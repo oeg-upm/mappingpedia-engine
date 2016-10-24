@@ -17,7 +17,10 @@ object MappingPediaConstant {
 
 	private val HAS_TRIPLES_MAPS_URI = MAPPINGPEDIA_NS + "hasTriplesMaps";
 	val HAS_TRIPLES_MAPS_PROPERTY = ResourceFactory.createProperty(HAS_TRIPLES_MAPS_URI);
-	
+
+	val R2RML_NS = "http://www.w3.org/ns/r2rml#";
+	val R2RML_TRIPLESMAP_URI = R2RML_NS + "TriplesMap";
+	val R2RML_TRIPLESMAP_CLASS = ResourceFactory.createResource(R2RML_TRIPLESMAP_URI);
 
 
 }
