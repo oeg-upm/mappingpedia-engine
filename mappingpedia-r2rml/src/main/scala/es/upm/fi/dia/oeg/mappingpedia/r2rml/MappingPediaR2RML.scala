@@ -8,7 +8,6 @@ import java.io.File
 import com.hp.hpl.jena.rdf.model.Statement
 import com.hp.hpl.jena.graph.Triple
 import scala.collection.mutable.ListBuffer
-import es.upm.fi.dia.oeg.obdi.wrapper.r2rml.R2RMLConstants
 import com.hp.hpl.jena.rdf.model.RDFList
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.rdf.model.Property
@@ -80,7 +79,7 @@ class MappingPediaR2RML {
 			}
 
 			val triplesMapResources = r2rmlDocumentModel.listResourcesWithProperty(
-				RDF.`type`, R2RMLConstants.R2RML_TRIPLESMAP_CLASS);
+				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
 			if(triplesMapResources != null) {
 			  val triplesMaplist : RDFNode = manifestModel.createList(triplesMapResources);
 			  r2rmlResource.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
