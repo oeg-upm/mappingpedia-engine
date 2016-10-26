@@ -1,15 +1,16 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
-import com.hp.hpl.jena.rdf.model.Property
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.rdf.model.Literal
 import scala.None
-import com.hp.hpl.jena.graph.Triple
+import org.apache.jena.rdf.model.Property
+import org.apache.jena.rdf.model.Resource
+import org.apache.jena.rdf.model.Literal
+import org.apache.jena.graph.Triple
 import virtuoso.jena.driver.VirtGraph
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 
 object MappingPediaUtility {
-	val logger : Logger = Logger.getLogger("MappingPediaUtility");
+	val logger : Logger = LogManager.getLogger("MappingPediaUtility");
 
   def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {
 		val it = resource.listProperties(property);

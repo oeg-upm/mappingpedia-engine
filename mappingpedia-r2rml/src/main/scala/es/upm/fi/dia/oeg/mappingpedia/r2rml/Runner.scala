@@ -1,11 +1,12 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
-import org.apache.log4j.Logger
-import com.hp.hpl.jena.graph.Triple
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
+import org.apache.jena.graph.Triple
 import virtuoso.jena.driver.VirtGraph
 
 object Runner {
-	val logger : Logger = Logger.getLogger("Runner");
+	val logger : Logger = LogManager.getLogger("Runner");
 
   def main(args: Array[String]): Unit = {
 		var manifestFilePath : String = null;

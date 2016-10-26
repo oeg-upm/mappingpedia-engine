@@ -1,21 +1,23 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.util.FileManager
-import com.hp.hpl.jena.vocabulary.RDF
-import com.hp.hpl.jena.vocabulary.DC_11
 import java.io.File
-import com.hp.hpl.jena.rdf.model.Statement
-import com.hp.hpl.jena.graph.Triple
 import scala.collection.mutable.ListBuffer
-import com.hp.hpl.jena.rdf.model.RDFList
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.rdf.model.Property
-import com.hp.hpl.jena.rdf.model.RDFNode
-import org.apache.log4j.Logger
+
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.util.FileManager
+import org.apache.jena.vocabulary.RDF
+import org.apache.jena.vocabulary.DC_11
+import org.apache.jena.rdf.model.Statement
+import org.apache.jena.graph.Triple
+import org.apache.jena.rdf.model.RDFList
+import org.apache.jena.rdf.model.Resource
+import org.apache.jena.rdf.model.Property
+import org.apache.jena.rdf.model.RDFNode
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 
 class MappingPediaR2RML {
-	val logger : Logger = Logger.getLogger("MappingPediaR2RML");
+	val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
 	
 	private val MANIFEST_FILE_LANGUAGE = "TURTLE";
 	private val R2RML_FILE_LANGUAGE = "TURTLE";

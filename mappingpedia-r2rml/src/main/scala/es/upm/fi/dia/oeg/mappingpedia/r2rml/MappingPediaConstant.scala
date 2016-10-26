@@ -1,7 +1,7 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
-import com.hp.hpl.jena.rdf.model.ResourceFactory
-import com.hp.hpl.jena.vocabulary.DC_11;
+import org.apache.jena.rdf.model.ResourceFactory
+import org.apache.jena.vocabulary.DC_11;
 
 object MappingPediaConstant {
 	private val RDB2RDFTEST_NS = "http://purl.org/NET/rdb2rdf-test#";
