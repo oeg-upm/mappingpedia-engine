@@ -1,28 +1,39 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.util.FileManager
-import com.hp.hpl.jena.vocabulary.RDF
-import com.hp.hpl.jena.vocabulary.DC_11
 import java.io.File
-import com.hp.hpl.jena.rdf.model.Statement
-import com.hp.hpl.jena.graph.Triple
 import scala.collection.mutable.ListBuffer
-import com.hp.hpl.jena.rdf.model.RDFList
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.rdf.model.Property
-import com.hp.hpl.jena.rdf.model.RDFNode
-import org.apache.log4j.Logger
 
-class MappingPediaR2RML {
-	val logger : Logger = Logger.getLogger("MappingPediaR2RML");
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.util.FileManager
+import org.apache.jena.vocabulary.RDF
+import org.apache.jena.vocabulary.DC_11
+import org.apache.jena.rdf.model.Statement
+import org.apache.jena.graph.Triple
+import org.apache.jena.rdf.model.RDFList
+import org.apache.jena.rdf.model.Resource
+import org.apache.jena.rdf.model.Property
+import org.apache.jena.rdf.model.RDFNode
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
+import virtuoso.jena.driver.VirtGraph
+import org.apache.jena.graph.Node
+import org.apache.jena.graph.NodeFactory
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.security.MessageDigest
+import org.apache.jena.util.ResourceUtils
+
+class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String, val virtuosoPwd:String) {
+	val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
 	
 	private val MANIFEST_FILE_LANGUAGE = "TURTLE";
 	private val R2RML_FILE_LANGUAGE = "TURTLE";
 	private var r2rmlTriples : List[Triple] = Nil;
 	private var manifestTriples : List[Triple] = Nil;
 	private var graphName : String = null;
-	
+  val mappingpediaGraph:VirtGraph = MappingPediaUtility.getVirtuosoGraph(
+    virtuosoJDBC, virtuosoUser, virtuosoPwd, MappingPediaConstant.MAPPINGPEDIA_GRAPH);
+		
 	def readManifestFile(manifestFilePath : String) = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 		val manifestFile = new File(manifestFilePath);
@@ -32,7 +43,7 @@ class MappingPediaR2RML {
 		manifestModel.read(inManifestModel, null, MANIFEST_FILE_LANGUAGE);	  
 		
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.R2RML_CLASS);
+				RDF.`type`, MappingPediaConstant.RDB2RDFTEST_R2RML_CLASS);
 		if(r2rmlResources != null) {
 			val r2rmlResource = r2rmlResources.nextResource();
 			graphName = r2rmlResource.toString();
@@ -47,7 +58,7 @@ class MappingPediaR2RML {
 					r2rmlResource, MappingPediaConstant.TEST_PURPOSE_PROPERTY);
 
 			val rdb2rdftestMappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, MappingPediaConstant.MAPPING_DOCUMENT_PROPERTY).toString();
+					r2rmlResource, MappingPediaConstant.RDB2RDFTEST_MAPPING_DOCUMENT_PROPERTY).toString();
 
 			var mappingDocumentFile = new File(rdb2rdftestMappingDocumentFilePath.toString());
 			val isMappingDocumentFilePathAbsolute = mappingDocumentFile.isAbsolute();
@@ -110,5 +121,60 @@ class MappingPediaR2RML {
 	
 	def getGraphName : String = {
 		return graphName;
-	}	
+	}
+	
+  def storeRDFFile(turtleFilePath:String, rdfSyntax:Option[String]) = {
+//    val b = Files.readAllBytes(Paths.get(turtleFilePath));
+//    val hash = MessageDigest.getInstance("SHA").digest(b);
+//    logger.info("hash = " + hash);
+
+    val model = ModelFactory.createDefaultModel() ;
+    if(rdfSyntax == null || rdfSyntax.isEmpty) {
+      model.read(new File(turtleFilePath).toURL().toString());
+    } else {
+      model.read(new File(turtleFilePath).toURL().toString(), "TURTLE");  
+    }
+    
+    logger.info("RDF file read.");
+    
+    val triplesMapResourcesList = model.listResourcesWithProperty(
+      RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
+    if(triplesMapResourcesList != null) {
+      if(triplesMapResourcesList.hasNext()) {
+        val triplesMapResource = triplesMapResourcesList.nextResource();
+        logger.info("triplesMapResource = " + triplesMapResource);
+        
+        val freshBlankNode = NodeFactory.createBlankNode();
+        logger.info("freshBlankNode = " + freshBlankNode);
+        
+        val newResource = 
+          ResourceUtils.renameResource(triplesMapResource, freshBlankNode.getBlankNodeLabel);
+        logger.info("newResource = " + newResource);
+      }
+     // val triplesMaplist : RDFNode = model.createList(triplesMapResources);
+      //r2rmlResource.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
+    }
+	 		
+		val initialGraphSize = mappingpediaGraph.getCount();
+		logger.debug("initialGraphSize = " + initialGraphSize);
+
+		val stmtIterator = model.listStatements();
+    while(stmtIterator.hasNext()) {
+      val stmt = stmtIterator.nextStatement();
+      logger.info("stmt = " + stmt);
+      
+      val triple = stmt.asTriple();
+      logger.info("triple = " + triple);
+      
+      mappingpediaGraph.add(triple);
+    }
+    
+    val finalGraphSize = mappingpediaGraph.getCount();
+		logger.debug("finalGraphSize = " + finalGraphSize);
+		val addedTriplesSize = finalGraphSize - initialGraphSize; 
+		logger.info("No of added triples = " + addedTriplesSize);
+    
+  }
+  
+  
 }

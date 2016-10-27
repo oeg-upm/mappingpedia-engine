@@ -1,11 +1,12 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
-import org.apache.log4j.Logger
-import com.hp.hpl.jena.graph.Triple
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
+import org.apache.jena.graph.Triple
 import virtuoso.jena.driver.VirtGraph
 
 object Runner {
-	val logger : Logger = Logger.getLogger("Runner");
+	val logger : Logger = LogManager.getLogger("Runner");
 
   def main(args: Array[String]): Unit = {
 		var manifestFilePath : String = null;
@@ -56,10 +57,12 @@ object Runner {
 		, virtuosoUser : String, virtuosoPwd : String
 		, clearGraph : Boolean) : Unit = {
 
-    val mappingPediaR2rml : MappingPediaR2RML = new MappingPediaR2RML();
-    mappingPediaR2rml.readManifestFile(manifestFilePath);
+    val mappingpediaR2RML : MappingPediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser, virtuosoPwd);
+//    mappingpediaR2RML.storeRDFFile(manifestFilePath, Some("TURTLE"));
+    
+    mappingpediaR2RML.readManifestFile(manifestFilePath);
 
-    val virtuosoGraphName = mappingPediaR2rml.getGraphName;
+    val virtuosoGraphName = MappingPediaConstant.MAPPINGPEDIA_GRAPH;
     logger.info("Graph name = " + virtuosoGraphName);
     val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(virtuosoJDBC, virtuosoUser, virtuosoPwd
     		, virtuosoGraphName);
@@ -68,11 +71,11 @@ object Runner {
     }
     
     logger.info("Storing manifest triples.");
-    val manifestTriples = mappingPediaR2rml.getManifestTriples;
+    val manifestTriples = mappingpediaR2RML.getManifestTriples;
     MappingPediaUtility.store(manifestTriples, virtuosoGraph);
     
     logger.info("Storing R2RML triples.");
-    val r2rmlTriples = mappingPediaR2rml.getR2rmlTriples;
+    val r2rmlTriples = mappingpediaR2RML.getR2rmlTriples;
     MappingPediaUtility.store(r2rmlTriples, virtuosoGraph);
   }
 
