@@ -10,7 +10,7 @@ object MappingPediaTest {
 	def main(args: Array[String]): Unit = {
 	  
 	  Runner.run(MANIFEST_FILE_PATH, VIRTUOSO_JDBC
-	      , VIRTUOSO_USER, VIRTUOSO_PWD, "true");
+	      , VIRTUOSO_USER, VIRTUOSO_PWD, "http://mappingpedia.linkeddata.es/graph/data", false);
 	}
 	  
 	  
