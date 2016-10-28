@@ -23,16 +23,17 @@ import java.nio.file.Paths
 import java.security.MessageDigest
 import org.apache.jena.util.ResourceUtils
 
-class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String, val virtuosoPwd:String) {
+class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
+    , val virtuosoPwd:String, val graphName:String) {
 	val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
 	
 	private val MANIFEST_FILE_LANGUAGE = "TURTLE";
 	private val R2RML_FILE_LANGUAGE = "TURTLE";
 	private var r2rmlTriples : List[Triple] = Nil;
 	private var manifestTriples : List[Triple] = Nil;
-	private var graphName : String = null;
+	//private var graphName : String = null;
   val mappingpediaGraph:VirtGraph = MappingPediaUtility.getVirtuosoGraph(
-    virtuosoJDBC, virtuosoUser, virtuosoPwd, MappingPediaConstant.MAPPINGPEDIA_GRAPH);
+    virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
 		
 	def readManifestFile(manifestFilePath : String) = {
 		logger.info("Reading manifest file : " + manifestFilePath);
@@ -46,7 +47,7 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String, val vi
 				RDF.`type`, MappingPediaConstant.RDB2RDFTEST_R2RML_CLASS);
 		if(r2rmlResources != null) {
 			val r2rmlResource = r2rmlResources.nextResource();
-			graphName = r2rmlResource.toString();
+			//graphName = r2rmlResource.toString();
 			
 			val mappingDocumentTitle = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
 					r2rmlResource, DC_11.title);

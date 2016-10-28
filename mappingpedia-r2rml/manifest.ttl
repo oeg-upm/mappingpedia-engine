@@ -2,11 +2,12 @@
 @prefix dcterms: <http://purl.org/dc/elements/1.1/> .
 @prefix rdb2rdftest: <http://purl.org/NET/rdb2rdf-test#> .
 @prefix mappingpedia: <http://mappingpedia.linkeddata.es/vocabulary#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @base <http://www.w3.org/2001/sw/rdb2rdf/test-cases/#> .
 
-[] a rdb2rdftest:R2RML ;	
+<tc0000> a rdb2rdftest:R2RML ;	
 	dcterms:title "one table, one column, zero rows" ; 
-	dcterms:identifier "R2RMLTC0000a" ;
+	dcterms:identifier "R2RMLTC0000" ;
 	test:purpose "Tests if an empty table produces an empty RDF graph" ;
 	test:specificationReference "#physical-tables" ;
 	test:reviewStatus test:unreviewed ;
