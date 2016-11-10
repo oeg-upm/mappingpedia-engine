@@ -45,7 +45,8 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 		manifestModel.read(inManifestModel, null, MANIFEST_FILE_LANGUAGE);	  
 		
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.RDB2RDFTEST_R2RML_CLASS);
+				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RML_CLASS);
+		
 		if(r2rmlResources != null) {
 			val r2rmlResource = r2rmlResources.nextResource();
 			//graphName = r2rmlResource.toString();
