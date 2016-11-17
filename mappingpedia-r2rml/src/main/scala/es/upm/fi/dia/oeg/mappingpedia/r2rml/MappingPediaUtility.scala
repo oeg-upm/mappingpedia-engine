@@ -8,6 +8,9 @@ import org.apache.jena.graph.Triple
 import virtuoso.jena.driver.VirtGraph
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.LogManager
+import org.apache.jena.rdf.model.Model
+import org.apache.jena.rdf.model.ModelFactory
+import java.io.ByteArrayInputStream
 
 object MappingPediaUtility {
 	val logger : Logger = LogManager.getLogger("MappingPediaUtility");
@@ -47,5 +50,12 @@ object MappingPediaUtility {
 
 		val addedTriplesSize = finalGraphSize - initialGraphSize; 
 		logger.info("No of added triples = " + addedTriplesSize);	  
+  }
+  
+  def readModelFromString(modelText:String, lang:String) : Model = {
+    val model = ModelFactory.createDefaultModel();
+    val is = new ByteArrayInputStream(modelText.getBytes());
+    model.read(is, null, lang);
+    model
   }
 }

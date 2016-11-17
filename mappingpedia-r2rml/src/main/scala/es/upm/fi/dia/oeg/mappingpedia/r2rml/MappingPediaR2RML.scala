@@ -22,6 +22,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.MessageDigest
 import org.apache.jena.util.ResourceUtils
+import org.apache.jena.rdf.model.Model
 
 class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
     , val virtuosoPwd:String, val graphName:String) {
@@ -35,6 +36,58 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
   val mappingpediaGraph:VirtGraph = MappingPediaUtility.getVirtuosoGraph(
     virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
 		
+  def readManifestAndMappingInString(manifestText:String, mappingText:String) = {
+    logger.info("reading manifest file ...");
+    val manifestModel = MappingPediaUtility.readModelFromString(manifestText, MANIFEST_FILE_LANGUAGE);
+    
+    logger.info("reading r2rml file ...");
+    val r2rmlDocumentModel = MappingPediaUtility.readModelFromString(mappingText, R2RML_FILE_LANGUAGE);
+    
+    this.readManifestAndMappingInModel(manifestModel, r2rmlDocumentModel);
+  }
+  
+  def readManifestAndMappingInModel(manifestModel:Model, r2rmlDocumentModel:Model) = {
+		val mappingpediaR2RMLResources = manifestModel.listResourcesWithProperty(
+				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RML_CLASS);
+		
+		if(mappingpediaR2RMLResources != null) {
+			val mappingpediaR2RMLResource = mappingpediaR2RMLResources.nextResource();
+			//graphName = r2rmlResource.toString();
+			
+			val baseNS : String = r2rmlDocumentModel.getNsPrefixURI("");
+			logger.info("baseNS = " + baseNS);
+			
+			val r2rmlMappingDocumentStatements = r2rmlDocumentModel.listStatements();
+			if(r2rmlMappingDocumentStatements != null) {
+			  while(r2rmlMappingDocumentStatements.hasNext()) {
+			    val r2rmlMappingDocumentStatement : Statement = r2rmlMappingDocumentStatements.nextStatement();
+			    val r2rmlMappingDocumentTriple = r2rmlMappingDocumentStatement.asTriple();
+			    r2rmlTriples = r2rmlTriples ::: List(r2rmlMappingDocumentTriple);
+			  }
+			}
+
+			val triplesMapResources = r2rmlDocumentModel.listResourcesWithProperty(
+				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
+			if(triplesMapResources != null) {
+			  val triplesMaplist : RDFNode = manifestModel.createList(triplesMapResources);
+			  mappingpediaR2RMLResource.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
+			}
+
+		}
+
+		//put this after we process triples Map List!
+		val r2rmlMappingDocumentStatements = manifestModel.listStatements();
+		if(r2rmlMappingDocumentStatements != null) {
+		  while(r2rmlMappingDocumentStatements.hasNext()) {
+		    val r2rmlMappingDocumentTriple = r2rmlMappingDocumentStatements.next().asTriple();
+		    manifestTriples = manifestTriples ::: List(r2rmlMappingDocumentTriple);
+		  }
+		}
+		
+		logger.debug("manifestTriples = " + manifestTriples);
+		logger.debug("r2rmlTriples = " + r2rmlTriples);
+  }
+  
 	def readManifestFile(manifestFilePath : String) = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 		
@@ -60,20 +113,20 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 			val testPurpose = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
 					r2rmlResource, MappingPediaConstant.TEST_PURPOSE_PROPERTY);
 
-			val rdb2rdftestMappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
+			val mappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
 					r2rmlResource, MappingPediaConstant.RDB2RDFTEST_MAPPING_DOCUMENT_PROPERTY).toString();
 
-			var mappingDocumentFile = new File(rdb2rdftestMappingDocumentFilePath.toString());
+			var mappingDocumentFile = new File(mappingDocumentFilePath.toString());
 			val isMappingDocumentFilePathAbsolute = mappingDocumentFile.isAbsolute();
 			var r2rmlMappingDocumentPath : String = null; 
 			if(isMappingDocumentFilePathAbsolute) {
-				r2rmlMappingDocumentPath = rdb2rdftestMappingDocumentFilePath
+				r2rmlMappingDocumentPath = mappingDocumentFilePath
 			} else {
 			  val manifestFile = new File(manifestFilePath);
 			  if(manifestFile.isAbsolute()) {
 				r2rmlMappingDocumentPath = manifestFile.getParentFile().toString() + File.separator + mappingDocumentFile; 
 			  } else {
-			    r2rmlMappingDocumentPath = rdb2rdftestMappingDocumentFilePath
+			    r2rmlMappingDocumentPath = mappingDocumentFilePath
 			  }
 			}
 			
