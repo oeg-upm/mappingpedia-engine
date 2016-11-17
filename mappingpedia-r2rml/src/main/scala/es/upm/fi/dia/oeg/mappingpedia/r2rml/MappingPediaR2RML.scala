@@ -91,12 +91,11 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 	def readManifestFile(manifestFilePath : String) = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 		
-
-		
 		val inManifestModel = FileManager.get().open( manifestFilePath );
 		val manifestModel = ModelFactory.createDefaultModel();
 		manifestModel.read(inManifestModel, null, MANIFEST_FILE_LANGUAGE);	  
-		
+
+		var r2rmlDocumentModel:Model = null;
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
 				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RML_CLASS);
 		
@@ -131,41 +130,12 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 			}
 			
 			logger.info("Reading R2RML Mapping document : " + r2rmlMappingDocumentPath);
-			val r2rmlDocumentModel = ModelFactory.createDefaultModel();
+			r2rmlDocumentModel = ModelFactory.createDefaultModel();
 			val inR2rmlDocumentModel = FileManager.get().open( r2rmlMappingDocumentPath );
 			r2rmlDocumentModel.read(inR2rmlDocumentModel, null, R2RML_FILE_LANGUAGE);
-			val baseNS : String = r2rmlDocumentModel.getNsPrefixURI("");
-			logger.info("baseNS = " + baseNS);
-			
-			val r2rmlMappingDocumentStatements = r2rmlDocumentModel.listStatements();
-			if(r2rmlMappingDocumentStatements != null) {
-			  while(r2rmlMappingDocumentStatements.hasNext()) {
-			    val r2rmlMappingDocumentStatement : Statement = r2rmlMappingDocumentStatements.nextStatement();
-			    val r2rmlMappingDocumentTriple = r2rmlMappingDocumentStatement.asTriple();
-			    r2rmlTriples = r2rmlTriples ::: List(r2rmlMappingDocumentTriple);
-			  }
-			}
-
-			val triplesMapResources = r2rmlDocumentModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
-			if(triplesMapResources != null) {
-			  val triplesMaplist : RDFNode = manifestModel.createList(triplesMapResources);
-			  r2rmlResource.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
-			}
-
-		}
-
-		//put this after we process triples Map List!
-		val r2rmlMappingDocumentStatements = manifestModel.listStatements();
-		if(r2rmlMappingDocumentStatements != null) {
-		  while(r2rmlMappingDocumentStatements.hasNext()) {
-		    val r2rmlMappingDocumentTriple = r2rmlMappingDocumentStatements.next().asTriple();
-		    manifestTriples = manifestTriples ::: List(r2rmlMappingDocumentTriple);
-		  }
 		}
 		
-		logger.debug("manifestTriples = " + manifestTriples);
-		logger.debug("r2rmlTriples = " + r2rmlTriples);
+		this.readManifestAndMappingInModel(manifestModel, r2rmlDocumentModel);
 	}
 
 	def getR2rmlTriples : List[Triple] = {
