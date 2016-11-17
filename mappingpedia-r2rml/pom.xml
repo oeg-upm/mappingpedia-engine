@@ -5,6 +5,14 @@
 	<artifactId>mappingpedia-r2rml</artifactId>
 	<version>0.0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
+	
+<properties>
+    <scala.version>2.11.8</scala.version>
+    <commons.codec.version>1.8</commons.codec.version>
+    <grizzled.version>1.0.1</grizzled.version>
+    <slf4j-log4j12.version>1.7.5</slf4j-log4j12.version>
+</properties>
+
 	<dependencies>
 
 		<!-- <dependency> <groupId>com.hp.hpl.jena</groupId> <artifactId>jena</artifactId> 
@@ -14,7 +22,7 @@
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
-			<version>2.11.8</version>
+			<version>${scala.version}</version>
 		</dependency>
 		
 		<dependency>
@@ -66,6 +74,8 @@
 	<build>
 		<sourceDirectory>src/main/scala</sourceDirectory>
 		<testSourceDirectory>src/test/scala</testSourceDirectory>
+
+		
 		<pluginManagement>
 		</pluginManagement>
 
@@ -80,6 +90,22 @@
 					</outputDirectory>
 				</configuration>
 			</plugin>
+			
+        <plugin>
+            <groupId>org.scala-tools</groupId>
+            <artifactId>maven-scala-plugin</artifactId>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>compile</goal>
+                        <goal>testCompile</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <scalaVersion>${scala.version}</scalaVersion>
+            </configuration>
+        </plugin>
 
 		</plugins>
 	</build>
