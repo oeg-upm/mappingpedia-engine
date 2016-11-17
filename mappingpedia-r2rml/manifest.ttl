@@ -1,10 +1,11 @@
 @base <http://www.w3.org/2001/sw/rdb2rdf/test-cases/#> .
 @prefix dcterms: <http://purl.org/dc/elements/1.1/> .
 @prefix mappingpediavocab: <http://mappingpedia.linkeddata.es/vocabulary#> .
-@prefix mappingpediainstance: <http://mappingpedia.linkeddata.es/vocabulary#> .
+@prefix mappingpediainstance: <http://mappingpedia.linkeddata.es/instance#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
-@prefix rdb2rdftest: <http://purl.org/NET/rdb2rdf-test#> .@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdb2rdftest: <http://purl.org/NET/rdb2rdf-test#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
 mappingpediavocab:R2RML rdfs:subClassOf dcterms:BibliographicResource .
 mappingpediainstance:mapping-29 a mappingpediavocab:R2RML ;
@@ -15,7 +16,7 @@ mappingpediainstance:mapping-29 a mappingpediavocab:R2RML ;
     dcterms:license "Accept all the terms and conditions" ;
     dcterms:subject "Subject Test" ;
     mappingpediavocab:hasDataSource mappingpediainstance:db-29 ;
-    rdb2rdftest:mappingDocument "r2rml.ttl" ;
+    rdb2rdftest:mappingDocument "mapping.ttl" ;
 .
 mappingpediavocab:Datasource rdfs:subClassOf dcat:Dataset .
 mappingpediainstance:db-29 a mappingpediavocab:DataSource ;
