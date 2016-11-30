@@ -48,7 +48,7 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
   
   def readManifestAndMappingInModel(manifestModel:Model, r2rmlDocumentModel:Model) = {
 		val mappingpediaR2RMLResources = manifestModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RML_CLASS);
+				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
 		
 		if(mappingpediaR2RMLResources != null) {
 			val mappingpediaR2RMLResource = mappingpediaR2RMLResources.nextResource();
@@ -91,30 +91,29 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 	def readManifestFile(manifestFilePath : String) = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 		
-
-		
 		val inManifestModel = FileManager.get().open( manifestFilePath );
 		val manifestModel = ModelFactory.createDefaultModel();
 		manifestModel.read(inManifestModel, null, MANIFEST_FILE_LANGUAGE);	  
-		
+
+		var r2rmlDocumentModel:Model = null;
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RML_CLASS);
+				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
 		
 		if(r2rmlResources != null) {
 			val r2rmlResource = r2rmlResources.nextResource();
 			//graphName = r2rmlResource.toString();
 			
-			val mappingDocumentTitle = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, DC_11.title);
+//			val mappingDocumentTitle = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
+//					r2rmlResource, DC_11.title);
 
-			val mappingDocumentId = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, DC_11.identifier);
+//			val mappingDocumentId = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
+//					r2rmlResource, DC_11.identifier);
 
-			val testPurpose = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, MappingPediaConstant.TEST_PURPOSE_PROPERTY);
+//			val testPurpose = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
+//					r2rmlResource, MappingPediaConstant.TEST_PURPOSE_PROPERTY);
 
 			val mappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, MappingPediaConstant.RDB2RDFTEST_MAPPING_DOCUMENT_PROPERTY).toString();
+					r2rmlResource, MappingPediaConstant.DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY).toString();
 
 			var mappingDocumentFile = new File(mappingDocumentFilePath.toString());
 			val isMappingDocumentFilePathAbsolute = mappingDocumentFile.isAbsolute();
@@ -131,41 +130,12 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 			}
 			
 			logger.info("Reading R2RML Mapping document : " + r2rmlMappingDocumentPath);
-			val r2rmlDocumentModel = ModelFactory.createDefaultModel();
+			r2rmlDocumentModel = ModelFactory.createDefaultModel();
 			val inR2rmlDocumentModel = FileManager.get().open( r2rmlMappingDocumentPath );
 			r2rmlDocumentModel.read(inR2rmlDocumentModel, null, R2RML_FILE_LANGUAGE);
-			val baseNS : String = r2rmlDocumentModel.getNsPrefixURI("");
-			logger.info("baseNS = " + baseNS);
-			
-			val r2rmlMappingDocumentStatements = r2rmlDocumentModel.listStatements();
-			if(r2rmlMappingDocumentStatements != null) {
-			  while(r2rmlMappingDocumentStatements.hasNext()) {
-			    val r2rmlMappingDocumentStatement : Statement = r2rmlMappingDocumentStatements.nextStatement();
-			    val r2rmlMappingDocumentTriple = r2rmlMappingDocumentStatement.asTriple();
-			    r2rmlTriples = r2rmlTriples ::: List(r2rmlMappingDocumentTriple);
-			  }
-			}
-
-			val triplesMapResources = r2rmlDocumentModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
-			if(triplesMapResources != null) {
-			  val triplesMaplist : RDFNode = manifestModel.createList(triplesMapResources);
-			  r2rmlResource.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
-			}
-
-		}
-
-		//put this after we process triples Map List!
-		val r2rmlMappingDocumentStatements = manifestModel.listStatements();
-		if(r2rmlMappingDocumentStatements != null) {
-		  while(r2rmlMappingDocumentStatements.hasNext()) {
-		    val r2rmlMappingDocumentTriple = r2rmlMappingDocumentStatements.next().asTriple();
-		    manifestTriples = manifestTriples ::: List(r2rmlMappingDocumentTriple);
-		  }
 		}
 		
-		logger.debug("manifestTriples = " + manifestTriples);
-		logger.debug("r2rmlTriples = " + r2rmlTriples);
+		this.readManifestAndMappingInModel(manifestModel, r2rmlDocumentModel);
 	}
 
 	def getR2rmlTriples : List[Triple] = {
@@ -180,7 +150,8 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 		return graphName;
 	}
 	
-  def storeRDFFile(turtleFilePath:String, rdfSyntax:Option[String]) = {
+  
+def storeRDFFile(turtleFilePath:String, rdfSyntax:Option[String]) = {
 //    val b = Files.readAllBytes(Paths.get(turtleFilePath));
 //    val hash = MessageDigest.getInstance("SHA").digest(b);
 //    logger.info("hash = " + hash);

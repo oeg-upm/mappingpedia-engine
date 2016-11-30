@@ -69,7 +69,7 @@ object Runner {
     
     
   
-//    Runner.run(manifestFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName, clearGraphBoolean);
+
     if(manifestText == None && manifestFilePath != null) {
       val manifestFileContent = fromFile(manifestFilePath).getLines.mkString("\n");
       logger.info("manifestFileContent = " + manifestFileContent);
@@ -82,8 +82,34 @@ object Runner {
       mappingText = Some(mappingFileContent);
     }
     
-    Runner.runManifestAndMappingInString(manifestText.get, mappingText.get
-	      , virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName, clearGraphBoolean);
+    val mappingpediaR2RML : MappingPediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser
+      , virtuosoPwd, graphName);
+        
+    if(manifestFilePath != null && mappingText == None && mappingFilePath == null) {
+//      Runner.run(manifestFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName, clearGraphBoolean);
+      mappingpediaR2RML.readManifestFile(manifestFilePath);
+    } else if(manifestText.isDefined && mappingText.isDefined) {
+//      Runner.runManifestAndMappingInString(manifestText.get, mappingText.get
+//	      , virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName, clearGraphBoolean);      
+      mappingpediaR2RML.readManifestAndMappingInString(manifestText.get, mappingText.get);
+    } else {
+      logger.error("Something wrong, please check your argument or manifest file!");
+    }
+
+    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(virtuosoJDBC, virtuosoUser, virtuosoPwd
+    		, graphName);
+    if(clearGraphBoolean) {
+    	virtuosoGraph.clear();
+    }
+    
+    logger.info("Storing manifest triples.");
+    val manifestTriples = mappingpediaR2RML.getManifestTriples;
+    MappingPediaUtility.store(manifestTriples, virtuosoGraph);
+    
+    logger.info("Storing R2RML triples.");
+    val r2rmlTriples = mappingpediaR2RML.getR2rmlTriples;
+    MappingPediaUtility.store(r2rmlTriples, virtuosoGraph);
+    
     logger.info("Bye!");
   }
 
@@ -100,29 +126,29 @@ object Runner {
 //
 //  }
   
-  def runManifestAndMappingInString(manifestText:String, mappingText:String
-      , virtuosoJDBC : String
-		, virtuosoUser : String, virtuosoPwd : String
-		, graphName:String, clearGraph : Boolean) : Unit = {
-    val mappingpediaR2RML : MappingPediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser
-        , virtuosoPwd, graphName);
-    mappingpediaR2RML.readManifestAndMappingInString(manifestText, mappingText);
-
-    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(virtuosoJDBC, virtuosoUser, virtuosoPwd
-    		, graphName);
-    if(clearGraph) {
-    	virtuosoGraph.clear();
-    }
-    
-    logger.info("Storing manifest triples.");
-    val manifestTriples = mappingpediaR2RML.getManifestTriples;
-    MappingPediaUtility.store(manifestTriples, virtuosoGraph);
-    
-    logger.info("Storing R2RML triples.");
-    val r2rmlTriples = mappingpediaR2RML.getR2rmlTriples;
-    MappingPediaUtility.store(r2rmlTriples, virtuosoGraph);
-  }
-
+//  def runManifestAndMappingInString(manifestText:String, mappingText:String
+//      , virtuosoJDBC : String
+//		, virtuosoUser : String, virtuosoPwd : String
+//		, graphName:String, clearGraph : Boolean) : Unit = {
+//    val mappingpediaR2RML : MappingPediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser
+//        , virtuosoPwd, graphName);
+//    mappingpediaR2RML.readManifestAndMappingInString(manifestText, mappingText);
+//
+//    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(virtuosoJDBC, virtuosoUser, virtuosoPwd
+//    		, graphName);
+//    if(clearGraph) {
+//    	virtuosoGraph.clear();
+//    }
+//    
+//    logger.info("Storing manifest triples.");
+//    val manifestTriples = mappingpediaR2RML.getManifestTriples;
+//    MappingPediaUtility.store(manifestTriples, virtuosoGraph);
+//    
+//    logger.info("Storing R2RML triples.");
+//    val r2rmlTriples = mappingpediaR2RML.getR2rmlTriples;
+//    MappingPediaUtility.store(r2rmlTriples, virtuosoGraph);
+//  }
+//
 //  def run(manifestFilePath : String
 //      , virtuosoJDBC : String
 //		, virtuosoUser : String, virtuosoPwd : String
