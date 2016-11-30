@@ -25,8 +25,8 @@ object RunnerTest {
 	  val graphName = "...";
 	  val clearGraph = false;
 	  
-	  Runner.runManifestAndMappingInString(manifestText, mappingText
-	      , virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName, clearGraph);
+//	  Runner.runManifestAndMappingInString(manifestText, mappingText
+//	      , virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName, clearGraph);
 	  println("Done");
 	}
 	  

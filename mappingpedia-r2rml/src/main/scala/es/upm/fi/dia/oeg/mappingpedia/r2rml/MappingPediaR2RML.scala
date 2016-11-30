@@ -48,7 +48,7 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
   
   def readManifestAndMappingInModel(manifestModel:Model, r2rmlDocumentModel:Model) = {
 		val mappingpediaR2RMLResources = manifestModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RML_CLASS);
+				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
 		
 		if(mappingpediaR2RMLResources != null) {
 			val mappingpediaR2RMLResource = mappingpediaR2RMLResources.nextResource();
@@ -97,23 +97,23 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 
 		var r2rmlDocumentModel:Model = null;
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RML_CLASS);
+				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
 		
 		if(r2rmlResources != null) {
 			val r2rmlResource = r2rmlResources.nextResource();
 			//graphName = r2rmlResource.toString();
 			
-			val mappingDocumentTitle = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, DC_11.title);
+//			val mappingDocumentTitle = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
+//					r2rmlResource, DC_11.title);
 
-			val mappingDocumentId = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, DC_11.identifier);
+//			val mappingDocumentId = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
+//					r2rmlResource, DC_11.identifier);
 
-			val testPurpose = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, MappingPediaConstant.TEST_PURPOSE_PROPERTY);
+//			val testPurpose = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
+//					r2rmlResource, MappingPediaConstant.TEST_PURPOSE_PROPERTY);
 
 			val mappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, MappingPediaConstant.RDB2RDFTEST_MAPPING_DOCUMENT_PROPERTY).toString();
+					r2rmlResource, MappingPediaConstant.DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY).toString();
 
 			var mappingDocumentFile = new File(mappingDocumentFilePath.toString());
 			val isMappingDocumentFilePathAbsolute = mappingDocumentFile.isAbsolute();
@@ -150,7 +150,8 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 		return graphName;
 	}
 	
-  def storeRDFFile(turtleFilePath:String, rdfSyntax:Option[String]) = {
+  
+def storeRDFFile(turtleFilePath:String, rdfSyntax:Option[String]) = {
 //    val b = Files.readAllBytes(Paths.get(turtleFilePath));
 //    val hash = MessageDigest.getInstance("SHA").digest(b);
 //    logger.info("hash = " + hash);
