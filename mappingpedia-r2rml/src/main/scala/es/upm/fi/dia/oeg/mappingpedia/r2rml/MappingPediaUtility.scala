@@ -11,6 +11,8 @@ import org.apache.logging.log4j.LogManager
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import java.io.ByteArrayInputStream
+import org.apache.jena.util.FileManager
+
 
 object MappingPediaUtility {
 	val logger : Logger = LogManager.getLogger("MappingPediaUtility");
@@ -56,6 +58,13 @@ object MappingPediaUtility {
     val model = ModelFactory.createDefaultModel();
     val is = new ByteArrayInputStream(modelText.getBytes());
     model.read(is, null, lang);
-    model
+    model;
+  }
+  
+  def readModelFromFile(filePath:String, lang:String, rdfSyntax:String) : Model = {
+		val inputStream = FileManager.get().open(filePath);
+		val model = ModelFactory.createDefaultModel();
+		model.read(inputStream, null, rdfSyntax);	 
+		model;
   }
 }

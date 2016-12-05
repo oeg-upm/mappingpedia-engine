@@ -91,10 +91,12 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 	def readManifestFile(manifestFilePath : String) = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 		
-		val inManifestModel = FileManager.get().open( manifestFilePath );
-		val manifestModel = ModelFactory.createDefaultModel();
-		manifestModel.read(inManifestModel, null, MANIFEST_FILE_LANGUAGE);	  
+//		val inputStream = FileManager.get().open( manifestFilePath );
+//		val manifestModel = ModelFactory.createDefaultModel();
+//		manifestModel.read(inputStream, null, MANIFEST_FILE_LANGUAGE);	  
 
+		val manifestModel = MappingPediaUtility.readModelFromFile(manifestFilePath, null, MANIFEST_FILE_LANGUAGE);
+		
 		var r2rmlDocumentModel:Model = null;
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
 				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
