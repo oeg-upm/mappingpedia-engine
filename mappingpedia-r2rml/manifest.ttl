@@ -7,20 +7,20 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
 mpv:R2RMLMappingDocument rdfs:subClassOf dcterms:BibliographicResource .
-mpi:mapping-29 a mpv:R2RMLMappingDocument ;
-    dcterms:identifier "29" ;
+mpi:mappingdocument-30 a mpv:R2RMLMappingDocument ;
+    dcterms:identifier "30" ;
     dcterms:title "Title Test" ;
     dcterms:dateSubmitted "2016-11-10" ;
     dcterms:creator "Nelson Saturno" ;
     dcterms:license "Accept all the terms and conditions" ;
     dcterms:subject "Subject Test" ;
-    mpv:hasDataset mpi:db-29 ;
+    mpv:hasDataset mpi:db-30 ;
     mpv:hasMappingDocumentFile "mapping.ttl" ;
 .
 mpv:Dataset rdfs:subClassOf dcat:Dataset .
-mpi:db-29 a mpv:Dataset ;
-    dcterms:identifier 29 ;
+mpi:db-30 a mpv:Dataset ;
+    dcterms:identifier 30 ;
     dcterms:title "Title Test" ;
     dcat:keyword "keywordTest" ;
-    dcterms:publisher mpi:user-29 ;
+    dcterms:publisher mpi:user-30 ;
 .
