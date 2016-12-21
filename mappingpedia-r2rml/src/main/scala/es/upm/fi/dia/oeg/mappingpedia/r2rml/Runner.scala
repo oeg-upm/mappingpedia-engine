@@ -76,7 +76,7 @@ object Runner {
         throw new Exception(errorMessage);
       } else {
         val manifestFileContent = fromFile(manifestFilePath).getLines.mkString("\n");
-        logger.info("manifestFileContent = \n" + manifestFileContent);
+        //logger.info("manifestFileContent = \n" + manifestFileContent);
         manifestText = Some(manifestFileContent);          
       }
     }
@@ -86,7 +86,7 @@ object Runner {
         mappingFilePath = mappingpediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
       } 
       val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
-      logger.info("mappingFileContent = \n" + mappingFileContent);
+      //logger.info("mappingFileContent = \n" + mappingFileContent);
       mappingText = Some(mappingFileContent);
     }
     

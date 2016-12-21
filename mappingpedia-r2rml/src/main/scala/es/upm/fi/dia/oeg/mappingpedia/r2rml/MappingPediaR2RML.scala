@@ -23,6 +23,7 @@ import java.nio.file.Paths
 import java.security.MessageDigest
 import org.apache.jena.util.ResourceUtils
 import org.apache.jena.rdf.model.Model
+import org.apache.jena.rdf.model.impl.StatementImpl
 
 class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
     , val virtuosoPwd:String, val graphName:String) {
@@ -68,9 +69,17 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 			val triplesMapResources = r2rmlDocumentModel.listResourcesWithProperty(
 				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
 			if(triplesMapResources != null) {
-			  val triplesMaplist : RDFNode = manifestModel.createList(triplesMapResources);
-			  r2rmlMappingDocument.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
-			  logger.info("triplesMaplist = " + triplesMaplist);
+			  while(triplesMapResources.hasNext()) {
+			    val triplesMapResource = triplesMapResources.nextResource();
+			    //r2rmlMappingDocument.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
+			    val newStatement = new StatementImpl(r2rmlMappingDocument, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
+			    logger.info("newStatement = " + newStatement);
+			    manifestModel.add(newStatement);
+			  }
+			  
+//			  val triplesMaplist : RDFNode = manifestModel.createList(triplesMapResources);
+//			  r2rmlMappingDocument.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
+//			  logger.info("triplesMaplist = " + triplesMaplist);
 			}
 
 		}
@@ -84,7 +93,7 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 		  }
 		}
 		
-		logger.debug("manifestTriples = " + manifestTriples);
+		logger.info("manifestTriples = " + manifestTriples);
 		logger.debug("r2rmlTriples = " + r2rmlTriples);
   }
   
