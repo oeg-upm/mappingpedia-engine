@@ -9,10 +9,10 @@ import java.io.BufferedWriter
 import java.io.FileWriter
 import scala.io.Source._
 
-object Runner {
+object MappingPediaRunner {
   val logger : Logger = LogManager.getLogger("Runner");
 
-  def main(args: Array[String]): Unit = {
+  def run(args: Array[String]): Unit = {
     var manifestFilePath:String = null;
     var mappingFilePath:String = null;
     var virtuosoJDBC : String = null;
@@ -40,7 +40,7 @@ object Runner {
       } else if(args(i).equals("-graphname")) {
         graphName = args(i+1);
       } else if(args(i).equals("-cleargraph")) {
-        val clearGraphString = args(i+1);
+        clearGraphString = args(i+1);
         logger.info("clearGraphString = " + clearGraphString);
       } else if(args(i).equals("-manifestText")) {
         manifestText = Some(args(i+1));
@@ -95,7 +95,14 @@ object Runner {
     val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(virtuosoJDBC, virtuosoUser, virtuosoPwd
     		, graphName);
     if(clearGraphBoolean) {
-    	virtuosoGraph.clear();
+      try {
+        virtuosoGraph.clear();  
+      } catch {
+        case e:Exception => {
+          logger.error("unable to clear the graph: " + e.getMessage);
+        } 
+      }
+    	
     }
     
     logger.info("Storing manifest triples.");

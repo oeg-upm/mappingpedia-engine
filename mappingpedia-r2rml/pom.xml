@@ -5,13 +5,22 @@
 	<artifactId>mappingpedia-r2rml</artifactId>
 	<version>0.0.4-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	
-<properties>
-    <scala.version>2.11.8</scala.version>
-    <commons.codec.version>1.8</commons.codec.version>
-    <grizzled.version>1.0.1</grizzled.version>
-    <slf4j-log4j12.version>1.7.5</slf4j-log4j12.version>
-</properties>
+
+	<properties>
+		<scala.version>2.11.8</scala.version>
+		<commons.codec.version>1.8</commons.codec.version>
+		<grizzled.version>1.0.1</grizzled.version>
+		<slf4j-log4j12.version>1.7.5</slf4j-log4j12.version>
+		<project.java.version>1.8</project.java.version>
+		 <maven.dependency.version>2.5.1</maven.dependency.version>
+	</properties>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.4.2.RELEASE</version>
+	</parent>
+
 
 	<dependencies>
 
@@ -24,7 +33,7 @@
 			<artifactId>scala-library</artifactId>
 			<version>${scala.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.jena</groupId>
 			<artifactId>apache-jena-libs</artifactId>
@@ -60,6 +69,21 @@
 			<version>19.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
 	<repositories>
@@ -72,43 +96,44 @@
 	</repositories>
 
 	<build>
-		<sourceDirectory>src/main/scala</sourceDirectory>
-		<testSourceDirectory>src/test/scala</testSourceDirectory>
+<!-- 		<sourceDirectory>src/main/scala</sourceDirectory>
+		<testSourceDirectory>src/test/scala</testSourceDirectory> -->
 
-		
+
 		<pluginManagement>
-		<plugins>
-			<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-			<plugin>
-				<groupId>org.eclipse.m2e</groupId>
-				<artifactId>lifecycle-mapping</artifactId>
-				<version>1.0.0</version>
-				<configuration>
-					<lifecycleMappingMetadata>
-						<pluginExecutions>
-							<pluginExecution>
-								<pluginExecutionFilter>
-									<groupId>org.scala-tools</groupId>
-									<artifactId>
-										maven-scala-plugin
-									</artifactId>
-									<versionRange>
-										[2.15.2,)
-									</versionRange>
-									<goals>
-										<goal>compile</goal>
-										<goal>testCompile</goal>
-									</goals>
-								</pluginExecutionFilter>
-								<action>
-									<ignore></ignore>
-								</action>
-							</pluginExecution>
-						</pluginExecutions>
-					</lifecycleMappingMetadata>
-				</configuration>
-			</plugin>
-		</plugins>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.scala-tools</groupId>
+										<artifactId>
+											maven-scala-plugin
+										</artifactId>
+										<versionRange>
+											[2.15.2,)
+										</versionRange>
+										<goals>
+											<goal>compile</goal>
+											<goal>testCompile</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
 		</pluginManagement>
 
 		<plugins>
@@ -122,22 +147,38 @@
 					</outputDirectory>
 				</configuration>
 			</plugin>
-			
-        <plugin>
-            <groupId>org.scala-tools</groupId>
-            <artifactId>maven-scala-plugin</artifactId>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>compile</goal>
-                        <goal>testCompile</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                <scalaVersion>${scala.version}</scalaVersion>
-            </configuration>
-        </plugin>
+
+			<plugin>
+				<groupId>org.scala-tools</groupId>
+				<artifactId>maven-scala-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>compile</goal>
+							<goal>testCompile</goal>
+						</goals>
+						<phase>process-resources</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<scalaVersion>${scala.version}</scalaVersion>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven.dependency.version}</version>
+				<configuration>
+					<source>${project.java.version}</source>
+					<target>${project.java.version}</target>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
 
 		</plugins>
 	</build>
