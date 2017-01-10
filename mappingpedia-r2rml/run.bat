@@ -1,1 +1,1 @@
-java -cp mappingpedia-r2rml.jar;lib/* es.upm.fi.dia.oeg.mappingpedia.r2rml.Runner -deprecation -m manifest.ttl -vjdbc FILLME -usr FILLME -pwd FILLME -graphname FILLME
+java -cp target/mappingpedia-engine-r2rml-0.0.6-SNAPSHOT.jar.original;lib/* es.upm.fi.dia.oeg.mappingpedia.r2rml.Application -deprecation -manifestFilePath manifest-retele.ttl

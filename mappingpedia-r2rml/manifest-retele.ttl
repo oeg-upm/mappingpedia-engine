@@ -1,0 +1,36 @@
+@base <http://www.w3.org/2001/sw/rdb2rdf/test-cases/#> .
+@prefix dcterms: <http://purl.org/dc/elements/1.1/> .
+@prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#> .
+@prefix mpi: <http://mappingpedia.linkeddata.es/instance#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+
+# mpv:R2RMLMappingDocument rdfs:subClassOf dcterms:BibliographicResource .
+mpi:mapping-289 a mpv:R2RMLMappingDocument ;
+    dcterms:identifier "mapping-289" ;
+    dcterms:title "Retele" ;
+    dcterms:dateSubmitted "2017-01-09T10:54:18.204297+00:00"^^xsd:dateTime;
+    dcterms:creator "Nelson Retele" ;
+    dcterms:license "Accept all the terms and conditions" ;
+    dcterms:subject "Retele" ;
+    mpv:hasDataset mpi:ds-289 ;
+    mpv:hasMappingDocumentFile "cat_reg-mapping.ttl" ;
+.
+
+
+# mpv:Dataset rdfs:subClassOf dcat:Dataset .
+mpi:ds-289 a mpv:Dataset ;
+    dcterms:identifier "data-265" ;
+    dcterms:title "Retele" ;
+    dcat:keyword "retele1", "retele2"  ;
+    dcterms:publisher mpi:user-289 ;
+    dcterms:language <http://id.loc.gov/vocabulary/iso639-1/en> ;
+    dcat:distribution mpi:ds-289_distribution-265 ;
+.
+
+
+mpi:ds-289_distribution-265 a dcat:Distribution;
+    dcat:mediaType "application/rdb" ;
+.
