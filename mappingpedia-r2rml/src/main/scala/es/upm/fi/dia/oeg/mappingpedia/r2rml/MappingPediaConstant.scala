@@ -23,7 +23,7 @@ object MappingPediaConstant {
 
 	//Mappingpedia related constants
 	private val MAPPINGPEDIA_NS = "http://mappingpedia.linkeddata.es/vocabulary#";
-	private val MAPPINGPEDIA_INSTANCE_NS = "http://mappingpedia.linkeddata.es/instance#";
+	val MAPPINGPEDIA_INSTANCE_NS = "http://mappingpedia.linkeddata.es/instance/";
 	val DEFAULT_MAPPINGPEDIA_GRAPH = "http://mappingpedia.linkeddata.es/graph/data";
 	private val HAS_TRIPLES_MAPS_URI = MAPPINGPEDIA_NS + "hasTriplesMaps";
 	val HAS_TRIPLES_MAPS_PROPERTY = ResourceFactory.createProperty(HAS_TRIPLES_MAPS_URI);
