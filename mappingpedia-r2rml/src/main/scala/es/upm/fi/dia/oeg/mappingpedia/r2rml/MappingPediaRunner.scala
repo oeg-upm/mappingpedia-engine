@@ -10,18 +10,94 @@ import java.io.FileWriter
 import scala.io.Source._
 
 object MappingPediaRunner {
-  val logger : Logger = LogManager.getLogger("Runner");
+  val logger : Logger = LogManager.getLogger("MappingPediaRunner");
 
+  def run(manifestFilePath:String, pMappingFilePath:String, virtuosoJDBC:String, virtuosoUser:String, virtuosoPwd:String
+      , graphName:String, clearGraphString:String, pManifestText:String, pMappingText:String): Unit = {
+    
+    val clearGraphBoolean = if(clearGraphString != null) {
+      if(clearGraphString.equalsIgnoreCase("true") || clearGraphString.equalsIgnoreCase("yes")) {
+        true;
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+    //logger.info("clearGraphBoolean = " + clearGraphBoolean);
+  
+
+
+    val manifestText:String = if(pManifestText == null) {
+      if(manifestFilePath == null) {
+        val errorMessage = "no manifest is provided";
+        logger.error(errorMessage);
+        throw new Exception(errorMessage);
+      } else {
+        val manifestFileContent = fromFile(manifestFilePath).getLines.mkString("\n");
+        //logger.info("manifestFileContent = \n" + manifestFileContent);
+        manifestFileContent;          
+      }
+    } else {
+      pManifestText;
+    }
+    
+    val mappingpediaR2RML : MappingPediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
+    
+    val mappingText:String = if(pMappingText == null) {
+      val mappingFilePath = if(pMappingFilePath == null) {
+        mappingpediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
+      }  else {
+        pMappingFilePath;
+      }
+      
+      val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
+      //logger.info("mappingFileContent = \n" + mappingFileContent);
+      mappingFileContent;
+    } else {
+      pMappingText;
+    }
+    
+    mappingpediaR2RML.insertMappingInString(manifestText, mappingText);
+
+    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(virtuosoJDBC, virtuosoUser, virtuosoPwd
+    		, graphName);
+    if(clearGraphBoolean) {
+      try {
+        virtuosoGraph.clear();  
+      } catch {
+        case e:Exception => {
+          logger.error("unable to clear the graph: " + e.getMessage);
+        } 
+      }
+    	
+    }
+    
+    logger.info("Storing manifest triples.");
+    val manifestTriples = mappingpediaR2RML.getManifestTriples;
+    MappingPediaUtility.store(manifestTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+    
+    logger.info("Storing R2RML triples.");
+    val r2rmlTriples = mappingpediaR2RML.getR2rmlTriples;
+    MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+    
+    logger.info("Bye!");
+    
+  }
+  
   def run(args: Array[String]): Unit = {
+    
+
+        
     var manifestFilePath:String = null;
     var mappingFilePath:String = null;
-    var virtuosoJDBC : String = null;
-    var virtuosoUser : String = null;
-    var virtuosoPwd : String = null;
-    var graphName : String = null;
-    var clearGraphString : String = null;
-    var manifestText:Option[String] = None;
-    var mappingText:Option[String] = None;
+    var virtuosoJDBC:String = null;
+    var virtuosoUser:String = null;
+    var virtuosoPwd:String = null;
+    var graphName:String = null;
+    var clearGraphString:String = null;
+    var manifestText:String = null;
+    var mappingText:String = null;
     
     for(i <- 0 to args.length - 1 ) {
       if(args(i).equals("-manifestFilePath")) {
@@ -43,77 +119,22 @@ object MappingPediaRunner {
         clearGraphString = args(i+1);
         logger.info("clearGraphString = " + clearGraphString);
       } else if(args(i).equals("-manifestText")) {
-        manifestText = Some(args(i+1));
+        manifestText = args(i+1);
       } else if(args(i).equals("-mappingText")) {
-        mappingText = Some(args(i+1));
+        mappingText = args(i+1);
       } 
     }
-    
+
+
+        
     if(graphName == null) {
       graphName = MappingPediaConstant.DEFAULT_MAPPINGPEDIA_GRAPH;
     }
     logger.info("graphName = " + graphName);
 
-    val clearGraphBoolean = if(clearGraphString != null) {
-      if(clearGraphString.equalsIgnoreCase("true") || clearGraphString.equalsIgnoreCase("yes")) {
-        true;
-      } else {
-        false
-      }
-    } else {
-      false
-    }
-    logger.info("clearGraphBoolean = " + clearGraphBoolean);
-  
-    val mappingpediaR2RML : MappingPediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser
-      , virtuosoPwd, graphName);
 
-
-    if(manifestText == None) {
-      if(manifestFilePath == null) {
-        val errorMessage = "no manifest is provided";
-        logger.error(errorMessage);
-        throw new Exception(errorMessage);
-      } else {
-        val manifestFileContent = fromFile(manifestFilePath).getLines.mkString("\n");
-        //logger.info("manifestFileContent = \n" + manifestFileContent);
-        manifestText = Some(manifestFileContent);          
-      }
-    }
-    
-    if(mappingText == None) {
-      if(mappingFilePath == null) {
-        mappingFilePath = mappingpediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
-      } 
-      val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
-      //logger.info("mappingFileContent = \n" + mappingFileContent);
-      mappingText = Some(mappingFileContent);
-    }
-    
-    mappingpediaR2RML.readManifestAndMappingInString(manifestText.get, mappingText.get);
-
-    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(virtuosoJDBC, virtuosoUser, virtuosoPwd
-    		, graphName);
-    if(clearGraphBoolean) {
-      try {
-        virtuosoGraph.clear();  
-      } catch {
-        case e:Exception => {
-          logger.error("unable to clear the graph: " + e.getMessage);
-        } 
-      }
-    	
-    }
-    
-    logger.info("Storing manifest triples.");
-    val manifestTriples = mappingpediaR2RML.getManifestTriples;
-    MappingPediaUtility.store(manifestTriples, virtuosoGraph);
-    
-    logger.info("Storing R2RML triples.");
-    val r2rmlTriples = mappingpediaR2RML.getR2rmlTriples;
-    MappingPediaUtility.store(r2rmlTriples, virtuosoGraph);
-    
-    logger.info("Bye!");
+    this.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName, clearGraphString
+        , manifestText, mappingText)
   }
 
 

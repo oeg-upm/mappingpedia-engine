@@ -36,23 +36,22 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
   val mappingpediaGraph:VirtGraph = MappingPediaUtility.getVirtuosoGraph(
     virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
 		
-  def readManifestAndMappingInString(manifestText:String, mappingText:String) = {
+  def insertMappingInString(manifestText:String, mappingText:String) = {
     logger.info("reading manifest file ...");
     val manifestModel = MappingPediaUtility.readModelFromString(manifestText, MANIFEST_FILE_LANGUAGE);
     
     logger.info("reading r2rml file ...");
     val r2rmlDocumentModel = MappingPediaUtility.readModelFromString(mappingText, R2RML_FILE_LANGUAGE);
     
-    this.readManifestAndMappingInModel(manifestModel, r2rmlDocumentModel);
+    this.insertMappingInModel(manifestModel, r2rmlDocumentModel);
   }
   
-  def readManifestAndMappingInModel(manifestModel:Model, r2rmlDocumentModel:Model) = {
+  def insertMappingInModel(manifestModel:Model, r2rmlDocumentModel:Model) = {
 		val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
 				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
 		
 		if(r2rmlMappingDocumentResources != null) {
 			val r2rmlMappingDocument = r2rmlMappingDocumentResources.nextResource();
-			//graphName = r2rmlResource.toString();
 			
 			val baseNS : String = r2rmlDocumentModel.getNsPrefixURI("");
 			logger.info("baseNS = " + baseNS);
@@ -71,15 +70,11 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 			if(triplesMapResources != null) {
 			  while(triplesMapResources.hasNext()) {
 			    val triplesMapResource = triplesMapResources.nextResource();
-			    //r2rmlMappingDocument.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
 			    val newStatement = new StatementImpl(r2rmlMappingDocument, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
-			    logger.info("newStatement = " + newStatement);
+			    logger.info("adding new hasTriplesMap statement: " + newStatement);
 			    manifestModel.add(newStatement);
 			  }
 			  
-//			  val triplesMaplist : RDFNode = manifestModel.createList(triplesMapResources);
-//			  r2rmlMappingDocument.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
-//			  logger.info("triplesMaplist = " + triplesMaplist);
 			}
 
 		}
@@ -93,8 +88,10 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 		  }
 		}
 		
-		logger.info("manifestTriples = " + manifestTriples);
-		logger.debug("r2rmlTriples = " + r2rmlTriples);
+		//logger.debug("manifestTriples = " + manifestTriples);
+		//logger.debug("r2rmlTriples = " + r2rmlTriples);
+		
+
   }
   
   def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
@@ -134,13 +131,9 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 
   }
   
-	def readManifestFile(manifestFilePath : String) = {
+	def insertMappingFromManifestFile(manifestFilePath : String) = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 		
-//		val inputStream = FileManager.get().open( manifestFilePath );
-//		val manifestModel = ModelFactory.createDefaultModel();
-//		manifestModel.read(inputStream, null, MANIFEST_FILE_LANGUAGE);	  
-
 		val manifestModel = MappingPediaUtility.readModelFromFile(manifestFilePath, null, MANIFEST_FILE_LANGUAGE);
 		
 		var r2rmlDocumentModel:Model = null;
@@ -149,16 +142,6 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 		
 		if(r2rmlResources != null) {
 			val r2rmlResource = r2rmlResources.nextResource();
-			//graphName = r2rmlResource.toString();
-			
-//			val mappingDocumentTitle = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-//					r2rmlResource, DC_11.title);
-
-//			val mappingDocumentId = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-//					r2rmlResource, DC_11.identifier);
-
-//			val testPurpose = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-//					r2rmlResource, MappingPediaConstant.TEST_PURPOSE_PROPERTY);
 
 			val mappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
 					r2rmlResource, MappingPediaConstant.DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY).toString();
@@ -183,7 +166,7 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 			r2rmlDocumentModel.read(inR2rmlDocumentModel, null, R2RML_FILE_LANGUAGE);
 		}
 		
-		this.readManifestAndMappingInModel(manifestModel, r2rmlDocumentModel);
+		this.insertMappingInModel(manifestModel, r2rmlDocumentModel);
 	}
 
 	def getR2rmlTriples : List[Triple] = {
@@ -200,9 +183,6 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 	
   
 def storeRDFFile(turtleFilePath:String, rdfSyntax:Option[String]) = {
-//    val b = Files.readAllBytes(Paths.get(turtleFilePath));
-//    val hash = MessageDigest.getInstance("SHA").digest(b);
-//    logger.info("hash = " + hash);
 
     val model = ModelFactory.createDefaultModel() ;
     if(rdfSyntax == null || rdfSyntax.isEmpty) {
@@ -227,8 +207,6 @@ def storeRDFFile(turtleFilePath:String, rdfSyntax:Option[String]) = {
           ResourceUtils.renameResource(triplesMapResource, freshBlankNode.getBlankNodeLabel);
         logger.info("newResource = " + newResource);
       }
-     // val triplesMaplist : RDFNode = model.createList(triplesMapResources);
-      //r2rmlResource.addProperty(MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMaplist);
     }
 	 		
 		val initialGraphSize = mappingpediaGraph.getCount();
