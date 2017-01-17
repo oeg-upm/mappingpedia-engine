@@ -46,15 +46,20 @@ public class MappingPediaController {
 		
 		// Path where the uploaded files will be stored.
 		String uuid = UUID.randomUUID().toString();
-		String uploadDirectoryPath = "upload-dir/" + uuid;
-		logger.info("upload directory path = " + uploadDirectoryPath);
-		File outputDirectory = new File(uploadDirectoryPath);
+		String uploadDirectoryPath1 = "upload-dir";
+		File outputDirectory1 = new File(uploadDirectoryPath1);
+		if(!outputDirectory1.exists()) {
+			outputDirectory1.mkdirs();
+		}
+		String uploadDirectoryPath2 = uploadDirectoryPath1 + "/" + uuid;
+		logger.info("upload directory path = " + uploadDirectoryPath2);
+		File outputDirectory2 = new File(uploadDirectoryPath2);
 
 		// Now create the output files on the server.
-		String manifestFilePath = "upload-dir/" + uuid + "/" + manifestFileName;
+		String manifestFilePath = uploadDirectoryPath2 + "/" + manifestFileName;
 		File manifestFile = new File(manifestFilePath);
 		logger.info("manifest file path = " + manifestFilePath);
-		String mappingFilePath = "upload-dir/" + uuid + "/" + mappingFileName;
+		String mappingFilePath = uploadDirectoryPath2 + "/" + mappingFileName;
 		File mappingFile = new File(mappingFilePath);
 		logger.info("mapping file path = " + mappingFilePath);
 		
@@ -62,7 +67,7 @@ public class MappingPediaController {
 		FileInputStream manifestReader = null;
 		FileInputStream mappingReader = null;
 		try {
-			outputDirectory.mkdir();
+			outputDirectory2.mkdir();
 			manifestFile.createNewFile();
 			mappingFile.createNewFile();
 
@@ -77,10 +82,10 @@ public class MappingPediaController {
 			e.printStackTrace();
 		}
 
-    	logger.info("Application.mappingpediaR2RML = " + Application.mappingpediaR2RML);
     	String status=null;
     	try {
-    		Application.mappingpediaR2RML.insertMappingFromManifestFilePath(manifestFile.getPath());
+    		//Application.mappingpediaR2RML.insertMappingFromManifestFilePath(manifestFile.getPath());
+    		MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false");
     		status="success!";
     		logger.info("mapping inserted.");
     	} catch (Exception e){
