@@ -1,5 +1,6 @@
 *.class
 *.log
+mappingpedia-r2rml/src/main/resources/config.properties
 
 # sbt specific
 .cache
