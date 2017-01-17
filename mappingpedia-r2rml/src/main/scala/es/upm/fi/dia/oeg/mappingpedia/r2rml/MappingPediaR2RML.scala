@@ -33,6 +33,8 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 	private val R2RML_FILE_LANGUAGE = "TURTLE";
 	private var r2rmlTriples : List[Triple] = Nil;
 	private var manifestTriples : List[Triple] = Nil;
+	var clearGraph:Boolean = false;
+	
   val mappingpediaGraph:VirtGraph = MappingPediaUtility.getVirtuosoGraph(
     virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
 		

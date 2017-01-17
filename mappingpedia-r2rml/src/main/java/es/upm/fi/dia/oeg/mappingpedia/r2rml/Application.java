@@ -56,6 +56,7 @@ public class Application {
 			}
 		}
 		Application.mappingpediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
+		Application.mappingpediaR2RML.clearGraph_$eq(false);
 		
 		if(args== null || args.length==0) {
 			SpringApplication.run(Application.class, args);	
@@ -74,8 +75,9 @@ public class Application {
 		          mappingText = args[i+1];
 		        } 
 		      }
-			MappingPediaRunner.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd
-				      , graphName, clearGraph, manifestText, mappingText);
+//			MappingPediaRunner.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd
+//				      , graphName, clearGraph, manifestText, mappingText);
+			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph);
 		}
 
 	}
