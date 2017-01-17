@@ -5,12 +5,13 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 mpv:R2RMLMappingDocument rdfs:subClassOf dcterms:BibliographicResource .
 mpi:md-03 a mpv:R2RMLMappingDocument ;
     dcterms:identifier "MD01" ;
     dcterms:title "Test Mapping Document Title" ;
-    dcterms:dateSubmitted "2016-11-10" ;
+    dcterms:dateSubmitted "2017-01-09T10:54:18.204297+00:00"^^xsd:dateTime;
     dcterms:creator "Nelson Saturno" ;
     dcterms:license "Accept all the terms and conditions" ;
     dcterms:subject "Test Mapping Document Subject" ;
