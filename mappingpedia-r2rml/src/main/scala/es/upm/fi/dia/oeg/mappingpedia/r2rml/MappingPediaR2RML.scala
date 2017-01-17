@@ -131,7 +131,11 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 
   }
   
-	def insertMappingFromManifestFile(manifestFilePath : String) = {
+  def insertMappingFromManifestFile(manifestFile:File) = {
+    
+  }
+  
+	def insertMappingFromManifestFilePath(manifestFilePath : String) = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 		
 		val manifestModel = MappingPediaUtility.readModelFromFile(manifestFilePath, null, MANIFEST_FILE_LANGUAGE);
@@ -145,6 +149,7 @@ class MappingPediaR2RML(val virtuosoJDBC:String, val virtuosoUser:String
 
 			val mappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
 					r2rmlResource, MappingPediaConstant.DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY).toString();
+      logger.info("mappingDocumentFilePath = " + mappingDocumentFilePath);
 
 			var mappingDocumentFile = new File(mappingDocumentFilePath.toString());
 			val isMappingDocumentFilePathAbsolute = mappingDocumentFile.isAbsolute();
