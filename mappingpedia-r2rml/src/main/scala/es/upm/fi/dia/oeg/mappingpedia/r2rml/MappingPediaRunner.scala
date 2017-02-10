@@ -13,7 +13,7 @@ object MappingPediaRunner {
   val logger : Logger = LogManager.getLogger("MappingPediaRunner");
 
   def run(manifestFilePath:String, pManifestText:String, pMappingFilePath:String, pMappingText:String, clearGraphString:String
-      , virtuosoGraph:VirtGraph
+      , mappingpediaR2RML:MappingPediaR2RML
       ): Unit = {
     
     val clearGraphBoolean = if(clearGraphString != null) {
@@ -43,6 +43,7 @@ object MappingPediaRunner {
       pManifestText;
     }
     val manifestModel = MappingPediaUtility.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
+    mappingpediaR2RML.manifestModel = manifestModel;
     
     logger.info("reading r2rml file ...");
     val mappingText:String = if(pMappingText == null) {
@@ -59,8 +60,9 @@ object MappingPediaRunner {
       pMappingText;
     }
     val mappingDocumentModel = MappingPediaUtility.readModelFromString(mappingText, MappingPediaConstant.R2RML_FILE_LANGUAGE);
+    mappingpediaR2RML.mappingDocumentModel = mappingDocumentModel;
     
-    //val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
+    val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
     if(clearGraphBoolean) {
       try {
         virtuosoGraph.clear();  
@@ -75,6 +77,10 @@ object MappingPediaRunner {
     logger.info("Storing manifest triples.");
     val manifestTriples = MappingPediaUtility.toTriples(manifestModel);
     MappingPediaUtility.store(manifestTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+
+    logger.info("Storing generated triples.");
+    val additionalTriples = mappingpediaR2RML.generateAdditionalTriples();
+    MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
     
     logger.info("Storing R2RML triples.");
     val r2rmlTriples = MappingPediaUtility.toTriples(mappingDocumentModel);
