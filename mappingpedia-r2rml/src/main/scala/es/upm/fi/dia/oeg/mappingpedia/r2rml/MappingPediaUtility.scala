@@ -137,4 +137,19 @@ object MappingPediaUtility {
     val newNode = NodeFactory.createURI(newNodeURI);
     newNode;
   }
+  
+  def toTriples(model:Model) : List[Triple] = {
+    val statements = model.listStatements();
+    //val statementList = statements.toList();
+    var triples:List[Triple] = List.empty; 
+    if(statements != null) {
+      while(statements.hasNext()) {
+        val statement = statements.nextStatement();
+        val triple = statement.asTriple();
+        triples = triples ::: List(triple);
+      }
+    }
+    triples;
+  }
+
 }

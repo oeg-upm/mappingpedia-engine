@@ -12,7 +12,9 @@ import scala.io.Source._
 object MappingPediaRunner {
   val logger : Logger = LogManager.getLogger("MappingPediaRunner");
 
-  def run(manifestFilePath:String, pManifestText:String, pMappingFilePath:String, pMappingText:String, clearGraphString:String): Unit = {
+  def run(manifestFilePath:String, pManifestText:String, pMappingFilePath:String, pMappingText:String, clearGraphString:String
+      , virtuosoGraph:VirtGraph
+      ): Unit = {
     
     val clearGraphBoolean = if(clearGraphString != null) {
       if(clearGraphString.equalsIgnoreCase("true") || clearGraphString.equalsIgnoreCase("yes")) {
@@ -26,7 +28,7 @@ object MappingPediaRunner {
     logger.info("clearGraphBoolean = " + clearGraphBoolean);
   
 
-
+    logger.info("reading manifest file ...");
     val manifestText:String = if(pManifestText == null) {
       if(manifestFilePath == null) {
         val errorMessage = "no manifest is provided";
@@ -40,17 +42,12 @@ object MappingPediaRunner {
     } else {
       pManifestText;
     }
+    val manifestModel = MappingPediaUtility.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
     
-    //val mappingpediaR2RML : MappingPediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
-    val mappingpediaR2RML = Application.mappingpediaR2RML;
-    val virtuosoJDBC = mappingpediaR2RML.virtuosoJDBC;
-    val virtuosoUser = mappingpediaR2RML.virtuosoUser;
-    val virtuosoPwd = mappingpediaR2RML.virtuosoPwd;
-    val graphName = mappingpediaR2RML.graphName;
-    
+    logger.info("reading r2rml file ...");
     val mappingText:String = if(pMappingText == null) {
       val mappingFilePath = if(pMappingFilePath == null) {
-        mappingpediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
+        MappingPediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
       }  else {
         pMappingFilePath;
       }
@@ -61,12 +58,9 @@ object MappingPediaRunner {
     } else {
       pMappingText;
     }
+    val mappingDocumentModel = MappingPediaUtility.readModelFromString(mappingText, MappingPediaConstant.R2RML_FILE_LANGUAGE);
     
-    mappingpediaR2RML.insertMappingInString(manifestText, mappingText);
-
-    
-    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(virtuosoJDBC, virtuosoUser, virtuosoPwd
-    		, graphName);
+    //val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
     if(clearGraphBoolean) {
       try {
         virtuosoGraph.clear();  
@@ -79,11 +73,11 @@ object MappingPediaRunner {
     }
     
     logger.info("Storing manifest triples.");
-    val manifestTriples = mappingpediaR2RML.getManifestTriples;
+    val manifestTriples = MappingPediaUtility.toTriples(manifestModel);
     MappingPediaUtility.store(manifestTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
     
     logger.info("Storing R2RML triples.");
-    val r2rmlTriples = mappingpediaR2RML.getR2rmlTriples;
+    val r2rmlTriples = MappingPediaUtility.toTriples(mappingDocumentModel);
     MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
     
     logger.info("Bye!");

@@ -37,13 +37,16 @@ public class MappingPediaController {
 	}
 
 	@RequestMapping(value = "/upload")
-	public MappingPediaExecutionResult uploadFile(@RequestParam("manifestFile") MultipartFile manifestFileRef, @RequestParam("mappingFile") MultipartFile mappingFileRef){
+	public MappingPediaExecutionResult uploadFile(
+			@RequestParam("manifestFile") MultipartFile manifestFileRef
+			, @RequestParam("mappingFile") MultipartFile mappingFileRef) 
+	{
 		logger.info("/upload ...");
 
 		// Get names of uploaded files.
 		String manifestFileName = manifestFileRef.getOriginalFilename();
 		String mappingFileName = mappingFileRef.getOriginalFilename();
-		
+
 		// Path where the uploaded files will be stored.
 		String uuid = UUID.randomUUID().toString();
 		String uploadDirectoryPath1 = "upload-dir";
@@ -62,7 +65,7 @@ public class MappingPediaController {
 		String mappingFilePath = uploadDirectoryPath2 + "/" + mappingFileName;
 		File mappingFile = new File(mappingFilePath);
 		logger.info("mapping file path = " + mappingFilePath);
-		
+
 
 		FileInputStream manifestReader = null;
 		FileInputStream mappingReader = null;
@@ -71,44 +74,47 @@ public class MappingPediaController {
 			manifestFile.createNewFile();
 			mappingFile.createNewFile();
 
-			
+
 			// Create the input stream to uploaded files to read data from it.
 			manifestReader = (FileInputStream) manifestFileRef.getInputStream();
 			mappingReader = (FileInputStream) mappingFileRef.getInputStream();
-			
+
 			MappingPediaController.copyFileUsingChannel(manifestReader, manifestFile);
 			MappingPediaController.copyFileUsingChannel(mappingReader, mappingFile);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-    	String status=null;
-    	try {
-    		//Application.mappingpediaR2RML.insertMappingFromManifestFilePath(manifestFile.getPath());
-    		MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false");
-    		status="success!";
-    		logger.info("mapping inserted.");
-    	} catch (Exception e){
-    		e.printStackTrace();
-    		status="failed, error message = " + e.getMessage();
-    	}
-    	
-		MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, mappingFilePath, status);
+		String status=null;
+		Integer errorCode=-1;
+		try {
+			//Application.mappingpediaR2RML.insertMappingFromManifestFilePath(manifestFile.getPath());
+			MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false", Application.mappingpediaGraph);
+			errorCode=0;
+			status="success!";
+			logger.info("mapping inserted.");
+		} catch (Exception e){
+			e.printStackTrace();
+			errorCode=-1;
+			status="failed, error message = " + e.getMessage();
+		}
+
+		MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, mappingFilePath, status, errorCode);
 		return executionResult;
 	}
-	
+
 	private static void copyFileUsingChannel(FileInputStream source, File dest) throws IOException {
-	    FileChannel sourceChannel = null;
-	    FileChannel destChannel = null;
-	    FileOutputStream fos = new FileOutputStream(dest);
-	    try {
-	        sourceChannel = source.getChannel();
-	        destChannel = fos.getChannel();
-	        destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
-	       }finally{
-	           sourceChannel.close();
-	           destChannel.close();
-	           fos.close();
-	   }
+		FileChannel sourceChannel = null;
+		FileChannel destChannel = null;
+		FileOutputStream fos = new FileOutputStream(dest);
+		try {
+			sourceChannel = source.getChannel();
+			destChannel = fos.getChannel();
+			destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+		}finally{
+			sourceChannel.close();
+			destChannel.close();
+			fos.close();
+		}
 	}
 }
