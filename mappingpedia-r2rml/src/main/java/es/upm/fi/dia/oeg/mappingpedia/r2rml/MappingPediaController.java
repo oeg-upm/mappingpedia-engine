@@ -89,7 +89,7 @@ public class MappingPediaController {
 		Integer errorCode=-1;
 		try {
 			//Application.mappingpediaR2RML.insertMappingFromManifestFilePath(manifestFile.getPath());
-			MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false", Application.mappingpediaGraph);
+			MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false", Application.mappingpediaR2RML);
 			errorCode=0;
 			status="success!";
 			logger.info("mapping inserted.");

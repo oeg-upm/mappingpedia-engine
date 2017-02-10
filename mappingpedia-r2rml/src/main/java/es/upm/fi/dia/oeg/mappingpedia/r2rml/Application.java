@@ -15,8 +15,8 @@ import virtuoso.jena.driver.VirtGraph;
 @SpringBootApplication
 public class Application {
 	static Logger logger = LogManager.getLogger("Application");
-	//static MappingPediaR2RML mappingpediaR2RML = null;	
-	static VirtGraph mappingpediaGraph = null;
+	static MappingPediaR2RML mappingpediaR2RML = null;	
+	//static VirtGraph mappingpediaGraph = null;
 
 	public static void main(String[] args) {
 		Properties prop = new Properties();
@@ -57,11 +57,12 @@ public class Application {
 			}
 		}
 		
-		Application.mappingpediaGraph = MappingPediaUtility.getVirtuosoGraph(
+		VirtGraph mappingpediaGraph = MappingPediaUtility.getVirtuosoGraph(
 				    virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
-		//MappingPediaR2RML mappingpediaR2RML = new MappingPediaR2RML(mappingpediaGraph);
+		Application.mappingpediaR2RML = new MappingPediaR2RML(mappingpediaGraph);
 		
 		//Application.mappingpediaR2RML.clearGraph_$eq(false);
+
 
 		if(args== null || args.length==0) {
 			SpringApplication.run(Application.class, args);	
@@ -80,9 +81,15 @@ public class Application {
 					mappingText = args[i+1];
 				} 
 			}
+			
+//			manifestFilePath = System.getProperty("manifestFilePath");
+//			mappingFilePath = System.getProperty("mappingFilePath");
+//			manifestText = System.getProperty("manifestText");
+//			mappingText = System.getProperty("mappingText");
+			
 			//			MappingPediaRunner.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd
 			//				      , graphName, clearGraph, manifestText, mappingText);
-			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph, Application.mappingpediaGraph);
+			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph, Application.mappingpediaR2RML);
 		}
 
 	}

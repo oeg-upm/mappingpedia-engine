@@ -46,7 +46,7 @@ class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 //    this.insertTriplesMapsIntoManifest(manifestModel, r2rmlDocumentModel);
 //  }
   
-  def insertTriplesMapsIntoManifest() : List[Triple] = {
+  def generateAdditionalTriples() : List[Triple] = {
     var newTriples:List[Triple] = List.empty;
     
     val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
