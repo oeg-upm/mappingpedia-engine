@@ -10,19 +10,20 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import es.upm.fi.dia.oeg.mappingpedia.storage.StorageService;
+import virtuoso.jena.driver.VirtGraph;
 
 @SpringBootApplication
 public class Application {
 	static Logger logger = LogManager.getLogger("Application");
-	static MappingPediaR2RML mappingpediaR2RML = null;	
-	
-    
+	//static MappingPediaR2RML mappingpediaR2RML = null;	
+	static VirtGraph mappingpediaGraph = null;
+
 	public static void main(String[] args) {
 		Properties prop = new Properties();
 		InputStream is = null;
 		String virtuosoJDBC=null, virtuosoUser=null, virtuosoPwd=null, graphName=null, clearGraph=null;
 		String manifestFilePath=null, mappingFilePath=null, manifestText=null, mappingText=null;
-		
+
 		try {
 			String filename="config.properties";
 			is = Application.class.getClassLoader().getResourceAsStream(filename);
@@ -55,29 +56,33 @@ public class Application {
 				}
 			}
 		}
-		Application.mappingpediaR2RML = new MappingPediaR2RML(virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
-		Application.mappingpediaR2RML.clearGraph_$eq(false);
 		
+		Application.mappingpediaGraph = MappingPediaUtility.getVirtuosoGraph(
+				    virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
+		//MappingPediaR2RML mappingpediaR2RML = new MappingPediaR2RML(mappingpediaGraph);
+		
+		//Application.mappingpediaR2RML.clearGraph_$eq(false);
+
 		if(args== null || args.length==0) {
 			SpringApplication.run(Application.class, args);	
 		} else {
-			
-		    for(int i=0; i <args.length; i++) {
-		        if(args[i].equals("-manifestFilePath")) {
-		          manifestFilePath = args[i+1];
-		          logger.info("manifestFilePath = " + manifestFilePath);
-		        } else if(args[i].equals("-mappingFilePath")) {
-		          mappingFilePath = args[i+1];
-		          logger.info("mappingFilePath = " + mappingFilePath);
-		        } else if(args[i].equals("-manifestText")) {
-		          manifestText = args[i+1];
-		        } else if(args[i].equals("-mappingText")) {
-		          mappingText = args[i+1];
-		        } 
-		      }
-//			MappingPediaRunner.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd
-//				      , graphName, clearGraph, manifestText, mappingText);
-			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph);
+
+			for(int i=0; i <args.length; i++) {
+				if(args[i].equals("-manifestFilePath")) {
+					manifestFilePath = args[i+1];
+					logger.info("manifestFilePath = " + manifestFilePath);
+				} else if(args[i].equals("-mappingFilePath")) {
+					mappingFilePath = args[i+1];
+					logger.info("mappingFilePath = " + mappingFilePath);
+				} else if(args[i].equals("-manifestText")) {
+					manifestText = args[i+1];
+				} else if(args[i].equals("-mappingText")) {
+					mappingText = args[i+1];
+				} 
+			}
+			//			MappingPediaRunner.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd
+			//				      , graphName, clearGraph, manifestText, mappingText);
+			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph, Application.mappingpediaGraph);
 		}
 
 	}
