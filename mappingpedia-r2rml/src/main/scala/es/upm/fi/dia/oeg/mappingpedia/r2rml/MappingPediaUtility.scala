@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.LogManager
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
-import java.io.ByteArrayInputStream
+import java.io.{InputStream, ByteArrayInputStream}
 import org.apache.jena.util.FileManager
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
@@ -59,19 +59,23 @@ object MappingPediaUtility {
   }
   
   def readModelFromString(modelText:String, lang:String) : Model = {
-    val model = ModelFactory.createDefaultModel();
-    val is = new ByteArrayInputStream(modelText.getBytes());
-    model.read(is, null, lang);
+    val inputStream = new ByteArrayInputStream(modelText.getBytes());
+    val model = this.readModelFromInputStream(inputStream, lang);
     model;
   }
   
-  def readModelFromFile(filePath:String, lang:String, rdfSyntax:String) : Model = {
+  def readModelFromFile(filePath:String, lang:String) : Model = {
 		val inputStream = FileManager.get().open(filePath);
-		val model = ModelFactory.createDefaultModel();
-		model.read(inputStream, null, rdfSyntax);	 
-		model;
+    val model = this.readModelFromInputStream(inputStream, lang);
+    model;
   }
-  
+
+  def readModelFromInputStream(inputStream:InputStream, lang:String) : Model = {
+    val model = ModelFactory.createDefaultModel();
+    model.read(inputStream, null, lang);
+    model;
+  }
+
   def collectBlankNodes(triples:List[Triple]) : Set[Node] = {
     val blankNodes:Set[Node] = if(triples.isEmpty) {
       Set.empty;
@@ -151,5 +155,23 @@ object MappingPediaUtility {
     }
     triples;
   }
+
+  def replaceBaseURI(lines:Iterator[String], pNewBaseURI:String) : Iterator[String] = {
+    var newBaseURI = pNewBaseURI;
+    if(!pNewBaseURI.startsWith("<")) {
+      newBaseURI = "<" + newBaseURI;
+    }
+    if(!pNewBaseURI.endsWith(">")) {
+      newBaseURI = newBaseURI + ">";
+    }
+
+    val newLines = lines.map(line =>
+      if(line.startsWith("@base")) {
+        "@base " + newBaseURI + " . ";
+      } else { line }
+    )
+    newLines;
+  }
+
 
 }

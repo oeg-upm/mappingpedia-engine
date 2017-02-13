@@ -188,7 +188,7 @@ object MappingPediaR2RML {
   def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 
-		val manifestModel = MappingPediaUtility.readModelFromFile(manifestFilePath, null, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
+		val manifestModel = MappingPediaUtility.readModelFromFile(manifestFilePath, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 		
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
 				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);

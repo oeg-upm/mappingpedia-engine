@@ -3,13 +3,13 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import es.upm.fi.dia.oeg.mappingpedia.storage.StorageService;
 import virtuoso.jena.driver.VirtGraph;
 
 @SpringBootApplication
@@ -19,10 +19,14 @@ public class Application {
 	//static VirtGraph mappingpediaGraph = null;
 
 	public static void main(String[] args) {
+		System.out.println("Working Directory = " +
+				System.getProperty("user.dir"));
+
 		Properties prop = new Properties();
 		InputStream is = null;
 		String virtuosoJDBC=null, virtuosoUser=null, virtuosoPwd=null, graphName=null, clearGraph=null;
 		String manifestFilePath=null, mappingFilePath=null, manifestText=null, mappingText=null;
+		String replaceMappingBaseURI=null;
 
 		try {
 			String filename="config.properties";
@@ -79,7 +83,9 @@ public class Application {
 					manifestText = args[i+1];
 				} else if(args[i].equals("-mappingText")) {
 					mappingText = args[i+1];
-				} 
+				} else if(args[i].equals("-replaceMappingBaseURI")) {
+					replaceMappingBaseURI = args[i+1];
+				}
 			}
 			
 //			manifestFilePath = System.getProperty("manifestFilePath");
@@ -89,7 +95,10 @@ public class Application {
 			
 			//			MappingPediaRunner.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd
 			//				      , graphName, clearGraph, manifestText, mappingText);
-			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph, Application.mappingpediaR2RML);
+			String uuid = UUID.randomUUID().toString();
+			String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
+			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph
+					, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
 		}
 
 	}

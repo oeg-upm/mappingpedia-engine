@@ -39,7 +39,8 @@ public class MappingPediaController {
 	@RequestMapping(value = "/upload")
 	public MappingPediaExecutionResult uploadFile(
 			@RequestParam("manifestFile") MultipartFile manifestFileRef
-			, @RequestParam("mappingFile") MultipartFile mappingFileRef) 
+			, @RequestParam("mappingFile") MultipartFile mappingFileRef
+			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI)
 	{
 		logger.info("/upload ...");
 
@@ -87,9 +88,11 @@ public class MappingPediaController {
 
 		String status=null;
 		Integer errorCode=-1;
+		String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
 		try {
 			//Application.mappingpediaR2RML.insertMappingFromManifestFilePath(manifestFile.getPath());
-			MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false", Application.mappingpediaR2RML);
+			MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false"
+					, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
 			errorCode=0;
 			status="success!";
 			logger.info("mapping inserted.");
@@ -99,7 +102,8 @@ public class MappingPediaController {
 			status="failed, error message = " + e.getMessage();
 		}
 
-		MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, mappingFilePath, status, errorCode);
+		MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, mappingFilePath
+				, status, errorCode);
 		return executionResult;
 	}
 
