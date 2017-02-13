@@ -13,7 +13,7 @@ object MappingPediaRunner {
   val logger : Logger = LogManager.getLogger("MappingPediaRunner");
 
   def run(manifestFilePath:String, pManifestText:String, pMappingFilePath:String, pMappingText:String, clearGraphString:String
-      , mappingpediaR2RML:MappingPediaR2RML
+      , mappingpediaR2RML:MappingPediaR2RML, pReplaceMappingBaseURI:String, newMappingBaseURI:String
       ): Unit = {
     
     val clearGraphBoolean = if(clearGraphString != null) {
@@ -46,7 +46,7 @@ object MappingPediaRunner {
     mappingpediaR2RML.manifestModel = manifestModel;
     
     logger.info("reading r2rml file ...");
-    val mappingText:String = if(pMappingText == null) {
+    val oldMappingText:String = if(pMappingText == null) {
       val mappingFilePath = if(pMappingFilePath == null) {
         MappingPediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
       }  else {
@@ -59,7 +59,26 @@ object MappingPediaRunner {
     } else {
       pMappingText;
     }
-    val mappingDocumentModel = MappingPediaUtility.readModelFromString(mappingText, MappingPediaConstant.R2RML_FILE_LANGUAGE);
+
+    val replaceMappingBaseURI = if(pReplaceMappingBaseURI != null) {
+      if(pReplaceMappingBaseURI.equalsIgnoreCase("true")
+        || pReplaceMappingBaseURI.equalsIgnoreCase("yes")) {
+        true
+      } else {
+        false
+      }
+    } else {
+      true
+    }
+
+    val mappingText = if(replaceMappingBaseURI) {
+      MappingPediaUtility.replaceBaseURI(oldMappingText.split("\n").toIterator
+        , newMappingBaseURI).mkString("\n");
+    } else {
+      oldMappingText;
+    }
+    val mappingDocumentModel = MappingPediaUtility.readModelFromString(mappingText
+      , MappingPediaConstant.R2RML_FILE_LANGUAGE);
     mappingpediaR2RML.mappingDocumentModel = mappingDocumentModel;
     
     val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
