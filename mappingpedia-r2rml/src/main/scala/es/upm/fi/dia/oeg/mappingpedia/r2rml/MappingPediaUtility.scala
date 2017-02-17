@@ -1,5 +1,7 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
+import java.nio.channels.FileChannel
+
 import scala.None
 import org.apache.jena.rdf.model.Property
 import org.apache.jena.rdf.model.Resource
@@ -10,7 +12,7 @@ import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.LogManager
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
-import java.io.{InputStream, ByteArrayInputStream}
+import java.io._
 import org.apache.jena.util.FileManager
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
@@ -173,5 +175,39 @@ object MappingPediaUtility {
     newLines;
   }
 
+  @throws(classOf[IOException])
+  def materializeFileInputStream(source: FileInputStream, dest: File) {
+    var sourceChannel: FileChannel = null
+    var destChannel: FileChannel = null
+    val fos: FileOutputStream = new FileOutputStream(dest)
+    try {
+      sourceChannel = source.getChannel
+      destChannel = fos.getChannel
+      destChannel.transferFrom(sourceChannel, 0, sourceChannel.size)
+    } finally {
+      sourceChannel.close
+      destChannel.close
+      fos.close
+    }
+  }
 
+  @throws(classOf[IOException])
+  def materializeFileInputStream(source: FileInputStream, uuidDirectoryName: String, fileName: String): File = {
+    val uploadDirectoryPath: String = "upload-dir"
+    val outputDirectory: File = new File(uploadDirectoryPath)
+    if (!outputDirectory.exists) {
+      outputDirectory.mkdirs
+    }
+    val uuidDirectoryPath: String = uploadDirectoryPath + "/" + uuidDirectoryName
+    logger.info("upload directory path = " + uuidDirectoryPath)
+    val uuidDirectory: File = new File(uuidDirectoryPath)
+    if (!uuidDirectory.exists) {
+      uuidDirectory.mkdirs
+    }
+    val uploadedFilePath: String = uuidDirectory + "/" + fileName
+    val dest: File = new File(uploadedFilePath)
+    dest.createNewFile
+    this.materializeFileInputStream(source, dest)
+    return dest
+  }
 }

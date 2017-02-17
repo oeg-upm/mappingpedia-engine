@@ -22,3 +22,9 @@ project/plugins/project/
 .classpath
 .project
 mappingpedia-r2rml/.settings
+mappingpedia-r2rml/.idea/
+.idea/
+mappingpedia-r2rml/upload-dir/
+
+mappingpedia-r2rml/src/main/resources/config.properties
+*.iml
