@@ -26,9 +26,6 @@ public class MappingPediaController {
 	private static final String template = "Hello, %s!";
 	private final AtomicLong counter = new AtomicLong();
 
-
-
-
 	@RequestMapping("/greeting")
 	public Greeting greeting(@RequestParam(value="name", defaultValue="World") String name) {
 		logger.info("/greeting ...");
@@ -43,71 +40,131 @@ public class MappingPediaController {
 			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI)
 	{
 		logger.info("/upload ...");
+		String status="";
+		Integer errorCode=-1;
 
-		// Get names of uploaded files.
-		String manifestFileName = manifestFileRef.getOriginalFilename();
-		String mappingFileName = mappingFileRef.getOriginalFilename();
-
-		// Path where the uploaded files will be stored.
-		String uuid = UUID.randomUUID().toString();
-		String uploadDirectoryPath1 = "upload-dir";
-		File outputDirectory1 = new File(uploadDirectoryPath1);
-		if(!outputDirectory1.exists()) {
-			outputDirectory1.mkdirs();
-		}
-		String uploadDirectoryPath2 = uploadDirectoryPath1 + "/" + uuid;
-		logger.info("upload directory path = " + uploadDirectoryPath2);
-		File outputDirectory2 = new File(uploadDirectoryPath2);
-
-		// Now create the output files on the server.
-		String manifestFilePath = uploadDirectoryPath2 + "/" + manifestFileName;
-		File manifestFile = new File(manifestFilePath);
-		logger.info("manifest file path = " + manifestFilePath);
-		String mappingFilePath = uploadDirectoryPath2 + "/" + mappingFileName;
-		File mappingFile = new File(mappingFilePath);
-		logger.info("mapping file path = " + mappingFilePath);
-
-
+		// Create the input stream to uploaded files to read data from it.
 		FileInputStream manifestReader = null;
+		try {
+			if(manifestFileRef != null) {
+				manifestReader = (FileInputStream) manifestFileRef.getInputStream();	
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			String errorMessage = "error processing the uploaded manifest file.";
+			logger.error(errorMessage);
+			status += errorMessage + "\n";
+		}
+		
 		FileInputStream mappingReader = null;
 		try {
-			outputDirectory2.mkdir();
-			manifestFile.createNewFile();
-			mappingFile.createNewFile();
-
-
-			// Create the input stream to uploaded files to read data from it.
-			manifestReader = (FileInputStream) manifestFileRef.getInputStream();
-			mappingReader = (FileInputStream) mappingFileRef.getInputStream();
-
-			MappingPediaController.copyFileUsingChannel(manifestReader, manifestFile);
-			MappingPediaController.copyFileUsingChannel(mappingReader, mappingFile);
-		} catch (IOException e) {
+			if(mappingFileRef != null) {
+				mappingReader = (FileInputStream) mappingFileRef.getInputStream();	
+			}
+		} catch (Exception e) {
 			e.printStackTrace();
+			String errorMessage = "error processing the uploaded mapping file.";
+			logger.error(errorMessage);
+			status += errorMessage + "\n";
 		}
 
-		String status=null;
-		Integer errorCode=-1;
-		String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
-		try {
-			//Application.mappingpediaR2RML.insertMappingFromManifestFilePath(manifestFile.getPath());
-			MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false"
-					, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
-			errorCode=0;
-			status="success!";
-			logger.info("mapping inserted.");
-		} catch (Exception e){
-			e.printStackTrace();
-			errorCode=-1;
-			status="failed, error message = " + e.getMessage();
-		}
+		if(manifestReader == null || mappingReader == null) {
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult("", "", status, errorCode);
+			return executionResult;			
+		} else {
+			// Get names of uploaded files.
+			String manifestFileName = manifestFileRef.getOriginalFilename();
+			String mappingFileName = mappingFileRef.getOriginalFilename();
 
-		MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, mappingFilePath
-				, status, errorCode);
-		return executionResult;
+			// Path where the uploaded files will be stored.
+			String uuid = UUID.randomUUID().toString();
+
+			String manifestFilePath = null;
+			String mappingFilePath = null;
+			try {
+				File manifestFile = MappingPediaUtility.materializeFileInputStream(manifestReader, uuid, manifestFileName);
+				manifestFilePath = manifestFile.getPath();
+				logger.info("manifest file path = " + manifestFilePath);
+
+				File mappingFile = MappingPediaUtility.materializeFileInputStream(mappingReader, uuid, mappingFileName);
+				mappingFilePath = mappingFile.getPath();
+				logger.info("mapping file path = " + mappingFilePath);
+
+				String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
+				MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false"
+						, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
+
+				errorCode=0;
+				status="success!";
+				logger.info("mapping inserted.");
+			} catch (Exception e){
+				e.printStackTrace();
+				errorCode=-1;
+				status="failed, error message = " + e.getMessage();
+			}
+
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, mappingFilePath
+					, status, errorCode);
+			return executionResult;			
+
+		}
 	}
 
-	private static void copyFileUsingChannel(FileInputStream source, File dest) throws IOException {
+	@RequestMapping(value = "/storeRDFFile")
+	public MappingPediaExecutionResult storeRDFFile(@RequestParam("rdfFile") MultipartFile fileRef
+			, @RequestParam(value="graphURI") String graphURI)
+	{
+		logger.info("/storeRDFFile...");
+		String status="";
+		Integer errorCode=-1;
+
+		// Create the input stream to uploaded files to read data from it.
+		FileInputStream reader = null;
+		try {
+			if(fileRef != null) {
+				reader = (FileInputStream) fileRef.getInputStream();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			String errorMessage = "error processing the uploaded file.";
+			logger.error(errorMessage);
+			status += errorMessage + "\n";
+		}
+
+		if(reader == null) {
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult("", "", status, errorCode);
+			return executionResult;
+		} else {
+			// Get names of uploaded files.
+			String fileName = fileRef.getOriginalFilename();
+
+			// Path where the uploaded files will be stored.
+			String uuid = UUID.randomUUID().toString();
+
+			String filePath = null;
+			try {
+				File file = MappingPediaUtility.materializeFileInputStream(reader, uuid, fileName);
+				filePath = file.getPath();
+				logger.info("file path = " + filePath);
+
+				MappingPediaUtility.store(filePath, graphURI);
+				errorCode=0;
+				status="success!";
+				logger.info("mapping inserted.");
+			} catch (Exception e){
+				e.printStackTrace();
+				errorCode=-1;
+				status="failed, error message = " + e.getMessage();
+			}
+
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(filePath, "", status, errorCode);
+			return executionResult;
+
+		}
+	}
+
+/*
+	private static void materializeFileInputStream(FileInputStream source, File dest) throws IOException {
 		FileChannel sourceChannel = null;
 		FileChannel destChannel = null;
 		FileOutputStream fos = new FileOutputStream(dest);
@@ -115,10 +172,39 @@ public class MappingPediaController {
 			sourceChannel = source.getChannel();
 			destChannel = fos.getChannel();
 			destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
-		}finally{
+		} finally{
 			sourceChannel.close();
 			destChannel.close();
 			fos.close();
 		}
 	}
+
+	private static File materializeFileInputStream(FileInputStream source, String uuidDirectoryName, String fileName)
+			throws IOException {
+		//create upload directory is not exist
+		String uploadDirectoryPath = "upload-dir";
+		File outputDirectory = new File(uploadDirectoryPath);
+		if(!outputDirectory.exists()) {
+			outputDirectory.mkdirs();
+		}
+
+		//create uuid directory
+		String uuidDirectoryPath = uploadDirectoryPath + "/" + uuidDirectoryName;
+		logger.info("upload directory path = " + uuidDirectoryPath);
+		File uuidDirectory = new File(uuidDirectoryPath);
+		if(!uuidDirectory.exists()) {
+			uuidDirectory.mkdirs();
+		}
+
+
+		// Now create the output files on the server.
+		String uploadedFilePath = uuidDirectory + "/" + fileName;
+		File dest = new File(uploadedFilePath);
+		dest.createNewFile();
+
+		MappingPediaController.materializeFileInputStream(source, dest);
+
+		return dest;
+	}
+*/
 }
