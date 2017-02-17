@@ -17,12 +17,13 @@ public class Application {
 	static Logger logger = LogManager.getLogger("Application");
 	static MappingPediaR2RML mappingpediaR2RML = null;	
 	//static VirtGraph mappingpediaGraph = null;
-
+	static MappingPediaProperties prop = null;
+	
 	public static void main(String[] args) {
 		System.out.println("Working Directory = " +
 				System.getProperty("user.dir"));
 
-		Properties prop = new Properties();
+		Application.prop = new MappingPediaProperties();
 		InputStream is = null;
 		String virtuosoJDBC=null, virtuosoUser=null, virtuosoPwd=null, graphName=null, clearGraph=null;
 		String manifestFilePath=null, mappingFilePath=null, manifestText=null, mappingText=null;
@@ -41,14 +42,33 @@ public class Application {
 			//get the property value and print it out
 			virtuosoJDBC = prop.getProperty("vjdbc");
 			logger.info("virtuosoJDBC = " + virtuosoJDBC);
+			Application.prop.virtuosoJDBC_$eq(virtuosoJDBC);
+			
 			virtuosoUser = prop.getProperty("usr");
 			//logger.info("virtuosoUser = " + virtuosoUser);
+			Application.prop.virtuosoUser_$eq(virtuosoUser);
+
 			virtuosoPwd = prop.getProperty("pwd");
 			//logger.info("virtuosoPwd = " + virtuosoPwd);
+			Application.prop.virtuosoPwd_$eq(virtuosoPwd);
+
 			graphName = prop.getProperty("graphname");
 			logger.info("graphName = " + graphName);
+			Application.prop.graphName_$eq(graphName);
+
 			clearGraph = prop.getProperty("cleargraph");
 			//logger.info("clearGraph = " + clearGraph);
+			if(clearGraph == null) {
+				Application.prop.clearGraph_$eq(false);
+			} else {
+				if("true".equalsIgnoreCase(clearGraph) || "yes".equalsIgnoreCase(clearGraph)) {
+					Application.prop.clearGraph_$eq(true);
+				} else {
+					Application.prop.clearGraph_$eq(false);
+				}
+			}
+
+
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		} finally{

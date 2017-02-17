@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
 import java.nio.channels.FileChannel
 
+
 import scala.None
 import org.apache.jena.rdf.model.Property
 import org.apache.jena.rdf.model.Resource
@@ -16,10 +17,30 @@ import java.io._
 import org.apache.jena.util.FileManager
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
+import org.eclipse.egit.github.core.client.GitHubClient
+import org.eclipse.egit.github.core.service.RepositoryService
+import scala.collection.JavaConversions._
 
 
 object MappingPediaUtility {
 	val logger : Logger = LogManager.getLogger("MappingPediaUtility");
+  
+/*
+  def main(args: Array[String]): Unit = {
+    //Basic authentication
+    val client = new GitHubClient();
+    client.setCredentials("user", "passw0rd");
+    
+    val service = new RepositoryService();
+    val repositories = service.getRepositories("fpriyatna")
+    for (repo <- repositories) {
+      println(repo.getName() + " Watchers: " + repo.getWatchers());
+    }
+    
+
+    println("Bye!")
+  }
+*/
 
   def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {
 		val it = resource.listProperties(property);
@@ -41,7 +62,21 @@ object MappingPediaUtility {
 				return virtGraph;
   }
 
-  def store(pTriples:List[Triple], virtuosoGraph:VirtGraph, skolemizeBlankNode:Boolean, baseURI:String) = {
+  def store(filePath:String, graphURI:String) : Unit = {
+    val model = this.readModelFromFile(filePath);
+    val triples = this.toTriples(model);
+
+    val prop = Application.prop;
+    val virtuosoGraph = this.getVirtuosoGraph(prop.virtuosoJDBC, prop.virtuosoUser, prop.virtuosoPwd, graphURI);
+
+    this.store(triples, virtuosoGraph);
+  }
+
+  def store(pTriples:List[Triple], virtuosoGraph:VirtGraph) : Unit = {
+    this.store(pTriples, virtuosoGraph, false, null);
+  }
+
+  def store(pTriples:List[Triple], virtuosoGraph:VirtGraph, skolemizeBlankNode:Boolean, baseURI:String) : Unit = {
 		val initialGraphSize = virtuosoGraph.getCount();
 		logger.debug("initialGraphSize = " + initialGraphSize);
 
@@ -59,7 +94,11 @@ object MappingPediaUtility {
 		val addedTriplesSize = finalGraphSize - initialGraphSize; 
 		logger.info("No of added triples = " + addedTriplesSize);	  
   }
-  
+
+  def readModelFromFile(filePath:String) : Model = {
+    this.readModelFromFile(filePath, "TURTLE");
+  }
+
   def readModelFromString(modelText:String, lang:String) : Model = {
     val inputStream = new ByteArrayInputStream(modelText.getBytes());
     val model = this.readModelFromInputStream(inputStream, lang);
@@ -209,5 +248,9 @@ object MappingPediaUtility {
     dest.createNewFile
     this.materializeFileInputStream(source, dest)
     return dest
+  }
+
+  def pushContentToGitHub(file:File) = {
+
   }
 }

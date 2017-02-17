@@ -109,6 +109,60 @@ public class MappingPediaController {
 
 		}
 	}
+
+	@RequestMapping(value = "/storeRDFFile")
+	public MappingPediaExecutionResult storeRDFFile(@RequestParam("rdfFile") MultipartFile fileRef
+			, @RequestParam(value="graphURI") String graphURI)
+	{
+		logger.info("/storeRDFFile...");
+		String status="";
+		Integer errorCode=-1;
+
+		// Create the input stream to uploaded files to read data from it.
+		FileInputStream reader = null;
+		try {
+			if(fileRef != null) {
+				reader = (FileInputStream) fileRef.getInputStream();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			String errorMessage = "error processing the uploaded file.";
+			logger.error(errorMessage);
+			status += errorMessage + "\n";
+		}
+
+		if(reader == null) {
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult("", "", status, errorCode);
+			return executionResult;
+		} else {
+			// Get names of uploaded files.
+			String fileName = fileRef.getOriginalFilename();
+
+			// Path where the uploaded files will be stored.
+			String uuid = UUID.randomUUID().toString();
+
+			String filePath = null;
+			try {
+				File file = MappingPediaUtility.materializeFileInputStream(reader, uuid, fileName);
+				filePath = file.getPath();
+				logger.info("file path = " + filePath);
+
+				MappingPediaUtility.store(filePath, graphURI);
+				errorCode=0;
+				status="success!";
+				logger.info("mapping inserted.");
+			} catch (Exception e){
+				e.printStackTrace();
+				errorCode=-1;
+				status="failed, error message = " + e.getMessage();
+			}
+
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(filePath, "", status, errorCode);
+			return executionResult;
+
+		}
+	}
+
 /*
 	private static void materializeFileInputStream(FileInputStream source, File dest) throws IOException {
 		FileChannel sourceChannel = null;
