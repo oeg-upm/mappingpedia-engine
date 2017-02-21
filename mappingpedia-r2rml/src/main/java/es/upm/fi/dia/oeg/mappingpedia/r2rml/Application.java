@@ -26,6 +26,7 @@ public class Application {
 		Application.prop = new MappingPediaProperties();
 		InputStream is = null;
 		String virtuosoJDBC=null, virtuosoUser=null, virtuosoPwd=null, graphName=null, clearGraph=null;
+		String githubUser=null, githubAccessToken=null;
 		String manifestFilePath=null, mappingFilePath=null, manifestText=null, mappingText=null;
 		String replaceMappingBaseURI=null;
 
@@ -51,6 +52,14 @@ public class Application {
 			virtuosoPwd = prop.getProperty("pwd");
 			//logger.info("virtuosoPwd = " + virtuosoPwd);
 			Application.prop.virtuosoPwd_$eq(virtuosoPwd);
+
+			githubUser = prop.getProperty("github.mappingpedia.username");
+			logger.info("githubUser = " + githubUser);
+			Application.prop.githubUser_$eq(githubUser);
+
+			githubAccessToken = prop.getProperty("github.mappingpedia.accesstoken");
+			logger.info("github.mappingpedia.accesstoken = " + githubAccessToken);
+			Application.prop.githubAccessToken_$eq(githubAccessToken);
 
 			graphName = prop.getProperty("graphname");
 			logger.info("graphName = " + graphName);
@@ -119,6 +128,19 @@ public class Application {
 			String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
 			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph
 					, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
+			logger.info("Storing R2RML triples in GitHub.");
+
+			String filename = mappingFilePath;
+			if(filename == null) {
+				filename = uuid + ".ttl";
+			}
+			String commitMessage = "Commit From mappingpedia-engine.Application";
+			String mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, manifestText, mappingFilePath, mappingText);
+			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
+			String mappingpediaUserName = "mappingpedia-testuser";
+			GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
+					, githubUser, githubAccessToken, mappingpediaUserName);
+
 		}
 
 	}

@@ -3,6 +3,8 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml
 import java.nio.channels.FileChannel
 
 
+import org.eclipse.egit.github.core.RepositoryContents
+
 import scala.None
 import org.apache.jena.rdf.model.Property
 import org.apache.jena.rdf.model.Resource
@@ -18,29 +20,13 @@ import org.apache.jena.util.FileManager
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
 import org.eclipse.egit.github.core.client.GitHubClient
-import org.eclipse.egit.github.core.service.RepositoryService
+import org.eclipse.egit.github.core.service.{ContentsService, RepositoryService}
 import scala.collection.JavaConversions._
 
 
 object MappingPediaUtility {
 	val logger : Logger = LogManager.getLogger("MappingPediaUtility");
-  
-/*
-  def main(args: Array[String]): Unit = {
-    //Basic authentication
-    val client = new GitHubClient();
-    client.setCredentials("user", "passw0rd");
-    
-    val service = new RepositoryService();
-    val repositories = service.getRepositories("fpriyatna")
-    for (repo <- repositories) {
-      println(repo.getName() + " Watchers: " + repo.getWatchers());
-    }
-    
 
-    println("Bye!")
-  }
-*/
 
   def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {
 		val it = resource.listProperties(property);

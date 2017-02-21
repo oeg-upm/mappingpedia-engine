@@ -12,6 +12,43 @@ import scala.io.Source._
 object MappingPediaRunner {
   val logger : Logger = LogManager.getLogger("MappingPediaRunner");
 
+  def getManifestContent(manifestFilePath:String, manifestText:String):String = {
+    logger.info("reading manifest  ...");
+    val manifestContent:String = if(manifestText == null) {
+      if(manifestFilePath == null) {
+        val errorMessage = "no manifest is provided";
+        logger.error(errorMessage);
+        throw new Exception(errorMessage);
+      } else {
+        val manifestFileContent = fromFile(manifestFilePath).getLines.mkString("\n");
+        //logger.info("manifestFileContent = \n" + manifestFileContent);
+        manifestFileContent;
+      }
+    } else {
+      manifestText;
+    }
+    manifestContent;
+  }
+
+  def getMappingContent(manifestFilePath:String, manifestText:String, pMappingFilePath:String, pMappingText:String):String = {
+    logger.info("reading r2rml file ...");
+    val mappingContent:String = if(pMappingText == null) {
+      val mappingFilePath = if(pMappingFilePath == null) {
+        val mappingFilePathFromManifest = MappingPediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
+        mappingFilePathFromManifest;
+      }  else {
+        pMappingFilePath;
+      }
+
+      val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
+      //logger.info("mappingFileContent = \n" + mappingFileContent);
+      mappingFileContent;
+    } else {
+      pMappingText;
+    }
+    mappingContent;
+  }
+
   def run(manifestFilePath:String, pManifestText:String, pMappingFilePath:String, pMappingText:String, clearGraphString:String
       , mappingpediaR2RML:MappingPediaR2RML, pReplaceMappingBaseURI:String, newMappingBaseURI:String
       ): Unit = {
@@ -26,8 +63,19 @@ object MappingPediaRunner {
       false
     }
     logger.info("clearGraphBoolean = " + clearGraphBoolean);
-  
 
+    val replaceMappingBaseURI = if(pReplaceMappingBaseURI != null) {
+      if(pReplaceMappingBaseURI.equalsIgnoreCase("true")
+        || pReplaceMappingBaseURI.equalsIgnoreCase("yes")) {
+        true
+      } else {
+        false
+      }
+    } else {
+      true
+    }
+
+    /*
     logger.info("reading manifest file ...");
     val manifestText:String = if(pManifestText == null) {
       if(manifestFilePath == null) {
@@ -42,9 +90,12 @@ object MappingPediaRunner {
     } else {
       pManifestText;
     }
+    */
+    val manifestText = this.getManifestContent(manifestFilePath, pManifestText);
     val manifestModel = MappingPediaUtility.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
     mappingpediaR2RML.manifestModel = manifestModel;
-    
+
+    /*
     logger.info("reading r2rml file ...");
     val oldMappingText:String = if(pMappingText == null) {
       val mappingFilePath = if(pMappingFilePath == null) {
@@ -59,17 +110,9 @@ object MappingPediaRunner {
     } else {
       pMappingText;
     }
+    */
+    val oldMappingText:String = this.getMappingContent(manifestFilePath, manifestText, pMappingFilePath, pMappingText);
 
-    val replaceMappingBaseURI = if(pReplaceMappingBaseURI != null) {
-      if(pReplaceMappingBaseURI.equalsIgnoreCase("true")
-        || pReplaceMappingBaseURI.equalsIgnoreCase("yes")) {
-        true
-      } else {
-        false
-      }
-    } else {
-      true
-    }
 
     val mappingText = if(replaceMappingBaseURI) {
       MappingPediaUtility.replaceBaseURI(oldMappingText.split("\n").toIterator
@@ -101,10 +144,10 @@ object MappingPediaRunner {
     val additionalTriples = mappingpediaR2RML.generateAdditionalTriples();
     MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
     
-    logger.info("Storing R2RML triples.");
+    logger.info("Storing R2RML triples in Virtuoso.");
     val r2rmlTriples = MappingPediaUtility.toTriples(mappingDocumentModel);
     MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
-    
+
     logger.info("Bye!");
     
   }

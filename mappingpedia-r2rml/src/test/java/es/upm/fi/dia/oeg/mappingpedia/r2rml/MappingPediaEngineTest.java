@@ -26,43 +26,29 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-@AutoConfigureMockMvc
-public class GreetingControllerTests {
+@WebAppConfiguration
+//@ContextConfiguration(classes = WebConfig.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+public class MappingPediaEngineTest {
+
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Test
-    public void noParamGreetingShouldReturnDefaultMessage() throws Exception {
-
-        this.mockMvc.perform(get("/greeting")).andDo(print()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Hello, World!"));
-    }
-
-    @Test
-    public void paramGreetingShouldReturnTailoredMessage() throws Exception {
-
-        this.mockMvc.perform(get("/greeting").param("name", "Spring Community"))
-                .andDo(print()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Hello, Spring Community!"));
-    }
-
-
-    /*
+/*
     @Test
     public void testStoreRDFFile() throws Exception {
         MockMultipartFile rdfFile = new MockMultipartFile(".", "manifest.ttl", "text/plain", "some ttl".getBytes());
 
 
-        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         mockMvc.perform(MockMvcRequestBuilders.fileUpload("/storeRDFFile")
                 .file(rdfFile)
                 .param("graphURI", "http://mappingpedia.linkeddata.es/graph/testUploadGraph"))
@@ -70,5 +56,5 @@ public class GreetingControllerTests {
         //        .andExpect(content().string("success"))
         ;
     }
-    */
+*/
 }
