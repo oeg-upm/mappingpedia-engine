@@ -2,9 +2,12 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.util.Properties;
 import java.util.UUID;
 
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -138,9 +141,13 @@ public class Application {
 			String mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, manifestText, mappingFilePath, mappingText);
 			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
 			String mappingpediaUserName = "mappingpedia-testuser";
-			GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
+			HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
 					, githubUser, githubAccessToken, mappingpediaUserName);
-
+			int responseStatus = response.getStatus();
+			if(HttpURLConnection.HTTP_CREATED == responseStatus) {
+				String githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
+				logger.info("githubMappingURL = " + githubMappingURL);
+			}
 		}
 
 	}

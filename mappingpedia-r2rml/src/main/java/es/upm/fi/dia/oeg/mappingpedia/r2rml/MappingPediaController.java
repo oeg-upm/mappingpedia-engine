@@ -4,12 +4,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.nio.channels.FileChannel;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
 
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,6 +85,7 @@ public class MappingPediaController {
 			String uuid = UUID.randomUUID().toString();
 
 			String manifestFilePath = null;
+			String githubMappingURL = null;
 			String mappingFilePath = null;
 			try {
 				File manifestFile = MappingPediaUtility.materializeFileInputStream(manifestReader, uuid, manifestFileName);
@@ -96,16 +100,20 @@ public class MappingPediaController {
 				MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false"
 						, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
 
-				String filename = mappingFilePath;
+				String filename = mappingFileName;
 				if(filename == null) {
 					filename = uuid + ".ttl";
 				}
 				String commitMessage = "Commit From mappingpedia-engine.Application";
 				String mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, null, mappingFilePath, null);
 				String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
-				GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
+				HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
 						, Application.prop.githubUser(), Application.prop.githubAccessToken(), mappingpediaTestUser);
-
+				int responseStatus = response.getStatus();
+				if(HttpURLConnection.HTTP_CREATED == responseStatus) {
+					githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
+					logger.info("githubMappingURL = " + githubMappingURL);
+				}
 				errorCode=0;
 				status="success!";
 				logger.info("mapping inserted.");
@@ -115,7 +123,7 @@ public class MappingPediaController {
 				status="failed, error message = " + e.getMessage();
 			}
 
-			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, mappingFilePath
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, githubMappingURL
 					, status, errorCode);
 			return executionResult;			
 
