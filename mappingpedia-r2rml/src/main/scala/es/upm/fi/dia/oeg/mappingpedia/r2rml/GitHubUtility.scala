@@ -18,6 +18,8 @@ object GitHubUtility {
 
   def putEncodedFile(uuid:String, filename:String, message:String, base64EncodedContent:String
               , githubUsername:String, githubAccessToken:String, mappingpediaUsername:String) = {
+    logger.info("uuid = " + uuid);
+    logger.info("filename = " + filename);
 
     val jsonObj = new JSONObject();
     jsonObj.put("message", message);
@@ -35,8 +37,8 @@ object GitHubUtility {
       //.header("Content-Type", "application/json")
       .body(jsonObj)
       .asJson();
-    logger.info("responseHeaders = " + response.getHeaders);
-    logger.info("responseBody = " + response.getBody);
+    //logger.info("responseHeaders = " + response.getHeaders);
+    //logger.info("responseBody = " + response.getBody);
     response;
   }
 
