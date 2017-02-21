@@ -37,7 +37,9 @@ public class MappingPediaController {
 	public MappingPediaExecutionResult uploadFile(
 			@RequestParam("manifestFile") MultipartFile manifestFileRef
 			, @RequestParam("mappingFile") MultipartFile mappingFileRef
-			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI)
+			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
+			, @RequestParam(value="mappingpediaUsername", defaultValue="mappingpediaTestUser") String mappingpediaTestUser
+	)
 	{
 		logger.info("/upload ...");
 		String status="";
@@ -93,6 +95,16 @@ public class MappingPediaController {
 				String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
 				MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false"
 						, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
+
+				String filename = mappingFilePath;
+				if(filename == null) {
+					filename = uuid + ".ttl";
+				}
+				String commitMessage = "Commit From mappingpedia-engine.Application";
+				String mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, null, mappingFilePath, null);
+				String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
+				GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
+						, Application.prop.githubUser(), Application.prop.githubAccessToken(), mappingpediaTestUser);
 
 				errorCode=0;
 				status="success!";
