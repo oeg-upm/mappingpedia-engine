@@ -224,7 +224,7 @@ object MappingPediaUtility {
       outputDirectory.mkdirs
     }
     val uuidDirectoryPath: String = uploadDirectoryPath + "/" + uuidDirectoryName
-    logger.info("upload directory path = " + uuidDirectoryPath)
+    //logger.info("upload directory path = " + uuidDirectoryPath)
     val uuidDirectory: File = new File(uuidDirectoryPath)
     if (!uuidDirectory.exists) {
       uuidDirectory.mkdirs

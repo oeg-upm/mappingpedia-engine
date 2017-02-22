@@ -16,8 +16,10 @@ class GitHubUtility {
 object GitHubUtility {
   val logger : Logger = LogManager.getLogger("GitHubUtility");
 
-  def putEncodedFile(uuid:String, filename:String, message:String, base64EncodedContent:String
-              , githubUsername:String, githubAccessToken:String, mappingpediaUsername:String, sha:Option[String]) = {
+  def putEncodedFile(mappingDirectory:String, mappingFilename:String, message:String, base64EncodedContent:String
+    , githubUsername:String, githubAccessToken:String, mappingpediaUsername:String
+    //, sha:Option[String]
+  ) = {
     /*
     logger.info("content= " + base64EncodedContent);
     logger.info("message = " + message);
@@ -30,9 +32,16 @@ object GitHubUtility {
     val jsonObj = new JSONObject();
     jsonObj.put("message", message);
     jsonObj.put("content", base64EncodedContent);
-    if(sha!= null && sha.isDefined) {
-      jsonObj.put("sha", sha.get);
+
+    try {
+      val sha = GitHubUtility.getSHA(mappingpediaUsername, mappingDirectory, mappingFilename
+        , Application.prop.githubUser, Application.prop.githubAccessToken);
+      jsonObj.put("sha", sha);
+    } catch {
+      case e:Exception => {}
     }
+
+    //if(sha!= null && sha.isDefined) { jsonObj.put("sha", sha.get); }
     //jsonObj.put("path", filename);
     //jsonObj.put("access_token", "7dabca6745186161c07d04353b6967249095b679");
 
@@ -40,8 +49,8 @@ object GitHubUtility {
     val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val response = Unirest.put(uri)
       .routeParam("mappingpediaUsername", mappingpediaUsername)
-      .routeParam("mappingDirectory", uuid)
-      .routeParam("mappingFilename", filename)
+      .routeParam("mappingDirectory", mappingDirectory)
+      .routeParam("mappingFilename", mappingFilename)
       .basicAuth(githubUsername, githubAccessToken)
       //.header("Content-Type", "application/json")
       .body(jsonObj)
@@ -56,14 +65,14 @@ object GitHubUtility {
     base64EncodedContent;
   }
 
-  def getSHA(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String, mappingFileExtension:String
+  def getSHA(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
              , githubUsername:String, githubAccessToken:String) : String = {
-    val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}.{mappingFileExtension}";
+    val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val response = Unirest.get(uri)
       .routeParam("mappingpediaUsername", mappingpediaUsername)
       .routeParam("mappingDirectory", mappingDirectory)
       .routeParam("mappingFilename", mappingFilename)
-      .routeParam("mappingFileExtension", mappingFileExtension)
+      //.routeParam("mappingFileExtension", mappingFileExtension)
       .basicAuth(githubUsername, githubAccessToken)
       .asJson();
 
