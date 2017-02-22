@@ -142,7 +142,7 @@ public class Application {
 			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
 			String mappingpediaUserName = "mappingpedia-testuser";
 			HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
-					, githubUser, githubAccessToken, mappingpediaUserName);
+					, githubUser, githubAccessToken, mappingpediaUserName, null);
 			int responseStatus = response.getStatus();
 			if(HttpURLConnection.HTTP_CREATED == responseStatus) {
 				String githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
