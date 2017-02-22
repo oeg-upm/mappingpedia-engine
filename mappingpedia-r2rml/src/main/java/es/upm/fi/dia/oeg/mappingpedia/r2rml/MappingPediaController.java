@@ -42,12 +42,13 @@ public class MappingPediaController {
 				String.format(template, name));
 	}
 
-	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}/{mappingFileExtension}", method= RequestMethod.PUT)
+	//@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}/{mappingFileExtension}", method= RequestMethod.PUT)
+	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.PUT)
 	public MappingPediaExecutionResult updateMapping(
 			@PathVariable("mappingpediaUsername") String mappingpediaUsername
 		, @PathVariable("mappingDirectory") String mappingDirectory
 		, @PathVariable("mappingFilename") String mappingFilename
-		, @PathVariable("mappingFileExtension") String mappingFileExtension
+		//, @PathVariable("mappingFileExtension") String mappingFileExtension
 		, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
 	)
 	{
@@ -55,7 +56,7 @@ public class MappingPediaController {
 		logger.info("mappingpediaUsername = " + mappingpediaUsername);
 		logger.info("mappingDirectory = " + mappingDirectory);
 		logger.info("mappingFilename = " + mappingFilename);
-		logger.info("mappingFileExtension = " + mappingFileExtension);
+		//logger.info("mappingFileExtension = " + mappingFileExtension);
 		logger.info("mappingFileRef = " + mappingFileRef);
 		String status="";
 
@@ -85,7 +86,9 @@ public class MappingPediaController {
 		String commitMessage = "Mapping modification by mappingpedia-engine.Application";
 		String mappingContent = MappingPediaRunner.getMappingContent(null, null, mappingFilePath, null);
 		String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
-		HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(mappingDirectory, mappingFilename + "." + mappingFileExtension
+		HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(mappingDirectory
+				//, mappingFilename + "." + mappingFileExtension
+				, mappingFilename
 				, commitMessage, base64EncodedContent
 				, Application.prop.githubUser(), Application.prop.githubAccessToken(), mappingpediaUsername
 				//, Option.apply(sha)
