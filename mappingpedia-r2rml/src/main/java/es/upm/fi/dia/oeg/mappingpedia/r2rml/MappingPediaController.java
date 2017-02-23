@@ -42,17 +42,42 @@ public class MappingPediaController {
 				String.format(template, name));
 	}
 
-	//@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}/{mappingFileExtension}", method= RequestMethod.PUT)
+	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.GET)
+	public MappingPediaExecutionResult getMapping(
+			@PathVariable("mappingpediaUsername") String mappingpediaUsername
+		, @PathVariable("mappingDirectory") String mappingDirectory
+		, @PathVariable("mappingFilename") String mappingFilename
+	)
+	{
+		logger.info("GET /mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
+		logger.info("mappingpediaUsername = " + mappingpediaUsername);
+		logger.info("mappingDirectory = " + mappingDirectory);
+		logger.info("mappingFilename = " + mappingFilename);
+		HttpResponse<JsonNode> response = GitHubUtility.getFile(
+				Application.prop.githubUser(), Application.prop.githubAccessToken()
+			, mappingpediaUsername, mappingDirectory, mappingFilename
+		);
+		int responseStatus = response.getStatus();
+		logger.info("response.getStatusText() = " + response.getStatusText());
+		String githubMappingURL = null;
+		if(HttpURLConnection.HTTP_OK == responseStatus) {
+			githubMappingURL = response.getBody().getObject().getString("url");
+			logger.info("githubMappingURL = " + githubMappingURL);
+		}
+		MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, githubMappingURL
+				, response.getStatusText(), response.getStatus());
+		return executionResult;
+	}
+	
 	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.PUT)
 	public MappingPediaExecutionResult updateMapping(
 			@PathVariable("mappingpediaUsername") String mappingpediaUsername
 		, @PathVariable("mappingDirectory") String mappingDirectory
 		, @PathVariable("mappingFilename") String mappingFilename
-		//, @PathVariable("mappingFileExtension") String mappingFileExtension
 		, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
 	)
 	{
-		logger.info("PUT /mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}/{mappingFileExtension}");
+		logger.info("PUT /mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
 		logger.info("mappingpediaUsername = " + mappingpediaUsername);
 		logger.info("mappingDirectory = " + mappingDirectory);
 		logger.info("mappingFilename = " + mappingFilename);
@@ -77,11 +102,6 @@ public class MappingPediaController {
 			status += errorMessage + "\n";
 		}
 
-		/*
-		String sha = GitHubUtility.getSHA(mappingpediaUsername, mappingDirectory, mappingFilename, mappingFileExtension
-				, Application.prop.githubUser(), Application.prop.githubAccessToken());
-		logger.info("sha = " + sha);
-		*/
 
 		String commitMessage = "Mapping modification by mappingpedia-engine.Application";
 		String mappingContent = MappingPediaRunner.getMappingContent(null, null, mappingFilePath, null);

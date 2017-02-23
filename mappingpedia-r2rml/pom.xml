@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>es.upm.fi.dia.oeg.mappingpedia</groupId>
 	<artifactId>mappingpedia-engine-r2rml</artifactId>
-	<version>0.4.1-SNAPSHOT</version>
+	<version>0.4.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>
@@ -97,32 +97,41 @@
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.mylyn.github</groupId>
+			<artifactId>org.eclipse.egit.github.core</artifactId>
+			<version>2.1.5</version>
+		</dependency>
+
+        <!-- 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.mylyn.github</groupId>
-            <artifactId>org.eclipse.egit.github.core</artifactId>
-            <version>2.1.5</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.kohsuke/github-api -->
-<dependency>
-    <groupId>org.kohsuke</groupId>
-    <artifactId>github-api</artifactId>
-    <version>1.84</version>
-</dependency>
+			<groupId>es.upm.fi.dia.oeg.morph</groupId>
+			<artifactId>morph-rdb-dist</artifactId>
+			<type>pom</type>
+			<version>3.7.8</version>
+		</dependency>
+        -->
+        
+		<!-- https://mvnrepository.com/artifact/org.kohsuke/github-api -->
+		<dependency>
+			<groupId>org.kohsuke</groupId>
+			<artifactId>github-api</artifactId>
+			<version>1.84</version>
+		</dependency>
 
 
-<dependency>
-    <groupId>com.mashape.unirest</groupId>
-    <artifactId>unirest-java</artifactId>
-    <version>1.4.9</version>
-</dependency>
+		<dependency>
+			<groupId>com.mashape.unirest</groupId>
+			<artifactId>unirest-java</artifactId>
+			<version>1.4.9</version>
+		</dependency>
 
 	</dependencies>
 
