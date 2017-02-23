@@ -16,6 +16,25 @@ class GitHubUtility {
 object GitHubUtility {
   val logger : Logger = LogManager.getLogger("GitHubUtility");
 
+  def getFile(githubUsername:String, githubAccessToken:String
+              , mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String) = {
+    //val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/mappingpedia-testuser/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c.ttl";
+    //val response = Unirest.get(uri).asJson();
+
+    val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
+    val response = Unirest.get(uri)
+      .routeParam("mappingpediaUsername", mappingpediaUsername)
+      .routeParam("mappingDirectory", mappingDirectory)
+      .routeParam("mappingFilename", mappingFilename)
+      //.basicAuth(githubUsername, githubAccessToken)
+      //.header("Content-Type", "application/json")
+      //.body(jsonObj)
+      .asJson();
+    //logger.info("responseHeaders = " + response.getHeaders);
+    //logger.info("responseBody = " + response.getBody);
+    response;
+  }
+
   def putEncodedFile(mappingDirectory:String, mappingFilename:String, message:String, base64EncodedContent:String
     , githubUsername:String, githubAccessToken:String, mappingpediaUsername:String
     //, sha:Option[String]
