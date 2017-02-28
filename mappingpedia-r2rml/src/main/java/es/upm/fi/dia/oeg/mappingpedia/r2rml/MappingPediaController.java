@@ -42,6 +42,43 @@ public class MappingPediaController {
 				String.format(template, name));
 	}
 
+	@RequestMapping(value="/executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.POST)
+	public MappingPediaExecutionResult executeMapping(
+			@PathVariable("mappingpediaUsername") String mappingpediaUsername
+		, @PathVariable("mappingDirectory") String mappingDirectory
+		, @PathVariable("mappingFilename") String mappingFilename
+		, @RequestParam(value="morphConfigurationFile") MultipartFile morphConfigurationFile
+	)
+	{
+		logger.info("GET /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
+		logger.info("mappingpediaUsername = " + mappingpediaUsername);
+		logger.info("mappingDirectory = " + mappingDirectory);
+		logger.info("mappingFilename = " + mappingFilename);
+		
+		HttpResponse<JsonNode> response = GitHubUtility.getFile(
+				Application.prop.githubUser(), Application.prop.githubAccessToken()
+			, mappingpediaUsername, mappingDirectory, mappingFilename
+		);
+		int responseStatus = response.getStatus();
+		logger.info("responseStatus = " + responseStatus);
+		String responseStatusText = response.getStatusText();
+		logger.info("responseStatusText = " + responseStatusText);
+		if(HttpURLConnection.HTTP_OK == responseStatus) {
+			String encodedContent = response.getBody().getObject().getString("content");
+			logger.info("encodedContent = " + encodedContent);
+			String decodedContent = GitHubUtility.decodeFromBase64(encodedContent);
+			logger.info("decodedContent = " + decodedContent);
+					
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+					, responseStatusText, responseStatus);
+			return executionResult;			
+		} else {
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+					, responseStatusText, responseStatus);
+			return executionResult;			
+		}
+	}
+	
 	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.GET)
 	public MappingPediaExecutionResult getMapping(
 			@PathVariable("mappingpediaUsername") String mappingpediaUsername
@@ -58,19 +95,24 @@ public class MappingPediaController {
 			, mappingpediaUsername, mappingDirectory, mappingFilename
 		);
 		int responseStatus = response.getStatus();
-		logger.info("response.getStatusText() = " + response.getStatusText());
-		String githubMappingURL = null;
+		logger.info("responseStatus = " + responseStatus);
+		String responseStatusText = response.getStatusText();
+		logger.info("responseStatusText = " + responseStatusText);
 		if(HttpURLConnection.HTTP_OK == responseStatus) {
-			githubMappingURL = response.getBody().getObject().getString("url");
+			String githubMappingURL = response.getBody().getObject().getString("url");
 			logger.info("githubMappingURL = " + githubMappingURL);
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, githubMappingURL
+					, responseStatusText, responseStatus);
+			return executionResult;			
+		} else {
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+					, responseStatusText, responseStatus);
+			return executionResult;			
 		}
-		MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, githubMappingURL
-				, response.getStatusText(), response.getStatus());
-		return executionResult;
 	}
 	
 	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.PUT)
-	public MappingPediaExecutionResult updateMapping(
+	public MappingPediaExecutionResult updateExistingMapping(
 			@PathVariable("mappingpediaUsername") String mappingpediaUsername
 		, @PathVariable("mappingDirectory") String mappingDirectory
 		, @PathVariable("mappingFilename") String mappingFilename
@@ -83,45 +125,55 @@ public class MappingPediaController {
 		logger.info("mappingFilename = " + mappingFilename);
 		//logger.info("mappingFileExtension = " + mappingFileExtension);
 		logger.info("mappingFileRef = " + mappingFileRef);
-		String status="";
 
-		FileInputStream mappingReader = null;
-		String mappingFilePath = null;
-		String githubMappingURL = null;
 		try {
+			
+			//FileInputStream mappingReader = null;
+			
+			/*
 			if(mappingFileRef != null) {
 				mappingReader = (FileInputStream) mappingFileRef.getInputStream();
 			}
-			File mappingFile = MappingPediaUtility.materializeFileInputStream(mappingReader, mappingDirectory, mappingFilename);
-			mappingFilePath = mappingFile.getPath();
+			*/
+			//File mappingFile = MappingPediaUtility.materializeFileInputStream(mappingReader, mappingDirectory, mappingFilename);
+			File mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, mappingDirectory);
+			String mappingFilePath = mappingFile.getPath();
 			logger.info("mapping file path = " + mappingFilePath);
+
+			String commitMessage = "Mapping modification by mappingpedia-engine.Application";
+			String mappingContent = MappingPediaRunner.getMappingContent(null, null, mappingFilePath, null);
+			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
+			HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(mappingDirectory
+					//, mappingFilename + "." + mappingFileExtension
+					, mappingFilename
+					, commitMessage, base64EncodedContent
+					, Application.prop.githubUser(), Application.prop.githubAccessToken(), mappingpediaUsername
+					//, Option.apply(sha)
+			);
+			int responseStatus = response.getStatus();
+			logger.info("responseStatus = " + responseStatus);
+			String responseStatusText = response.getStatusText();
+			logger.info("responseStatusText = " + responseStatusText);
+			if(HttpURLConnection.HTTP_OK == responseStatus) {
+				String githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
+				logger.info("githubMappingURL = " + githubMappingURL);
+				MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, githubMappingURL
+						, responseStatusText, responseStatus);
+				return executionResult;
+			} else {
+				MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+						, responseStatusText, responseStatus);
+				return executionResult;
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			String errorMessage = "error processing the uploaded mapping file.";
+			String errorMessage = "error processing the uploaded mapping file: " + e.getMessage();
 			logger.error(errorMessage);
-			status += errorMessage + "\n";
+			Integer errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+					, errorMessage, errorCode);
+			return executionResult;
 		}
-
-
-		String commitMessage = "Mapping modification by mappingpedia-engine.Application";
-		String mappingContent = MappingPediaRunner.getMappingContent(null, null, mappingFilePath, null);
-		String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
-		HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(mappingDirectory
-				//, mappingFilename + "." + mappingFileExtension
-				, mappingFilename
-				, commitMessage, base64EncodedContent
-				, Application.prop.githubUser(), Application.prop.githubAccessToken(), mappingpediaUsername
-				//, Option.apply(sha)
-		);
-		int responseStatus = response.getStatus();
-		logger.info("response.getStatusText() = " + response.getStatusText());
-		if(HttpURLConnection.HTTP_OK == responseStatus) {
-			githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
-			logger.info("githubMappingURL = " + githubMappingURL);
-		}
-		MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, githubMappingURL
-				, response.getStatusText(), response.getStatus());
-		return executionResult;
 	}
 
 /*
@@ -135,8 +187,58 @@ public class MappingPediaController {
 	}
 */
 
-	@RequestMapping(value = {"/upload/{mappingpediaUsername}", "/mappings/{mappingpediaUsername}"}, method= RequestMethod.PUT)
-	public MappingPediaExecutionResult uploadFile(
+	@RequestMapping(value = "/datasets/{mappingpediaUsername}", method= RequestMethod.POST)
+	public MappingPediaExecutionResult uploadNewDataset(
+			@RequestParam("datasetFile") MultipartFile datasetFileRef
+			, @PathVariable("mappingpediaUsername") String mappingpediaUsername
+	)
+	{
+		logger.info("[POST] /datasets/{mappingpediaUsername}");
+		logger.info("mappingpediaUsername = " + mappingpediaUsername);
+
+		// Path where the uploaded files will be stored.
+		String uuid = UUID.randomUUID().toString();
+
+		try {
+			File datasetFile = MappingPediaUtility.multipartFileToFile(datasetFileRef, uuid);
+			String base64EncodedContent = GitHubUtility.encodeToBase64(datasetFile);
+
+			logger.info("storing mapping file in github ...");
+			String commitMessage = "Add a new dataset by mappingpedia-engine";
+			HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(uuid, datasetFile.getName(), commitMessage, base64EncodedContent
+					, Application.prop.githubUser(), Application.prop.githubAccessToken(), mappingpediaUsername
+			);
+			logger.info("response.getHeaders = " + response.getHeaders());
+			logger.info("response.getBody = " + response.getBody());
+
+			int responseStatus = response.getStatus();
+			logger.info("responseStatus = " + responseStatus);
+			String responseStatusText = response.getStatusText();
+			logger.info("responseStatusText = " + responseStatusText);
+			if(HttpURLConnection.HTTP_CREATED == responseStatus) {
+				String datasetURL = response.getBody().getObject().getJSONObject("content").getString("url");
+				logger.info("githubMappingURL = " + datasetURL);
+				logger.info("dataset inserted.");
+				MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, datasetURL, null
+						, responseStatusText, responseStatus);
+				return executionResult;				
+			} else {
+				MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+						, responseStatusText, responseStatus);
+				return executionResult;
+			}
+		} catch (Exception e) {
+			String errorMessage = e.getMessage();
+			logger.error("error uploading a new mapping file: " + errorMessage);
+			Integer errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+					, errorMessage, errorCode);
+			return executionResult;
+		}
+	}
+	
+	@RequestMapping(value = {"/upload/{mappingpediaUsername}", "/mappings/{mappingpediaUsername}"}, method= RequestMethod.POST)
+	public MappingPediaExecutionResult uploadNewMapping(
 			@RequestParam("manifestFile") MultipartFile manifestFileRef
 			, @RequestParam("mappingFile") MultipartFile mappingFileRef
 			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
@@ -144,97 +246,57 @@ public class MappingPediaController {
 			, @PathVariable("mappingpediaUsername") String mappingpediaUsername
 	)
 	{
-		logger.info("[PUT] /mappings/{mappingpediaUsername}");
+		logger.info("[POST] /mappings/{mappingpediaUsername}");
 		logger.info("mappingpediaUsername = " + mappingpediaUsername);
-		String status="";
-		Integer errorCode=-1;
 
-		// Create the input stream to uploaded files to read data from it.
-		FileInputStream manifestReader = null;
+		// Path where the uploaded files will be stored.
+		String uuid = UUID.randomUUID().toString();
+
 		try {
-			if(manifestFileRef != null) {
-				manifestReader = (FileInputStream) manifestFileRef.getInputStream();	
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			String errorMessage = "error processing the uploaded manifest file.";
-			logger.error(errorMessage);
-			status += errorMessage + "\n";
-		}
-		
-		FileInputStream mappingReader = null;
-		try {
-			if(mappingFileRef != null) {
-				mappingReader = (FileInputStream) mappingFileRef.getInputStream();	
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			String errorMessage = "error processing the uploaded mapping file.";
-			logger.error(errorMessage);
-			status += errorMessage + "\n";
-		}
+			File manifestFile = MappingPediaUtility.multipartFileToFile(manifestFileRef, uuid);
+			String manifestFilePath = manifestFile.getPath();
+			File mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, uuid);
+			String mappingFilePath = mappingFile.getPath();
 
-		if(manifestReader == null || mappingReader == null) {
-			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult("", "", status, errorCode);
-			return executionResult;			
-		} else {
-			// Get names of uploaded files.
-			String manifestFileName = manifestFileRef.getOriginalFilename();
-			String mappingFileName = mappingFileRef.getOriginalFilename();
+			String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
+			MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false"
+					, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
 
-			// Path where the uploaded files will be stored.
-			String uuid = UUID.randomUUID().toString();
+			String commitMessage = "Commit From mappingpedia-engine.Application";
+			String mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, null, mappingFilePath, null);
+			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
 
-			String manifestFilePath = null;
-			String githubMappingURL = null;
-			String mappingFilePath = null;
-			try {
-				File manifestFile = MappingPediaUtility.materializeFileInputStream(manifestReader, uuid, manifestFileName);
-				manifestFilePath = manifestFile.getPath();
-				//logger.info("manifest file path = " + manifestFilePath);
+			logger.info("storing mapping file in github ...");
+			HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(uuid, mappingFile.getName(), commitMessage, base64EncodedContent
+					, Application.prop.githubUser(), Application.prop.githubAccessToken(), mappingpediaUsername
+					//, null
+			);
+			logger.info("response.getHeaders = " + response.getHeaders());
+			logger.info("response.getBody = " + response.getBody());
 
-				File mappingFile = MappingPediaUtility.materializeFileInputStream(mappingReader, uuid, mappingFileName);
-				mappingFilePath = mappingFile.getPath();
-				//logger.info("mapping file path = " + mappingFilePath);
-
-				String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
-				MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false"
-						, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
-
-				String filename = mappingFileName;
-				if(filename == null) {
-					filename = uuid + ".ttl";
-				}
-				String commitMessage = "Commit From mappingpedia-engine.Application";
-				String mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, null, mappingFilePath, null);
-				String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
-
-				logger.info("storing mapping file in github ...");
-				HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
-						, Application.prop.githubUser(), Application.prop.githubAccessToken(), mappingpediaUsername
-						//, null
-				);
-				logger.info("response.getHeaders = " + response.getHeaders());
-				logger.info("response.getBody = " + response.getBody());
-
-				int responseStatus = response.getStatus();
-				if(HttpURLConnection.HTTP_CREATED == responseStatus) {
-					githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
-					logger.info("githubMappingURL = " + githubMappingURL);
-				}
-				errorCode=response.getStatus();
-				status=response.getStatusText();
+			int responseStatus = response.getStatus();
+			logger.info("responseStatus = " + responseStatus);
+			String responseStatusText = response.getStatusText();
+			logger.info("responseStatusText = " + responseStatusText);
+			if(HttpURLConnection.HTTP_CREATED == responseStatus) {
+				String githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
+				logger.info("githubMappingURL = " + githubMappingURL);
 				logger.info("mapping inserted.");
-			} catch (Exception e){
-				e.printStackTrace();
-				errorCode=-1;
-				status="failed, error message = " + e.getMessage();
+				MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, null, githubMappingURL
+						, responseStatusText, responseStatus);
+				return executionResult;				
+			} else {
+				MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, null, null
+						, responseStatusText, responseStatus);
+				return executionResult;
 			}
-
-			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(manifestFilePath, githubMappingURL
-					, status, errorCode);
-			return executionResult;			
-
+		} catch (Exception e) {
+			String errorMessage = e.getMessage();
+			logger.error("error uploading a new mapping file: " + errorMessage);
+			Integer errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+					, errorMessage, errorCode);
+			return executionResult;
 		}
 	}
 
@@ -243,51 +305,27 @@ public class MappingPediaController {
 			, @RequestParam(value="graphURI") String graphURI)
 	{
 		logger.info("/storeRDFFile...");
-		String status="";
-		Integer errorCode=-1;
-
-		// Create the input stream to uploaded files to read data from it.
-		FileInputStream reader = null;
+		
 		try {
-			if(fileRef != null) {
-				reader = (FileInputStream) fileRef.getInputStream();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			String errorMessage = "error processing the uploaded file.";
+			File file = MappingPediaUtility.multipartFileToFile(fileRef);
+			String filePath = file.getPath();
+			logger.info("file path = " + filePath);
+
+			MappingPediaUtility.store(filePath, graphURI);
+			Integer errorCode=0;
+			String status="success, file uploaded to: " + filePath;
+			logger.info("mapping inserted.");
+			
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null, status, errorCode);
+			return executionResult;			
+			
+		} catch(Exception e) {
+			String errorMessage = "error processing uploaded file: " + e.getMessage();
 			logger.error(errorMessage);
-			status += errorMessage + "\n";
-		}
-
-		if(reader == null) {
-			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult("", "", status, errorCode);
+			Integer errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
+			String status="failed, error message = " + e.getMessage();
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null, status, errorCode);
 			return executionResult;
-		} else {
-			// Get names of uploaded files.
-			String fileName = fileRef.getOriginalFilename();
-
-			// Path where the uploaded files will be stored.
-			String uuid = UUID.randomUUID().toString();
-
-			String filePath = null;
-			try {
-				File file = MappingPediaUtility.materializeFileInputStream(reader, uuid, fileName);
-				filePath = file.getPath();
-				logger.info("file path = " + filePath);
-
-				MappingPediaUtility.store(filePath, graphURI);
-				errorCode=0;
-				status="success!";
-				logger.info("mapping inserted.");
-			} catch (Exception e){
-				e.printStackTrace();
-				errorCode=-1;
-				status="failed, error message = " + e.getMessage();
-			}
-
-			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(filePath, "", status, errorCode);
-			return executionResult;
-
 		}
 	}
 
