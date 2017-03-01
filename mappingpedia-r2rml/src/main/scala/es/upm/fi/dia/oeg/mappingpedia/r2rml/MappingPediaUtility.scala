@@ -275,4 +275,16 @@ object MappingPediaUtility {
     file;
   }
   
+  def stringToBoolean(aString:String) : Boolean = {
+    if(aString != null) {
+      if(aString.equalsIgnoreCase("true") || aString.equalsIgnoreCase("yes")) {
+        true;
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+  }
+  
 }

@@ -141,8 +141,11 @@ public class Application {
 			String mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, manifestText, mappingFilePath, mappingText);
 			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
 			String mappingpediaUserName = "mappingpedia-testuser";
-			HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(uuid, filename, commitMessage, base64EncodedContent
-					, githubUser, githubAccessToken, mappingpediaUserName);
+			HttpResponse<JsonNode> response = GitHubUtility.putEncodedContent(
+					githubUser, githubAccessToken
+					, mappingpediaUserName, uuid, filename
+					, commitMessage, base64EncodedContent
+					);
 			int responseStatus = response.getStatus();
 			if(HttpURLConnection.HTTP_CREATED == responseStatus) {
 				String githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
