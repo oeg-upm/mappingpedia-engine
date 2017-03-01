@@ -1,6 +1,12 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
 import java.io.File
+import java.net.HttpURLConnection
+import com.mashape.unirest.http.{JsonNode, HttpResponse}
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
+import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVRunnerFactory, MorphCSVProperties}
+import org.apache.commons.lang.text.StrSubstitutor
+
 import scala.collection.mutable.ListBuffer
 
 import org.apache.jena.rdf.model.ModelFactory
@@ -24,6 +30,8 @@ import java.security.MessageDigest
 import org.apache.jena.util.ResourceUtils
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.impl.StatementImpl
+import scala.collection.JavaConversions._
+
 
 class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 	val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
@@ -222,6 +230,65 @@ object MappingPediaR2RML {
 
   }
 
+	def executeMapping(mappingpediaUsername:String, mappingDirectory: String, mappingFilename: String
+		, datasetFile: String, pOutputFilename: String) : MappingPediaExecutionResult = {
+		logger.info("mappingpediaUsername = " + mappingpediaUsername)
+		logger.info("mappingDirectory = " + mappingDirectory)
+		logger.info("mappingFilename = " + mappingFilename)
+		val properties: MorphCSVProperties = new MorphCSVProperties
+		properties.setDatabaseName(mappingpediaUsername + "/" + mappingDirectory)
+		val templateString: String = "${mappingpediaUsername}/${mappingDirectory}/${mappingFilename}"
+		val valuesMap: java.util.Map[String, String] = new java.util.HashMap[String, String]
+		valuesMap.put("mappingpediaUsername", mappingpediaUsername)
+		valuesMap.put("mappingDirectory", mappingDirectory)
+		valuesMap.put("mappingFilename", mappingFilename)
+		val sub: StrSubstitutor = new StrSubstitutor(valuesMap)
+		val templateResultString: String = sub.replace(templateString)
+		val mappingBlobURL: String = "https://github.com/oeg-upm/mappingpedia-contents/blob/master/" + templateResultString
+		logger.info("mappingBlobURL = " + mappingBlobURL)
+		properties.setMappingDocumentFilePath(mappingBlobURL)
+		val outputFileName = if (pOutputFilename == null) {
+			"output.nt";
+		} else {
+			pOutputFilename;
+		}
+		val outputFilepath = "executions/" + templateResultString + "/" + outputFileName
 
+		properties.setOutputFilePath(outputFilepath);
+		properties.setCSVFile(datasetFile)
+		try {
+			val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
+			val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
+			runner.run
+			logger.info("mapping execution success!")
+			val outputFile: File = new File(outputFilepath)
+			val response = GitHubUtility.putEncodedFile(Application.prop.githubUser, Application.prop.githubAccessToken
+				, mappingpediaUsername, mappingDirectory, outputFileName
+				, "add mapping execution result by mappingpedia engine", outputFile);
+
+			val responseStatus: Int = response.getStatus
+			logger.info("responseStatus = " + responseStatus)
+			val responseStatusText: String = response.getStatusText
+			logger.info("responseStatusText = " + responseStatusText)
+			if (HttpURLConnection.HTTP_OK == responseStatus) {
+				val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null, outputGitHubURL, responseStatus)
+				return executionResult
+			}
+			else {
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null, responseStatusText, responseStatus)
+				return executionResult
+			}
+		}
+		catch {
+			case e: Exception => {
+				e.printStackTrace
+				val errorMessage: String = "Error occured: " + e.getMessage
+				logger.error("mapping execution failed: " + errorMessage)
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR)
+				return executionResult
+			}
+		}
+	}
 
 }

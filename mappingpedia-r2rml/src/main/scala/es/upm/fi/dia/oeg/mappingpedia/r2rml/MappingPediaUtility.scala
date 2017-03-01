@@ -22,6 +22,8 @@ import org.apache.jena.graph.NodeFactory
 import org.eclipse.egit.github.core.client.GitHubClient
 import org.eclipse.egit.github.core.service.{ContentsService, RepositoryService}
 import scala.collection.JavaConversions._
+import org.springframework.web.multipart.MultipartFile;
+import java.util.UUID
 
 
 object MappingPediaUtility {
@@ -239,4 +241,50 @@ object MappingPediaUtility {
   def pushContentToGitHub(file:File) = {
 
   }
+  
+  def multipartFileToFile(fileRef:MultipartFile) : File = {
+			// Path where the uploaded files will be stored.
+		val uuid = UUID.randomUUID().toString();
+
+		val file = this.multipartFileToFile(fileRef, uuid);
+		file;
+  }
+  
+  def multipartFileToFile(fileRef:MultipartFile, uuid:String) : File = {
+		
+		// Create the input stream to uploaded files to read data from it.
+		val fis:FileInputStream = try {
+			if(fileRef != null) {
+				val inputStreamAux = fileRef.getInputStream().asInstanceOf[FileInputStream];
+				inputStreamAux;
+			} else {
+			  val errorMessage = "can't process the uploaded file, fileRef is null";
+			  throw new Exception(errorMessage);
+			}
+		} catch {
+		  case e:Exception => {
+  			e.printStackTrace();
+  			throw e;
+		  }
+		}
+		
+			// Get the name of uploaded files.
+		val fileName = fileRef.getOriginalFilename();
+
+    val file = MappingPediaUtility.materializeFileInputStream(fis, uuid, fileName);
+    file;
+  }
+  
+  def stringToBoolean(aString:String) : Boolean = {
+    if(aString != null) {
+      if(aString.equalsIgnoreCase("true") || aString.equalsIgnoreCase("yes")) {
+        true;
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+  }
+  
 }

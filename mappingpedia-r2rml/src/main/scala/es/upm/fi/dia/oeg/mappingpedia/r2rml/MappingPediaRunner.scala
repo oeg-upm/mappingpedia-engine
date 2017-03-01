@@ -53,47 +53,25 @@ object MappingPediaRunner {
       , mappingpediaR2RML:MappingPediaR2RML, pReplaceMappingBaseURI:String, newMappingBaseURI:String
       ): Unit = {
     
-    val clearGraphBoolean = if(clearGraphString != null) {
-      if(clearGraphString.equalsIgnoreCase("true") || clearGraphString.equalsIgnoreCase("yes")) {
-        true;
-      } else {
-        false
-      }
-    } else {
-      false
-    }
+    val clearGraphBoolean = MappingPediaUtility.stringToBoolean(clearGraphString);
     logger.info("clearGraphBoolean = " + clearGraphBoolean);
 
-    val replaceMappingBaseURI = if(pReplaceMappingBaseURI != null) {
-      if(pReplaceMappingBaseURI.equalsIgnoreCase("true")
-        || pReplaceMappingBaseURI.equalsIgnoreCase("yes")) {
-        true
-      } else {
-        false
-      }
+    val replaceMappingBaseURI = MappingPediaUtility.stringToBoolean(pReplaceMappingBaseURI);
+
+    val manifestText = if(manifestFilePath != null || pManifestText != null) {
+      this.getManifestContent(manifestFilePath, pManifestText);
     } else {
-      true
+      null;
     }
 
-    /*
-    logger.info("reading manifest file ...");
-    val manifestText:String = if(pManifestText == null) {
-      if(manifestFilePath == null) {
-        val errorMessage = "no manifest is provided";
-        logger.error(errorMessage);
-        throw new Exception(errorMessage);
-      } else {
-        val manifestFileContent = fromFile(manifestFilePath).getLines.mkString("\n");
-        //logger.info("manifestFileContent = \n" + manifestFileContent);
-        manifestFileContent;          
-      }
+    val manifestModel = if(manifestText != null) {
+      MappingPediaUtility.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
     } else {
-      pManifestText;
+      null;
     }
-    */
-    val manifestText = this.getManifestContent(manifestFilePath, pManifestText);
-    val manifestModel = MappingPediaUtility.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
+    
     mappingpediaR2RML.manifestModel = manifestModel;
+
 
     /*
     logger.info("reading r2rml file ...");
@@ -133,16 +111,17 @@ object MappingPediaRunner {
           logger.error("unable to clear the graph: " + e.getMessage);
         } 
       }
-    	
     }
     
-    logger.info("Storing manifest triples.");
-    val manifestTriples = MappingPediaUtility.toTriples(manifestModel);
-    MappingPediaUtility.store(manifestTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
-
-    logger.info("Storing generated triples.");
-    val additionalTriples = mappingpediaR2RML.generateAdditionalTriples();
-    MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+    if(manifestModel != null) {
+      logger.info("Storing manifest triples.");
+      val manifestTriples = MappingPediaUtility.toTriples(manifestModel);
+      MappingPediaUtility.store(manifestTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+  
+      logger.info("Storing generated triples.");
+      val additionalTriples = mappingpediaR2RML.generateAdditionalTriples();
+      MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);      
+    }
     
     logger.info("Storing R2RML triples in Virtuoso.");
     val r2rmlTriples = MappingPediaUtility.toTriples(mappingDocumentModel);
