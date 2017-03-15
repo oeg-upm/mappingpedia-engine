@@ -141,6 +141,15 @@
 			<url>https://raw.github.com/fpriyatna/external-libs/master/</url>
 		</repository>
 
+		<repository>
+			<id>morph-rdb-mvn-repo</id>
+			<url>https://raw.github.com/oeg-upm/morph-rdb/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+        
 	</repositories>
 
 	<build>
