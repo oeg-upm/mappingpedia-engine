@@ -115,7 +115,7 @@ public class MappingPediaController {
 
 			logger.info("storing mapping file in github ...");
 			HttpResponse<JsonNode> response = GitHubUtility.putEncodedContent(
-					Application.prop.githubUser(), Application.prop.githubAccessToken()
+					MappingPediaProperties.githubUser(), MappingPediaProperties.githubAccessToken()
 					, mappingpediaUsername, datasetID, mappingFile.getName()
 					, commitMessage, base64EncodedContent
 			);
@@ -160,7 +160,7 @@ public class MappingPediaController {
 		logger.info("mappingDirectory = " + mappingDirectory);
 		logger.info("mappingFilename = " + mappingFilename);
 		HttpResponse<JsonNode> response = GitHubUtility.getFile(
-				Application.prop.githubUser(), Application.prop.githubAccessToken()
+				MappingPediaProperties.githubUser(), MappingPediaProperties.githubAccessToken()
 			, mappingpediaUsername, mappingDirectory, mappingFilename
 		);
 		int responseStatus = response.getStatus();
@@ -213,7 +213,7 @@ public class MappingPediaController {
 			String mappingContent = MappingPediaRunner.getMappingContent(null, null, mappingFilePath, null);
 			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
 			HttpResponse<JsonNode> response = GitHubUtility.putEncodedContent(
-					Application.prop.githubUser(), Application.prop.githubAccessToken()
+					MappingPediaProperties.githubUser(), MappingPediaProperties.githubAccessToken()
 					, mappingpediaUsername, mappingDirectory, mappingFilename
 					, commitMessage, base64EncodedContent
 			);
@@ -287,7 +287,7 @@ public class MappingPediaController {
 			logger.info("storing a dataset file in github ...");
 			String commitMessage = "Add a new dataset by mappingpedia-engine";
 			HttpResponse<JsonNode> response = GitHubUtility.putEncodedFile(
-					Application.prop.githubUser(), Application.prop.githubAccessToken()
+					MappingPediaProperties.githubUser(), MappingPediaProperties.githubAccessToken()
 					, mappingpediaUsername, datasetID, datasetFile.getName()
 					, commitMessage, datasetFile
 			);

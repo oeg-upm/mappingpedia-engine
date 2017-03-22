@@ -244,7 +244,9 @@ object MappingPediaR2RML {
 		valuesMap.put("mappingFilename", mappingFilename)
 		val sub: StrSubstitutor = new StrSubstitutor(valuesMap)
 		val templateResultString: String = sub.replace(templateString)
-		val mappingBlobURL: String = "https://github.com/oeg-upm/mappingpedia-contents/blob/master/" + templateResultString
+		val githubRepo = MappingPediaProperties.githubRepo
+		val mappingBlobURL: String = githubRepo + "/blob/master/" + templateResultString
+		//val mappingBlobURL: String = "https://github.com/oeg-upm/mappingpedia-contents/blob/master/" + templateResultString
 		logger.info("mappingBlobURL = " + mappingBlobURL)
 		properties.setMappingDocumentFilePath(mappingBlobURL)
 		val outputFileName = if (pOutputFilename == null) {
@@ -262,7 +264,7 @@ object MappingPediaR2RML {
 			runner.run
 			logger.info("mapping execution success!")
 			val outputFile: File = new File(outputFilepath)
-			val response = GitHubUtility.putEncodedFile(Application.prop.githubUser, Application.prop.githubAccessToken
+			val response = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser, MappingPediaProperties.githubAccessToken
 				, mappingpediaUsername, mappingDirectory, outputFileName
 				, "add mapping execution result by mappingpedia engine", outputFile);
 

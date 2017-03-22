@@ -20,16 +20,16 @@ public class Application {
 	static Logger logger = LogManager.getLogger("Application");
 	static MappingPediaR2RML mappingpediaR2RML = null;	
 	//static VirtGraph mappingpediaGraph = null;
-	static MappingPediaProperties prop = null;
+	//static MappingPediaProperties prop = null;
 	
 	public static void main(String[] args) {
 		System.out.println("Working Directory = " +
 				System.getProperty("user.dir"));
 
-		Application.prop = new MappingPediaProperties();
+		//Application.prop = new MappingPediaProperties();
 		InputStream is = null;
 		String virtuosoJDBC=null, virtuosoUser=null, virtuosoPwd=null, graphName=null, clearGraph=null;
-		String githubUser=null, githubAccessToken=null;
+		String githubUser=null, githubAccessToken=null, githubRepo=null, githubRepoContents=null
 		String manifestFilePath=null, mappingFilePath=null, manifestText=null, mappingText=null;
 		String replaceMappingBaseURI=null;
 
@@ -41,42 +41,51 @@ public class Application {
 				return;
 			}
 
-			prop.load(is);
+			MappingPediaProperties.load(is);
 
 			//get the property value and print it out
-			virtuosoJDBC = prop.getProperty("vjdbc");
+			virtuosoJDBC = MappingPediaProperties.getProperty("vjdbc");
 			logger.info("virtuosoJDBC = " + virtuosoJDBC);
-			Application.prop.virtuosoJDBC_$eq(virtuosoJDBC);
+			MappingPediaProperties.virtuosoJDBC_$eq(virtuosoJDBC);
 			
-			virtuosoUser = prop.getProperty("usr");
+			virtuosoUser = MappingPediaProperties.getProperty("usr");
 			//logger.info("virtuosoUser = " + virtuosoUser);
-			Application.prop.virtuosoUser_$eq(virtuosoUser);
+			MappingPediaProperties.virtuosoUser_$eq(virtuosoUser);
 
-			virtuosoPwd = prop.getProperty("pwd");
+			virtuosoPwd = MappingPediaProperties.getProperty("pwd");
 			//logger.info("virtuosoPwd = " + virtuosoPwd);
-			Application.prop.virtuosoPwd_$eq(virtuosoPwd);
+			MappingPediaProperties.virtuosoPwd_$eq(virtuosoPwd);
 
-			githubUser = prop.getProperty("github.mappingpedia.username");
+			githubUser = MappingPediaProperties.getProperty("github.mappingpedia.username");
 			logger.info("githubUser = " + githubUser);
-			Application.prop.githubUser_$eq(githubUser);
+			MappingPediaProperties.githubUser_$eq(githubUser);
 
-			githubAccessToken = prop.getProperty("github.mappingpedia.accesstoken");
+			githubAccessToken = MappingPediaProperties.getProperty("github.mappingpedia.accesstoken");
 			logger.info("github.mappingpedia.accesstoken = " + githubAccessToken);
-			Application.prop.githubAccessToken_$eq(githubAccessToken);
+			MappingPediaProperties.githubAccessToken_$eq(githubAccessToken);
 
-			graphName = prop.getProperty("graphname");
+			githubRepo = MappingPediaProperties.getProperty("github.mappingpedia.repository");
+			logger.info("github.mappingpedia.repository = " + githubRepo);
+			MappingPediaProperties.githubRepo_$eq(githubRepo);
+
+			githubRepoContents = MappingPediaProperties.getProperty("github.mappingpedia.repository.contents");
+			logger.info("github.mappingpedia.repository.contents = " + githubRepoContents);
+			MappingPediaProperties.githubRepoContents_$eq(githubRepoContents);
+
+
+			graphName = MappingPediaProperties.getProperty("graphname");
 			logger.info("graphName = " + graphName);
-			Application.prop.graphName_$eq(graphName);
+			MappingPediaProperties.graphName_$eq(graphName);
 
-			clearGraph = prop.getProperty("cleargraph");
+			clearGraph = MappingPediaProperties.getProperty("cleargraph");
 			//logger.info("clearGraph = " + clearGraph);
 			if(clearGraph == null) {
-				Application.prop.clearGraph_$eq(false);
+				MappingPediaProperties.clearGraph_$eq(false);
 			} else {
 				if("true".equalsIgnoreCase(clearGraph) || "yes".equalsIgnoreCase(clearGraph)) {
-					Application.prop.clearGraph_$eq(true);
+					MappingPediaProperties.clearGraph_$eq(true);
 				} else {
-					Application.prop.clearGraph_$eq(false);
+					MappingPediaProperties.clearGraph_$eq(false);
 				}
 			}
 

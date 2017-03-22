@@ -41,7 +41,7 @@ object GitHubUtility {
     //val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/mappingpedia-testuser/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c.ttl";
     //val response = Unirest.get(uri).asJson();
 
-    val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
+    val uri = MappingPediaProperties.githubRepoContents + "/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val response = Unirest.get(uri)
       .routeParam("mappingpediaUsername", mappingpediaUsername)
       .routeParam("mappingDirectory", mappingDirectory)
@@ -81,7 +81,7 @@ object GitHubUtility {
       case e:Exception => {}
     }
 
-    val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
+    val uri = MappingPediaProperties.githubRepoContents + "/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val response = Unirest.put(uri)
       .routeParam("mappingpediaUsername", mappingpediaUsername)
       .routeParam("mappingDirectory", mappingDirectory)
@@ -116,7 +116,7 @@ object GitHubUtility {
   
   def getSHA(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
              , githubUsername:String, githubAccessToken:String) : String = {
-    val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
+    val uri = MappingPediaProperties.githubRepoContents + "/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val response = Unirest.get(uri)
       .routeParam("mappingpediaUsername", mappingpediaUsername)
       .routeParam("mappingDirectory", mappingDirectory)
