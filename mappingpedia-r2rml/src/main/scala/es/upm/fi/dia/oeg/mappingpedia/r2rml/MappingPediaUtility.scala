@@ -54,8 +54,9 @@ object MappingPediaUtility {
     val model = this.readModelFromFile(filePath);
     val triples = this.toTriples(model);
 
-    val prop = Application.prop;
-    val virtuosoGraph = this.getVirtuosoGraph(prop.virtuosoJDBC, prop.virtuosoUser, prop.virtuosoPwd, graphURI);
+    //val prop = Application.prop;
+    val virtuosoGraph = this.getVirtuosoGraph(MappingPediaProperties.virtuosoJDBC, MappingPediaProperties.virtuosoUser
+      , MappingPediaProperties.virtuosoPwd, graphURI);
 
     this.store(triples, virtuosoGraph);
   }
