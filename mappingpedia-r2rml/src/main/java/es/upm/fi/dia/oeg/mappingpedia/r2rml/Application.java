@@ -29,7 +29,7 @@ public class Application {
 		//Application.prop = new MappingPediaProperties();
 		InputStream is = null;
 		String virtuosoJDBC=null, virtuosoUser=null, virtuosoPwd=null, graphName=null, clearGraph=null;
-		String githubUser=null, githubAccessToken=null, githubRepo=null, githubRepoContents=null
+		String githubUser=null, githubAccessToken=null, githubRepo=null, githubRepoContents=null;
 		String manifestFilePath=null, mappingFilePath=null, manifestText=null, mappingText=null;
 		String replaceMappingBaseURI=null;
 
@@ -65,10 +65,16 @@ public class Application {
 			MappingPediaProperties.githubAccessToken_$eq(githubAccessToken);
 
 			githubRepo = MappingPediaProperties.getProperty("github.mappingpedia.repository");
+			if(githubRepo == null) {
+				githubRepo = MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY();
+			}
 			logger.info("github.mappingpedia.repository = " + githubRepo);
 			MappingPediaProperties.githubRepo_$eq(githubRepo);
 
 			githubRepoContents = MappingPediaProperties.getProperty("github.mappingpedia.repository.contents");
+			if(githubRepoContents == null) {
+				githubRepoContents = MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY_CONTENTS();
+			}
 			logger.info("github.mappingpedia.repository.contents = " + githubRepoContents);
 			MappingPediaProperties.githubRepoContents_$eq(githubRepoContents);
 

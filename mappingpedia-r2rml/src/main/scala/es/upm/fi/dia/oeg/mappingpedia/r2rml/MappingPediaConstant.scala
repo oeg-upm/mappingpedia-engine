@@ -34,5 +34,10 @@ object MappingPediaConstant {
 	
 	val MANIFEST_FILE_LANGUAGE = "TURTLE";
 	val R2RML_FILE_LANGUAGE = "TURTLE";
+	val DEFAULT_OUTPUT_FILENAME = "output.nt";
+
+	val DEFAULT_GITHUB_REPOSITORY="https://github.com/oeg-upm/mappingpedia-contents";
+	val DEFAULT_GITHUB_REPOSITORY_CONTENTS="https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents";
+
 
 }
