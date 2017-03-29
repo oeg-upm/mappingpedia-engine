@@ -2,13 +2,13 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
 import java.io.File
 import java.net.HttpURLConnection
-import com.mashape.unirest.http.{JsonNode, HttpResponse}
+
+import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVRunnerFactory, MorphCSVProperties}
+import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
 import org.apache.commons.lang.text.StrSubstitutor
 
 import scala.collection.mutable.ListBuffer
-
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.util.FileManager
 import org.apache.jena.vocabulary.RDF
@@ -27,9 +27,12 @@ import org.apache.jena.graph.NodeFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.MessageDigest
+
 import org.apache.jena.util.ResourceUtils
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.impl.StatementImpl
+import org.springframework.web.multipart.MultipartFile
+
 import scala.collection.JavaConversions._
 
 
@@ -230,11 +233,96 @@ object MappingPediaR2RML {
 
   }
 
+
+	def addDatasetFile(datasetFileRef: MultipartFile, mappingpediaUsername:String, datasetID:String) : MappingPediaExecutionResult = {
+		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+		logger.debug("datasetID = " + datasetID)
+
+		try {
+			val datasetFile:File = MappingPediaUtility.multipartFileToFile(datasetFileRef, datasetID)
+
+			logger.info("storing a new dataset file in github ...")
+			val commitMessage = "Add a new dataset file by mappingpedia-engine"
+			val response = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser
+				, MappingPediaProperties.githubAccessToken, mappingpediaUsername
+				, datasetID, datasetFile.getName, commitMessage, datasetFile)
+			logger.debug("response.getHeaders = " + response.getHeaders)
+			logger.debug("response.getBody = " + response.getBody)
+			val responseStatus = response.getStatus
+			logger.debug("responseStatus = " + responseStatus)
+			val responseStatusText = response.getStatusText
+			logger.debug("responseStatusText = " + responseStatusText)
+			if (HttpURLConnection.HTTP_CREATED == responseStatus) {
+				val datasetURL = response.getBody.getObject.getJSONObject("content").getString("url")
+				logger.debug("datasetURL = " + datasetURL)
+				logger.info("dataset stored.")
+				val executionResult = new MappingPediaExecutionResult(null, datasetURL, null
+					, null, null, responseStatusText, responseStatus)
+				return executionResult
+			}
+			else {
+				val executionResult = new MappingPediaExecutionResult(null, null, null
+					, null , null, responseStatusText, responseStatus)
+				return executionResult
+			}
+		} catch {
+			case e: Exception =>
+				val errorMessage = e.getMessage
+				logger.error("error uploading a new file: " + errorMessage)
+				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
+				val executionResult = new MappingPediaExecutionResult(null, null, null
+					, null, null, errorMessage, errorCode)
+				return executionResult
+		}
+	}
+
+	def addQueryFile(queryFileRef: MultipartFile, mappingpediaUsername:String, datasetID:String) : MappingPediaExecutionResult = {
+		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+		logger.debug("datasetID = " + datasetID)
+
+		try {
+			val queryFile:File = MappingPediaUtility.multipartFileToFile(queryFileRef, datasetID)
+
+			logger.info("storing a new query file in github ...")
+			val commitMessage = "Add a new query file by mappingpedia-engine"
+			val response = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser
+				, MappingPediaProperties.githubAccessToken, mappingpediaUsername
+				, datasetID, queryFile.getName, commitMessage, queryFile)
+			logger.debug("response.getHeaders = " + response.getHeaders)
+			logger.debug("response.getBody = " + response.getBody)
+			val responseStatus = response.getStatus
+			logger.debug("responseStatus = " + responseStatus)
+			val responseStatusText = response.getStatusText
+			logger.debug("responseStatusText = " + responseStatusText)
+			if (HttpURLConnection.HTTP_CREATED == responseStatus) {
+				val queryURL = response.getBody.getObject.getJSONObject("content").getString("url")
+				logger.debug("queryURL = " + queryURL)
+				logger.info("dataset stored.")
+				val executionResult = new MappingPediaExecutionResult(null, null, null
+					, queryURL, null, responseStatusText, responseStatus)
+				return executionResult
+			}
+			else {
+				val executionResult = new MappingPediaExecutionResult(null, null, null
+					, null , null, responseStatusText, responseStatus)
+				return executionResult
+			}
+		} catch {
+			case e: Exception =>
+				val errorMessage = e.getMessage
+				logger.error("error uploading a new query file: " + errorMessage)
+				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
+				val executionResult = new MappingPediaExecutionResult(null, null, null
+					, null, null, errorMessage, errorCode)
+				return executionResult
+		}
+	}
+
 	def executeMapping(mappingpediaUsername:String, mappingDirectory: String, mappingFilename: String
-		, datasetFile: String, pOutputFilename: String) : MappingPediaExecutionResult = {
-		logger.info("mappingpediaUsername = " + mappingpediaUsername)
-		logger.info("mappingDirectory = " + mappingDirectory)
-		logger.info("mappingFilename = " + mappingFilename)
+		, datasetFile: String, queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
+		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+		logger.debug("mappingDirectory = " + mappingDirectory)
+		logger.debug("mappingFilename = " + mappingFilename)
 		val properties: MorphCSVProperties = new MorphCSVProperties
 		properties.setDatabaseName(mappingpediaUsername + "/" + mappingDirectory)
 		val templateString: String = "${mappingpediaUsername}/${mappingDirectory}/${mappingFilename}"
@@ -247,17 +335,19 @@ object MappingPediaR2RML {
 		val githubRepo = MappingPediaProperties.githubRepo
 		val mappingBlobURL: String = githubRepo + "/blob/master/" + templateResultString
 		//val mappingBlobURL: String = "https://github.com/oeg-upm/mappingpedia-contents/blob/master/" + templateResultString
-		logger.info("mappingBlobURL = " + mappingBlobURL)
+		logger.debug("mappingBlobURL = " + mappingBlobURL)
 		properties.setMappingDocumentFilePath(mappingBlobURL)
 		val outputFileName = if (pOutputFilename == null) {
-			"output.nt";
+			//"output.nt";
+			MappingPediaConstant.DEFAULT_OUTPUT_FILENAME;
 		} else {
 			pOutputFilename;
 		}
 		val outputFilepath = "executions/" + templateResultString + "/" + outputFileName
 
 		properties.setOutputFilePath(outputFilepath);
-		properties.setCSVFile(datasetFile)
+		properties.setCSVFile(datasetFile);
+		properties.setQueryFilePath(queryFile);
 		try {
 			val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
 			val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
@@ -272,13 +362,15 @@ object MappingPediaR2RML {
 			logger.info("responseStatus = " + responseStatus)
 			val responseStatusText: String = response.getStatusText
 			logger.info("responseStatusText = " + responseStatusText)
-			if (HttpURLConnection.HTTP_OK == responseStatus) {
+			if (HttpURLConnection.HTTP_CREATED== responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
 				val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
-				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null, outputGitHubURL, responseStatus)
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+					,null , outputGitHubURL, responseStatusText, responseStatus)
 				return executionResult
 			}
 			else {
-				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null, responseStatusText, responseStatus)
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+					, null, null, responseStatusText, responseStatus)
 				return executionResult
 			}
 		}
@@ -287,7 +379,8 @@ object MappingPediaR2RML {
 				e.printStackTrace
 				val errorMessage: String = "Error occured: " + e.getMessage
 				logger.error("mapping execution failed: " + errorMessage)
-				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR)
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+					, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR)
 				return executionResult
 			}
 		}
