@@ -24,6 +24,11 @@ import org.eclipse.egit.github.core.service.{ContentsService, RepositoryService}
 import scala.collection.JavaConversions._
 import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID
+import virtuoso.jena.driver.VirtModel
+import org.apache.jena.vocabulary.DC
+import org.apache.jena.query.Query
+import org.apache.jena.query.QueryFactory
+import virtuoso.jena.driver.VirtuosoQueryExecutionFactory
 
 
 object MappingPediaUtility {
@@ -77,7 +82,7 @@ object MappingPediaUtility {
 			virtuosoGraph.add(triple);
 		}
 
-		val finalGraphSize = virtuosoGraph.getCount();
+    val finalGraphSize = virtuosoGraph.getCount();
 		logger.debug("finalGraphSize = " + finalGraphSize);
 
 		val addedTriplesSize = finalGraphSize - initialGraphSize; 
@@ -287,5 +292,6 @@ object MappingPediaUtility {
       false
     }
   }
-  
+
+
 }

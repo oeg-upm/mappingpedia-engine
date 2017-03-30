@@ -1,55 +1,21 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.jena.graph.Triple;
-import virtuoso.jena.driver.VirtGraph;
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
+import org.apache.jena.graph.Triple
+import virtuoso.jena.driver.VirtGraph
 import java.io.File
 import java.io.BufferedWriter
 import java.io.FileWriter
+
+import es.upm.fi.dia.oeg.mappingpedia.r2rml
+
 import scala.io.Source._
 
 object MappingPediaRunner {
   val logger : Logger = LogManager.getLogger("MappingPediaRunner");
 
-  def getManifestContent(manifestFilePath:String, manifestText:String):String = {
-    logger.info("reading manifest  ...");
-    val manifestContent:String = if(manifestText == null) {
-      if(manifestFilePath == null) {
-        val errorMessage = "no manifest is provided";
-        logger.error(errorMessage);
-        throw new Exception(errorMessage);
-      } else {
-        val manifestFileContent = fromFile(manifestFilePath).getLines.mkString("\n");
-        //logger.info("manifestFileContent = \n" + manifestFileContent);
-        manifestFileContent;
-      }
-    } else {
-      manifestText;
-    }
-    manifestContent;
-  }
-
-  def getMappingContent(manifestFilePath:String, manifestText:String, pMappingFilePath:String, pMappingText:String):String = {
-    logger.info("reading r2rml file ...");
-    val mappingContent:String = if(pMappingText == null) {
-      val mappingFilePath = if(pMappingFilePath == null) {
-        val mappingFilePathFromManifest = MappingPediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
-        mappingFilePathFromManifest;
-      }  else {
-        pMappingFilePath;
-      }
-
-      val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
-      //logger.info("mappingFileContent = \n" + mappingFileContent);
-      mappingFileContent;
-    } else {
-      pMappingText;
-    }
-    mappingContent;
-  }
-
-  def run(manifestFilePath:String, pManifestText:String, pMappingFilePath:String, pMappingText:String, clearGraphString:String
+  def run(manifestFilePath:String, pMappingFilePath:String, clearGraphString:String
       , mappingpediaR2RML:MappingPediaR2RML, pReplaceMappingBaseURI:String, newMappingBaseURI:String
       ): Unit = {
     
@@ -58,8 +24,8 @@ object MappingPediaRunner {
 
     val replaceMappingBaseURI = MappingPediaUtility.stringToBoolean(pReplaceMappingBaseURI);
 
-    val manifestText = if(manifestFilePath != null || pManifestText != null) {
-      this.getManifestContent(manifestFilePath, pManifestText);
+    val manifestText = if(manifestFilePath != null ) {
+      MappingPediaR2RML.getManifestContent(manifestFilePath);
     } else {
       null;
     }
@@ -72,24 +38,7 @@ object MappingPediaRunner {
     
     mappingpediaR2RML.manifestModel = manifestModel;
 
-
-    /*
-    logger.info("reading r2rml file ...");
-    val oldMappingText:String = if(pMappingText == null) {
-      val mappingFilePath = if(pMappingFilePath == null) {
-        MappingPediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
-      }  else {
-        pMappingFilePath;
-      }
-      
-      val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
-      //logger.info("mappingFileContent = \n" + mappingFileContent);
-      mappingFileContent;
-    } else {
-      pMappingText;
-    }
-    */
-    val oldMappingText:String = this.getMappingContent(manifestFilePath, manifestText, pMappingFilePath, pMappingText);
+    val oldMappingText:String = MappingPediaR2RML.getMappingContent(manifestFilePath, pMappingFilePath);
 
 
     val mappingText = if(replaceMappingBaseURI) {
@@ -102,7 +51,9 @@ object MappingPediaRunner {
       , MappingPediaConstant.R2RML_FILE_LANGUAGE);
     mappingpediaR2RML.mappingDocumentModel = mappingDocumentModel;
     
-    val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
+    //val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
+    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(MappingPediaProperties.virtuosoJDBC
+      , MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd, MappingPediaProperties.graphName);
     if(clearGraphBoolean) {
       try {
         virtuosoGraph.clear();  
@@ -130,59 +81,6 @@ object MappingPediaRunner {
     logger.info("Bye!");
     
   }
-  
-//  def run(args: Array[String]): Unit = {
-//    
-//
-//        
-//    var manifestFilePath:String = null;
-//    var mappingFilePath:String = null;
-//    var virtuosoJDBC:String = null;
-//    var virtuosoUser:String = null;
-//    var virtuosoPwd:String = null;
-//    var graphName:String = null;
-//    var clearGraphString:String = null;
-//    var manifestText:String = null;
-//    var mappingText:String = null;
-//    
-//    for(i <- 0 to args.length - 1 ) {
-//      if(args(i).equals("-manifestFilePath")) {
-//        manifestFilePath = args(i+1);
-//        logger.info("manifestFilePath = " + manifestFilePath);
-//      } else if(args(i).equals("-mappingFilePath")) {
-//        mappingFilePath = args(i+1);
-//        logger.info("mappingFilePath = " + mappingFilePath);
-//      } else if(args(i).equals("-vjdbc")) {
-//        virtuosoJDBC = args(i+1);
-//        logger.info("virtuosoJDBC = " + virtuosoJDBC);
-//      } else if(args(i).equals("-usr")) {
-//        virtuosoUser = args(i+1);
-//      } else if(args(i).equals("-pwd")) {
-//  		  virtuosoPwd = args(i+1);
-//      } else if(args(i).equals("-graphname")) {
-//        graphName = args(i+1);
-//      } else if(args(i).equals("-cleargraph")) {
-//        clearGraphString = args(i+1);
-//        logger.info("clearGraphString = " + clearGraphString);
-//      } else if(args(i).equals("-manifestText")) {
-//        manifestText = args(i+1);
-//      } else if(args(i).equals("-mappingText")) {
-//        mappingText = args(i+1);
-//      } 
-//    }
-//
-//
-//        
-//    if(graphName == null) {
-//      graphName = MappingPediaConstant.DEFAULT_MAPPINGPEDIA_GRAPH;
-//    }
-//    logger.info("graphName = " + graphName);
-//
-//
-//    this.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName, clearGraphString
-//        , manifestText, mappingText)
-//  }
-
 
 
 

@@ -30,7 +30,7 @@ public class Application {
 		InputStream is = null;
 		String virtuosoJDBC=null, virtuosoUser=null, virtuosoPwd=null, graphName=null, clearGraph=null;
 		String githubUser=null, githubAccessToken=null, githubRepo=null, githubRepoContents=null;
-		String manifestFilePath=null, mappingFilePath=null, manifestText=null, mappingText=null;
+		String manifestFilePath=null, mappingFilePath=null;
 		String replaceMappingBaseURI=null;
 
 		try {
@@ -108,9 +108,10 @@ public class Application {
 			}
 		}
 		
-		VirtGraph mappingpediaGraph = MappingPediaUtility.getVirtuosoGraph(
-				    virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
-		Application.mappingpediaR2RML = new MappingPediaR2RML(mappingpediaGraph);
+		//VirtGraph mappingpediaGraph = MappingPediaUtility.getVirtuosoGraph(
+		//		    virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
+		//Application.mappingpediaR2RML = new MappingPediaR2RML(mappingpediaGraph);
+		Application.mappingpediaR2RML = new MappingPediaR2RML();
 		
 		//Application.mappingpediaR2RML.clearGraph_$eq(false);
 
@@ -126,10 +127,6 @@ public class Application {
 				} else if(args[i].equals("-mappingFilePath")) {
 					mappingFilePath = args[i+1];
 					logger.info("mappingFilePath = " + mappingFilePath);
-				} else if(args[i].equals("-manifestText")) {
-					manifestText = args[i+1];
-				} else if(args[i].equals("-mappingText")) {
-					mappingText = args[i+1];
 				} else if(args[i].equals("-replaceMappingBaseURI")) {
 					replaceMappingBaseURI = args[i+1];
 				}
@@ -144,7 +141,7 @@ public class Application {
 			//				      , graphName, clearGraph, manifestText, mappingText);
 			String uuid = UUID.randomUUID().toString();
 			String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
-			MappingPediaRunner.run(manifestFilePath, manifestText, mappingFilePath, mappingText, clearGraph
+			MappingPediaRunner.run(manifestFilePath, mappingFilePath, clearGraph
 					, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
 			logger.info("Storing R2RML triples in GitHub.");
 
@@ -153,7 +150,7 @@ public class Application {
 				filename = uuid + ".ttl";
 			}
 			String commitMessage = "Commit From mappingpedia-engine.Application";
-			String mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, manifestText, mappingFilePath, mappingText);
+			String mappingContent = MappingPediaR2RML.getMappingContent(manifestFilePath, mappingFilePath);
 			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
 			String mappingpediaUserName = "mappingpedia-testuser";
 			HttpResponse<JsonNode> response = GitHubUtility.putEncodedContent(

@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -10,6 +11,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.annotation.MultipartConfig;
 
 import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,8 @@ import com.mashape.unirest.http.JsonNode;
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner;
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphCSVProperties;
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphCSVRunnerFactory;
+import scala.collection.JavaConverters.*;
+import scala.collection.JavaConversions.*;
 
 @RestController
 //@RequestMapping(value = "/mappingpedia")
@@ -49,6 +54,28 @@ public class MappingPediaController {
 	public String getGitHubRepoURL() {
 		logger.info("/githubRepo(GET) ...");
 		return MappingPediaProperties.githubRepo();
+	}
+
+	@RequestMapping(value="/mappingpediaGraph", method= RequestMethod.GET)
+	public String getMappingPediaGraph() {
+		logger.info("/getMappingPediaGraph(GET) ...");
+		return MappingPediaProperties.graphName();
+	}
+
+	@RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
+	public String[] getAnnotations() {
+		logger.info("/ogd/annotations(GET) ...");
+		List<RDFNode> list = MappingPediaR2RML.getAllTriplesMapsAsJava();
+		logger.info("list = " + list);
+
+
+		String[] array = new String[list.size()];
+		for(int i=0; i<list.size(); i++) {
+			array[i] = list.get(i).toString();
+		}
+		logger.info("array = " + array);
+
+		return array;
 	}
 
 	@RequestMapping(value="/githubRepoContentsURL", method= RequestMethod.GET)

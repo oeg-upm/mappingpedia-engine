@@ -3,62 +3,30 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml
 import java.io.File
 import java.net.HttpURLConnection
 
-import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
 import org.apache.commons.lang.text.StrSubstitutor
-
-import scala.collection.mutable.ListBuffer
-import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.util.FileManager
 import org.apache.jena.vocabulary.RDF
-import org.apache.jena.vocabulary.DC_11
-import org.apache.jena.rdf.model.Statement
 import org.apache.jena.graph.Triple
-import org.apache.jena.rdf.model.RDFList
-import org.apache.jena.rdf.model.Resource
-import org.apache.jena.rdf.model.Property
-import org.apache.jena.rdf.model.RDFNode
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.LogManager
-import virtuoso.jena.driver.VirtGraph
-import org.apache.jena.graph.Node
-import org.apache.jena.graph.NodeFactory
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.security.MessageDigest
+import virtuoso.jena.driver.{VirtGraph, VirtModel, VirtuosoQueryExecutionFactory}
 import java.util.UUID
 
-import org.apache.jena.util.ResourceUtils
-import org.apache.jena.rdf.model.Model
+import org.apache.jena.rdf.model.{Model, RDFNode, Resource}
 import org.apache.jena.rdf.model.impl.StatementImpl
-import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.multipart.MultipartFile
 
-import scala.collection.JavaConversions._
+import scala.io.Source.fromFile
+import scala.collection.JavaConverters._
 
-
-class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
-	val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
+//class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
+class MappingPediaR2RML() {
+	val logger : Logger = LogManager.getLogger(this.getClass);
 	var manifestModel:Model = null;
 	var mappingDocumentModel:Model = null;
-	
-//	private var r2rmlTriples : List[Triple] = Nil;
-//	private var manifestTriples : List[Triple] = Nil;
 	var clearGraph:Boolean = false;
-	
 
-		
-//  def insertMappingInString(manifestText:String, mappingText:String) = {
-//    logger.info("reading manifest file ...");
-//    val manifestModel = MappingPediaUtility.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
-//    
-//    logger.info("reading r2rml file ...");
-//    val r2rmlDocumentModel = MappingPediaUtility.readModelFromString(mappingText, MappingPediaConstant.R2RML_FILE_LANGUAGE);
-//    
-//    this.insertTriplesMapsIntoManifest(manifestModel, r2rmlDocumentModel);
-//  }
-  
   def generateAdditionalTriples() : List[Triple] = {
     var newTriples:List[Triple] = List.empty;
     
@@ -74,13 +42,13 @@ class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
   			if(triplesMapResources != null) {
   			  while(triplesMapResources.hasNext()) {
   			    val triplesMapResource = triplesMapResources.nextResource();
-  			    val newStatement = new StatementImpl(r2rmlMappingDocumentResource, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
+  			    val newStatement = new StatementImpl(r2rmlMappingDocumentResource
+							, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
   			    logger.info("adding new hasTriplesMap statement: " + newStatement);
   			    val newTriple = newStatement.asTriple();
   			    newTriples = newTriples ::: List(newTriple);
   			  }
-  			  
-  			}		    
+  			}
 		  }
 		}
 
@@ -88,111 +56,8 @@ class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
   }
   
   
-//  def insertMappingFromManifestFile(manifestFile:File) = {
-//    
-//  }
-  
-//	def insertMappingFromManifestFilePath(manifestFilePath : String) = {
-//		logger.info("Reading manifest file : " + manifestFilePath);
-//		
-//		val manifestModel = MappingPediaUtility.readModelFromFile(manifestFilePath, null, MANIFEST_FILE_LANGUAGE);
-//		
-//		var r2rmlDocumentModel:Model = null;
-//		val r2rmlResources = manifestModel.listResourcesWithProperty(
-//				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
-//		
-//		if(r2rmlResources != null) {
-//			val r2rmlResource = r2rmlResources.nextResource();
-//
-//			val mappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-//					r2rmlResource, MappingPediaConstant.DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY).toString();
-//      logger.info("mappingDocumentFilePath = " + mappingDocumentFilePath);
-//
-//			var mappingDocumentFile = new File(mappingDocumentFilePath.toString());
-//			val isMappingDocumentFilePathAbsolute = mappingDocumentFile.isAbsolute();
-//			var r2rmlMappingDocumentPath : String = null; 
-//			if(isMappingDocumentFilePathAbsolute) {
-//				r2rmlMappingDocumentPath = mappingDocumentFilePath
-//			} else {
-//			  val manifestFile = new File(manifestFilePath);
-//			  if(manifestFile.isAbsolute()) {
-//				r2rmlMappingDocumentPath = manifestFile.getParentFile().toString() + File.separator + mappingDocumentFile; 
-//			  } else {
-//			    r2rmlMappingDocumentPath = mappingDocumentFilePath
-//			  }
-//			}
-//			
-//			logger.info("Reading R2RML Mapping document : " + r2rmlMappingDocumentPath);
-//			r2rmlDocumentModel = ModelFactory.createDefaultModel();
-//			val inR2rmlDocumentModel = FileManager.get().open( r2rmlMappingDocumentPath );
-//			r2rmlDocumentModel.read(inR2rmlDocumentModel, null, R2RML_FILE_LANGUAGE);
-//		}
-//		
-//		this.insertTriplesMapsIntoManifest(manifestModel, r2rmlDocumentModel);
-//	}
+  //def getMappingpediaGraph() = this.mappingpediaGraph;
 
-	
-//	def getGraphName : String = {
-//		return graphName;
-//	}
-	
-  
-//def storeRDFFile(turtleFilePath:String, rdfSyntax:Option[String]) = {
-//
-//    val model = ModelFactory.createDefaultModel() ;
-//    if(rdfSyntax == null || rdfSyntax.isEmpty) {
-//      model.read(new File(turtleFilePath).toURL().toString());
-//    } else {
-//      model.read(new File(turtleFilePath).toURL().toString(), "TURTLE");  
-//    }
-//    
-//    logger.info("RDF file read.");
-//    
-//    val triplesMapResourcesList = model.listResourcesWithProperty(
-//      RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
-//    if(triplesMapResourcesList != null) {
-//      if(triplesMapResourcesList.hasNext()) {
-//        val triplesMapResource = triplesMapResourcesList.nextResource();
-//        logger.info("triplesMapResource = " + triplesMapResource);
-//        
-//        val freshBlankNode = NodeFactory.createBlankNode();
-//        logger.info("freshBlankNode = " + freshBlankNode);
-//        
-//        val newResource = 
-//          ResourceUtils.renameResource(triplesMapResource, freshBlankNode.getBlankNodeLabel);
-//        logger.info("newResource = " + newResource);
-//      }
-//    }
-//	 		
-//		val initialGraphSize = mappingpediaGraph.getCount();
-//		logger.debug("initialGraphSize = " + initialGraphSize);
-//
-//		val stmtIterator = model.listStatements();
-//    while(stmtIterator.hasNext()) {
-//      val stmt = stmtIterator.nextStatement();
-//      logger.info("stmt = " + stmt);
-//      
-//      val triple = stmt.asTriple();
-//      logger.info("triple = " + triple);
-//      
-//      mappingpediaGraph.add(triple);
-//    }
-//    
-//    val finalGraphSize = mappingpediaGraph.getCount();
-//		logger.debug("finalGraphSize = " + finalGraphSize);
-//		val addedTriplesSize = finalGraphSize - initialGraphSize; 
-//		logger.info("No of added triples = " + addedTriplesSize);
-//    
-//  }
-
-//  def getVirtuosoGraph() : VirtGraph = {
-//    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(this.virtuosoJDBC, this.virtuosoUser, this.virtuosoPwd
-//    		, this.graphName);
-//    virtuosoGraph;
-//  }
-	
-  def getMappingpediaGraph() = this.mappingpediaGraph;
-  
 }
 
 object MappingPediaR2RML {
@@ -415,11 +280,11 @@ object MappingPediaR2RML {
 
 			val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, datasetID)
 			val mappingFilePath = mappingFile.getPath
-			MappingPediaRunner.run(manifestFilePath, null, mappingFilePath, null, "false", Application.mappingpediaR2RML
+			MappingPediaRunner.run(manifestFilePath,mappingFilePath, "false", Application.mappingpediaR2RML
 				, replaceMappingBaseURI, newMappingBaseURI)
 
 			val commitMessage = "add new mapping by mappingpedia-engine"
-			val mappingContent = MappingPediaRunner.getMappingContent(manifestFilePath, null, mappingFilePath, null)
+			val mappingContent = MappingPediaR2RML.getMappingContent(manifestFilePath, null, mappingFilePath, null)
 			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
 			logger.info("storing mapping file in github ...")
 			val response = GitHubUtility.putEncodedContent(MappingPediaProperties.githubUser
@@ -481,7 +346,7 @@ object MappingPediaR2RML {
 			val mappingFilePath = mappingFile.getPath
 			logger.debug("mapping file path = " + mappingFilePath)
 			val commitMessage = "Mapping modification by mappingpedia-engine.Application"
-			val mappingContent = MappingPediaRunner.getMappingContent(null, null, mappingFilePath, null)
+			val mappingContent = MappingPediaR2RML.getMappingContent(null, null, mappingFilePath, null)
 			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
 			val response = GitHubUtility.putEncodedContent(MappingPediaProperties.githubUser, MappingPediaProperties.githubAccessToken, mappingpediaUsername, mappingDirectory, mappingFilename, commitMessage, base64EncodedContent)
 			val responseStatus = response.getStatus
@@ -528,5 +393,78 @@ object MappingPediaR2RML {
 				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, status, errorCode)
 				executionResult
 		}
+	}
+
+	def getManifestContent(manifestFilePath:String, manifestText:String):String = {
+		logger.info("reading manifest  ...");
+		val manifestContent:String = if(manifestText == null) {
+			if(manifestFilePath == null) {
+				val errorMessage = "no manifest is provided";
+				logger.error(errorMessage);
+				throw new Exception(errorMessage);
+			} else {
+				val manifestFileContent = fromFile(manifestFilePath).getLines.mkString("\n");
+				//logger.info("manifestFileContent = \n" + manifestFileContent);
+				manifestFileContent;
+			}
+		} else {
+			manifestText;
+		}
+		manifestContent;
+	}
+
+	def getManifestContent(manifestFilePath:String):String = {
+		this.getManifestContent(manifestFilePath, null);
+	}
+
+	def getMappingContent(manifestFilePath:String, pMappingFilePath:String):String = {
+		this.getMappingContent(manifestFilePath, null, pMappingFilePath:String, null)
+	}
+
+	def getMappingContent(manifestFilePath:String, manifestText:String, pMappingFilePath:String, pMappingText:String):String = {
+		logger.info("reading r2rml file ...");
+		val mappingContent:String = if(pMappingText == null) {
+			val mappingFilePath = if(pMappingFilePath == null) {
+				val mappingFilePathFromManifest = MappingPediaR2RML.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
+				mappingFilePathFromManifest;
+			}  else {
+				pMappingFilePath;
+			}
+
+			val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
+			//logger.info("mappingFileContent = \n" + mappingFileContent);
+			mappingFileContent;
+		} else {
+			pMappingText;
+		}
+		mappingContent;
+	}
+
+	def getAllTriplesMapsAsJava() : java.util.List[RDFNode] = {
+		logger.debug("Returning Triples Maps");
+		this.getAllTriplesMaps().asJava
+	}
+
+	def getAllTriplesMaps() : List[RDFNode] = {
+		val prolog = "PREFIX rr: <http://www.w3.org/ns/r2rml#> \n"
+		val queryString: String = prolog + "SELECT ?tm FROM <http://mappingpedia.linkeddata.es/graph/develop> WHERE {?tm rr:logicalTable ?lt}";
+
+		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
+			, MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
+
+		//logger.debug("Executing query=\n" + queryString)
+
+		val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+		var results:List[RDFNode] = List.empty;
+		try {
+			val rs = qexec.execSelect
+			while (rs.hasNext) {
+				val rb = rs.nextSolution
+				val rdfNode = rb.get("tm");
+				results = rdfNode :: results;
+			}
+		} finally qexec.close
+
+		results
 	}
 }
