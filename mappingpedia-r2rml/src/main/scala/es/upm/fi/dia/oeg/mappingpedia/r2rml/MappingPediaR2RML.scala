@@ -11,7 +11,7 @@ import org.apache.jena.graph.Triple
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.LogManager
 import virtuoso.jena.driver.{VirtGraph, VirtModel, VirtuosoQueryExecutionFactory}
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import org.apache.jena.rdf.model.{Model, RDFNode, Resource}
 import org.apache.jena.rdf.model.impl.StatementImpl
@@ -21,6 +21,7 @@ import scala.io.Source.fromFile
 import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 import scala.io.Source
+import java.text.SimpleDateFormat
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 class MappingPediaR2RML() {
@@ -28,6 +29,7 @@ class MappingPediaR2RML() {
 	var manifestModel:Model = null;
 	var mappingDocumentModel:Model = null;
 	var clearGraph:Boolean = false;
+
 
   def generateAdditionalTriples() : List[Triple] = {
     var newTriples:List[Triple] = List.empty;
@@ -64,7 +66,8 @@ class MappingPediaR2RML() {
 
 object MappingPediaR2RML {
   val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
-  
+	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+
   def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 
@@ -261,17 +264,21 @@ object MappingPediaR2RML {
 	}
 
 	def uploadNewMapping(mappingpediaUsername: String, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile
-											 , replaceMappingBaseURI: String, generateManifestFile:String): MappingPediaExecutionResult = {
+											 , replaceMappingBaseURI: String, generateManifestFile:String
+											 , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
+											): MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		// Path where the uploaded files will be stored.
 		val uuid = UUID.randomUUID.toString
 		logger.debug("uuid = " + uuid)
-		this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI, generateManifestFile);
+		this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI
+			, generateManifestFile, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects);
 	}
 
-	def uploadNewMapping(mappingpediaUsername: String, datasetID: String
-	, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile , replaceMappingBaseURI: String
-											 , generateManifestFile:String
+	def uploadNewMapping(mappingpediaUsername: String, datasetID: String, manifestFileRef: MultipartFile
+											 , mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
+		, mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
+
 	) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
@@ -288,19 +295,13 @@ object MappingPediaR2RML {
 			logger.debug("manifestFilePath = " + manifestFilePath)
 			logger.debug("generateManifestFile = " + generateManifestFile)
 
-			if(manifestFilePath == null) {
-				if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
-					val mapValues:Map[String,String] = Map.empty;
-					MappingPediaR2RML.generateManifestFile(mapValues);
-				}
 
-			}
+			//STORE MAPPING FILE ON GITHUB
 			val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, datasetID)
 			val mappingFilePath = mappingFile.getPath
 			MappingPediaRunner.run(manifestFilePath,mappingFilePath, "false", Application.mappingpediaR2RML
 				, replaceMappingBaseURI, newMappingBaseURI)
-
-			val commitMessage = "add new mapping by mappingpedia-engine"
+			val commitMessage = "add a new mapping file by mappingpedia-engine"
 			val mappingContent = MappingPediaR2RML.getMappingContent(manifestFilePath, null, mappingFilePath, null)
 			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
 			logger.info("storing mapping file in github ...")
@@ -313,16 +314,38 @@ object MappingPediaR2RML {
 			logger.debug("responseStatus = " + responseStatus)
 			val responseStatusText = response.getStatusText
 			logger.debug("responseStatusText = " + responseStatusText)
-			val executionResult = if (HttpURLConnection.HTTP_CREATED == responseStatus) {
-				val githubMappingURL = response.getBody.getObject.getJSONObject("content").getString("url")
-				logger.debug("githubMappingURL = " + githubMappingURL)
+			var mappingDocumentFilePath = "";
+
+			val uploadMappingToGitHubExecutionResult = if (HttpURLConnection.HTTP_CREATED == responseStatus) {
+				mappingDocumentFilePath = response.getBody.getObject.getJSONObject("content").getString("url")
+				logger.debug("githubMappingURL = " + mappingDocumentFilePath)
 				logger.info("mapping inserted.")
-				new MappingPediaExecutionResult(manifestFilePath, null, githubMappingURL, null, null, responseStatusText, responseStatus)
+				new MappingPediaExecutionResult(manifestFilePath, null, mappingDocumentFilePath, null, null, responseStatusText, responseStatus)
 			}
 			else {
 				new MappingPediaExecutionResult(manifestFilePath, null, null, null, null, responseStatusText, responseStatus)
 			}
-			executionResult;
+
+			//GENERATE MANIFEST FILE IF NOT PROVIDED
+			if(manifestFilePath == null) {
+				if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+
+					val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
+
+					val mapValues:Map[String,String] = Map("$mappingDocumentTitle" -> mappingDocumentTitle
+						, "$mappingDocumentDateTimeSubmitted" -> mappingDocumentDateTimeSubmitted
+						, "$mappingDocumentCreator" -> mappingDocumentCreator
+						, "$mappingDocumentSubjects" -> mappingDocumentSubjects
+						, "$mappingDocumentFilePath" -> mappingDocumentFilePath
+					);
+
+					MappingPediaR2RML.generateManifestFile(mapValues);
+				}
+
+			}
+
+			uploadMappingToGitHubExecutionResult;
+
 		} catch {
 			case e: Exception =>
 				val errorMessage = e.getMessage
@@ -331,6 +354,8 @@ object MappingPediaR2RML {
 				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode)
 				executionResult
 		}
+
+
 	}
 
 	def getMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String):MappingPediaExecutionResult = {
@@ -491,14 +516,27 @@ object MappingPediaR2RML {
 
       //var lines: String = Source.fromResource("mapping-metadata-template.ttl").getLines.mkString("\n");
       val stream : InputStream = getClass.getResourceAsStream("/mapping-metadata-template.ttl")
-      var lines = scala.io.Source.fromInputStream( stream ).getLines.mkString("\n");
+      val lines = scala.io.Source.fromInputStream( stream ).getLines.mkString("\n");
 
-      logger.info("lines = " + lines)
+      //logger.info("lines = " + lines)
 
-      map.keys.foreach(key => {
-        lines = lines.replaceAllLiterally(key, map(key));
+			val lines2 = map.foldLeft(lines)( (acc, kv) => {
+				val mapValue:String = map.get(kv._1).getOrElse("");
+
+				logger.debug("replacing " + kv._1 + " with " + mapValue);
+				acc.replaceAllLiterally(kv._1, mapValue)
+			});
+			logger.info("lines2 = " + lines2)
+
+			/*
+			var lines3 = lines;
+			map.keys.foreach(key => {
+				lines3 = lines3.replaceAllLiterally(key, map(key));
       })
-      println(lines)
+			logger.info("lines3 = " + lines3)
+			*/
+
+
 		} catch {
 			case e:Exception => {
 				logger.error("error generating manifest file: " + e.getMessage);
