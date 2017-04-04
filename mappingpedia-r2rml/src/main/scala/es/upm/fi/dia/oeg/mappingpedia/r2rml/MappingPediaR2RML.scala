@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.net.HttpURLConnection
 
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
@@ -19,6 +19,8 @@ import org.springframework.web.multipart.MultipartFile
 
 import scala.io.Source.fromFile
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
+import scala.io.Source
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 class MappingPediaR2RML() {
@@ -213,7 +215,12 @@ object MappingPediaR2RML {
 		val outputFilepath = "executions/" + templateResultString + "/" + outputFileName
 
 		properties.setOutputFilePath(outputFilepath);
+
+
+
 		properties.setCSVFile(datasetFile);
+		logger.debug("datasetFile = " + datasetFile)
+
 		properties.setQueryFilePath(queryFile);
 		try {
 			val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
@@ -254,16 +261,17 @@ object MappingPediaR2RML {
 	}
 
 	def uploadNewMapping(mappingpediaUsername: String, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile
-											 , replaceMappingBaseURI: String): MappingPediaExecutionResult = {
+											 , replaceMappingBaseURI: String, generateManifestFile:String): MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		// Path where the uploaded files will be stored.
 		val uuid = UUID.randomUUID.toString
 		logger.debug("uuid = " + uuid)
-		this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI);
+		this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI, generateManifestFile);
 	}
 
 	def uploadNewMapping(mappingpediaUsername: String, datasetID: String
 	, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile , replaceMappingBaseURI: String
+											 , generateManifestFile:String
 	) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
@@ -277,7 +285,16 @@ object MappingPediaR2RML {
 			} else {
 				null;
 			}
+			logger.debug("manifestFilePath = " + manifestFilePath)
+			logger.debug("generateManifestFile = " + generateManifestFile)
 
+			if(manifestFilePath == null) {
+				if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+					val mapValues:Map[String,String] = Map.empty;
+					MappingPediaR2RML.generateManifestFile(mapValues);
+				}
+
+			}
 			val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, datasetID)
 			val mappingFilePath = mappingFile.getPath
 			MappingPediaRunner.run(manifestFilePath,mappingFilePath, "false", Application.mappingpediaR2RML
@@ -440,31 +457,55 @@ object MappingPediaR2RML {
 		mappingContent;
 	}
 
-	def getAllTriplesMapsAsJava() : java.util.List[RDFNode] = {
-		logger.debug("Returning Triples Maps");
-		this.getAllTriplesMaps().asJava
-	}
-
-	def getAllTriplesMaps() : List[RDFNode] = {
+	def getAllTriplesMaps() : ListResult = {
 		val prolog = "PREFIX rr: <http://www.w3.org/ns/r2rml#> \n"
-		val queryString: String = prolog + "SELECT ?tm FROM <http://mappingpedia.linkeddata.es/graph/develop> WHERE {?tm rr:logicalTable ?lt}";
+		var queryString: String = prolog + "SELECT ?tm \n";
+		queryString = queryString + " FROM <" + MappingPediaProperties.graphName + ">\n";
+		queryString = queryString + " WHERE {?tm rr:logicalTable ?lt} \n";
 
 		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
 			, MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
 
-		//logger.debug("Executing query=\n" + queryString)
+		logger.debug("Executing query=\n" + queryString)
 
 		val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
-		var results:List[RDFNode] = List.empty;
+		var results:List[String] = List.empty;
 		try {
 			val rs = qexec.execSelect
 			while (rs.hasNext) {
 				val rb = rs.nextSolution
 				val rdfNode = rb.get("tm");
-				results = rdfNode :: results;
+				val rdfNodeInString = rb.get("tm").toString;
+				results = rdfNodeInString :: results;
 			}
 		} finally qexec.close
 
-		results
+		val listResult = new ListResult(results.length, results);
+		listResult
+	}
+
+	def generateManifestFile(pMap: Map[String, String]) = {
+		try {
+      val mappingDocumentID = UUID.randomUUID().toString;
+      val map = pMap + ("$mappingDocumentID" -> mappingDocumentID);
+
+      //var lines: String = Source.fromResource("mapping-metadata-template.ttl").getLines.mkString("\n");
+      val stream : InputStream = getClass.getResourceAsStream("/mapping-metadata-template.ttl")
+      var lines = scala.io.Source.fromInputStream( stream ).getLines.mkString("\n");
+
+      logger.info("lines = " + lines)
+
+      map.keys.foreach(key => {
+        lines = lines.replaceAllLiterally(key, map(key));
+      })
+      println(lines)
+		} catch {
+			case e:Exception => {
+				logger.error("error generating manifest file: " + e.getMessage);
+				e.printStackTrace();
+
+			}
+		}
+
 	}
 }

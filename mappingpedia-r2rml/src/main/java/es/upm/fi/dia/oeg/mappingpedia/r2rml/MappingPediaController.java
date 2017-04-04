@@ -63,19 +63,12 @@ public class MappingPediaController {
 	}
 
 	@RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-	public String[] getAnnotations() {
+	public ListResult getAnnotations() {
 		logger.info("/ogd/annotations(GET) ...");
-		List<RDFNode> list = MappingPediaR2RML.getAllTriplesMapsAsJava();
-		logger.info("list = " + list);
+		ListResult listResult = MappingPediaR2RML.getAllTriplesMaps();
+		logger.info("listResult = " + listResult);
 
-
-		String[] array = new String[list.size()];
-		for(int i=0; i<list.size(); i++) {
-			array[i] = list.get(i).toString();
-		}
-		logger.info("array = " + array);
-
-		return array;
+		return listResult;
 	}
 
 	@RequestMapping(value="/githubRepoContentsURL", method= RequestMethod.GET)
@@ -104,11 +97,12 @@ public class MappingPediaController {
 			, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
 			, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
 			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
+			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
 	)
 	{
 		logger.info("[POST] /mappings/{mappingpediaUsername}");
 		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, manifestFileRef, mappingFileRef
-				, replaceMappingBaseURI);
+				, replaceMappingBaseURI, generateManifestFile);
 	}
 
 	@RequestMapping(value = "/mappings/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -118,12 +112,12 @@ public class MappingPediaController {
 			, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
 			, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
 			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
-
+			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
 	)
 	{
-		logger.info("/mappings/{mappingpediaUsername}/{datasetID}");
+		logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
 		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
-				, replaceMappingBaseURI);
+				, replaceMappingBaseURI, generateManifestFile);
 	}
 
 	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.GET)
