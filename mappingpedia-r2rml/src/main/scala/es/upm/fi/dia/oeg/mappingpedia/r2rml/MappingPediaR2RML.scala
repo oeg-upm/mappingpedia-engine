@@ -261,17 +261,21 @@ object MappingPediaR2RML {
 	}
 
 	def uploadNewMapping(mappingpediaUsername: String, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile
-											 , replaceMappingBaseURI: String, generateManifestFile:String): MappingPediaExecutionResult = {
+											 , replaceMappingBaseURI: String, generateManifestFile:String
+											 , mappingDocumentTitle: String
+											): MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		// Path where the uploaded files will be stored.
 		val uuid = UUID.randomUUID.toString
 		logger.debug("uuid = " + uuid)
-		this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI, generateManifestFile);
+		this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI
+			, generateManifestFile, mappingDocumentTitle);
 	}
 
-	def uploadNewMapping(mappingpediaUsername: String, datasetID: String
-	, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile , replaceMappingBaseURI: String
-											 , generateManifestFile:String
+	def uploadNewMapping(mappingpediaUsername: String, datasetID: String, manifestFileRef: MultipartFile
+											 , mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
+		, mappingDocumentTitle: String
+
 	) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
@@ -290,7 +294,8 @@ object MappingPediaR2RML {
 
 			if(manifestFilePath == null) {
 				if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
-					val mapValues:Map[String,String] = Map.empty;
+					var mapValues:Map[String,String] = Map("$mappingDocumentTitle" -> mappingDocumentTitle);
+
 					MappingPediaR2RML.generateManifestFile(mapValues);
 				}
 
@@ -491,14 +496,27 @@ object MappingPediaR2RML {
 
       //var lines: String = Source.fromResource("mapping-metadata-template.ttl").getLines.mkString("\n");
       val stream : InputStream = getClass.getResourceAsStream("/mapping-metadata-template.ttl")
-      var lines = scala.io.Source.fromInputStream( stream ).getLines.mkString("\n");
+      val lines = scala.io.Source.fromInputStream( stream ).getLines.mkString("\n");
 
-      logger.info("lines = " + lines)
+      //logger.info("lines = " + lines)
 
-      map.keys.foreach(key => {
-        lines = lines.replaceAllLiterally(key, map(key));
+			val lines2 = map.foldLeft(lines)( (acc, kv) => {
+				val mapValue:String = map.get(kv._1).getOrElse("");
+
+				logger.debug("replacing " + kv._1 + " with " + mapValue);
+				acc.replaceAllLiterally(kv._1, mapValue)
+			});
+			logger.info("lines2 = " + lines2)
+
+			/*
+			var lines3 = lines;
+			map.keys.foreach(key => {
+				lines3 = lines3.replaceAllLiterally(key, map(key));
       })
-      println(lines)
+			logger.info("lines3 = " + lines3)
+			*/
+
+
 		} catch {
 			case e:Exception => {
 				logger.error("error generating manifest file: " + e.getMessage);

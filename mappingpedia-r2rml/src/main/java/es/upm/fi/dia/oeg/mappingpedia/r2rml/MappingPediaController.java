@@ -98,11 +98,12 @@ public class MappingPediaController {
 			, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
 			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
 			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
+			, @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
 	)
 	{
 		logger.info("[POST] /mappings/{mappingpediaUsername}");
 		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, manifestFileRef, mappingFileRef
-				, replaceMappingBaseURI, generateManifestFile);
+				, replaceMappingBaseURI, generateManifestFile, mappingDocumentTitle);
 	}
 
 	@RequestMapping(value = "/mappings/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -113,11 +114,12 @@ public class MappingPediaController {
 			, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
 			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
 			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
+			, @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
 	)
 	{
 		logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
 		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
-				, replaceMappingBaseURI, generateManifestFile);
+				, replaceMappingBaseURI, generateManifestFile, mappingDocumentTitle);
 	}
 
 	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.GET)
