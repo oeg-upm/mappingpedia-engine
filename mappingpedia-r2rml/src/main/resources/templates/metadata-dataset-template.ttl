@@ -1,0 +1,6 @@
+mpv:Dataset rdfs:subClassOf dcat:Dataset .
+mpi:dataset-$mappingDocumentID a mpv:Dataset ;
+    mpv:datasetIdentifier "dataset-$mappingDocumentID" ;
+    dcterms:title "$datasetTitle" ;
+    dcat:keyword "$datasetKeywords" ;
+.
