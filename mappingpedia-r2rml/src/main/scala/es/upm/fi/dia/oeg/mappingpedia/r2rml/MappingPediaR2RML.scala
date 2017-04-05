@@ -263,10 +263,61 @@ object MappingPediaR2RML {
 		}
 	}
 
+	def generateManifestLines(map: Map[String, String], templateFilePath:String) : String = {
+		try {
+
+			//var lines: String = Source.fromResource(templateFilePath).getLines.mkString("\n");
+			val templateStream: InputStream = getClass.getResourceAsStream("/" + templateFilePath)
+			val templateLines = scala.io.Source.fromInputStream(templateStream).getLines.mkString("\n");
+
+			val mappingDocumentLines = map.foldLeft(templateLines)( (acc, kv) => {
+				val mapValue:String = map.get(kv._1).getOrElse("");
+
+				logger.debug("replacing " + kv._1 + " with " + mapValue);
+				acc.replaceAllLiterally(kv._1, mapValue)
+			});
+
+
+			/*
+			var lines3 = lines;
+			map.keys.foreach(key => {
+				lines3 = lines3.replaceAllLiterally(key, map(key));
+      })
+			logger.info("lines3 = " + lines3)
+			*/
+
+			mappingDocumentLines;
+		} catch {
+			case e:Exception => {
+				logger.error("error generating manifest lines: " + e.getMessage);
+				e.printStackTrace();
+				val templateLines="";
+				templateLines;
+			}
+		}
+	}
+
+	def generateManifestFile(map: Map[String, String]) = {
+		try {
+			def mappingDocumentLines = this.generateManifestLines(map, "templates/metadata-mappingdocument-template.ttl");
+			logger.debug("mappingDocumentLines = " + mappingDocumentLines)
+
+			def datasetLines = this.generateManifestLines(map, "templates/metadata-dataset-template.ttl");
+			logger.debug("datasetLines = " + datasetLines)
+
+		} catch {
+			case e:Exception => {
+				logger.error("error generating manifest file: " + e.getMessage);
+				e.printStackTrace();
+
+			}
+		}
+	}
+
 	def uploadNewMapping(mappingpediaUsername: String, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile
 		, replaceMappingBaseURI: String, generateManifestFile:String
 		, mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
-		, datasetTitle:String, datasetKeywords:String
+		, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
 	): MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		// Path where the uploaded files will be stored.
@@ -274,7 +325,7 @@ object MappingPediaR2RML {
 		logger.debug("uuid = " + uuid)
 		this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI
 			, generateManifestFile, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
-			, datasetTitle, datasetKeywords
+			, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
 		);
 	}
 
@@ -282,7 +333,7 @@ object MappingPediaR2RML {
 		, mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
 		, mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
 		, datasetTitle:String, datasetKeywords:String
-
+		, datasetPublisher:String, datasetLanguage:String
 
 	) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
@@ -349,6 +400,8 @@ object MappingPediaR2RML {
 						, "$mappingDocumentFilePath" -> mappingDocumentFilePath
 						, "$datasetTitle" -> datasetTitle
 						, "$datasetKeywords" -> datasetKeywords
+						, "$datasetPublisher" -> datasetPublisher
+						, "$datasetLanguage" -> datasetLanguage
 					);
 
 					MappingPediaR2RML.generateManifestFile(mapValues);
@@ -521,55 +574,5 @@ object MappingPediaR2RML {
 		listResult
 	}
 
-	def generateManifestLines(map: Map[String, String], templateFilePath:String) : String = {
-		try {
 
-			//var lines: String = Source.fromResource(templateFilePath).getLines.mkString("\n");
-			val templateStream: InputStream = getClass.getResourceAsStream("/" + templateFilePath)
-			val templateLines = scala.io.Source.fromInputStream(templateStream).getLines.mkString("\n");
-
-			val mappingDocumentLines = map.foldLeft(templateLines)( (acc, kv) => {
-				val mapValue:String = map.get(kv._1).getOrElse("");
-
-				logger.debug("replacing " + kv._1 + " with " + mapValue);
-				acc.replaceAllLiterally(kv._1, mapValue)
-			});
-
-
-			/*
-			var lines3 = lines;
-			map.keys.foreach(key => {
-				lines3 = lines3.replaceAllLiterally(key, map(key));
-      })
-			logger.info("lines3 = " + lines3)
-			*/
-
-			mappingDocumentLines;
-		} catch {
-			case e:Exception => {
-				logger.error("error generating manifest lines: " + e.getMessage);
-				e.printStackTrace();
-				val templateLines="";
-				templateLines;
-			}
-		}
-	}
-
-	def generateManifestFile(map: Map[String, String]) = {
-		try {
-			def mappingDocumentLines = this.generateManifestLines(map, "templates/metadata-mappingdocument-template.ttl");
-			logger.debug("mappingDocumentLines = " + mappingDocumentLines)
-
-			def datasetLines = this.generateManifestLines(map, "templates/metadata-dataset-template.ttl");
-			logger.debug("datasetLines = " + datasetLines)
-
-		} catch {
-			case e:Exception => {
-				logger.error("error generating manifest file: " + e.getMessage);
-				e.printStackTrace();
-
-			}
-		}
-
-	}
 }

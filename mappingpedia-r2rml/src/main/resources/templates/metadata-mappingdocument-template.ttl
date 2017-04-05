@@ -4,6 +4,7 @@
 @prefix mpi: <http://mappingpedia.linkeddata.es/instance/> .
 @prefix mpimd: <http://mappingpedia.linkeddata.es/instance/mappingdocument/> .
 @prefix mpids: <http://mappingpedia.linkeddata.es/instance/dataset/> .
+@prefix mpidss: <http://mappingpedia.linkeddata.es/instance/dataset/distribution/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .

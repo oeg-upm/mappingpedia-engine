@@ -103,14 +103,15 @@ public class MappingPediaController {
 		, @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
 		, @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
 		, @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
-
+		, @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
+		, @RequestParam(value="datasetLanguage", defaultValue="Dataset Language") String datasetLanguage
 	)
 	{
 		logger.info("[POST] /mappings/{mappingpediaUsername}");
 		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, manifestFileRef, mappingFileRef
 			, replaceMappingBaseURI, generateManifestFile
 			, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
-			, datasetTitle, datasetKeywords);
+			, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage);
 	}
 
 	@RequestMapping(value = "/mappings/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -126,13 +127,15 @@ public class MappingPediaController {
 		, @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
 		, @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
 		, @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
+		, @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
+		, @RequestParam(value="datasetLanguage", defaultValue="Dataset Language") String datasetLanguage
 	)
 	{
 		logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
 		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
 			, replaceMappingBaseURI, generateManifestFile
 			, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
-			, datasetTitle, datasetKeywords);
+			, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage);
 	}
 
 	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.GET)
