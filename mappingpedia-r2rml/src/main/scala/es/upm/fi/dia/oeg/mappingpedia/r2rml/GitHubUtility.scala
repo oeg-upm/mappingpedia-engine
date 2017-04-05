@@ -56,12 +56,12 @@ object GitHubUtility {
   }
 
   def putEncodedFile(githubUsername:String, githubAccessToken:String
-                        , mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
+                        , mappingpediaUsername:String, directory:String, filename:String
                         , message:String, file:File
                        ) = {
     val base64EncodedContent = this.encodeToBase64(file);
     this.putEncodedContent(githubUsername, githubAccessToken
-      , mappingpediaUsername, mappingDirectory, mappingFilename
+      , mappingpediaUsername, directory, filename
       , message, base64EncodedContent)
   }
 

@@ -55,6 +55,11 @@ object MappingPediaUtility {
 				return virtGraph;
   }
 
+  def store(file:File, graphURI:String) : Unit = {
+    val filePath = file.getPath;
+    this.store(filePath, graphURI)
+  }
+
   def store(filePath:String, graphURI:String) : Unit = {
     val model = this.readModelFromFile(filePath);
     val triples = this.toTriples(model);
@@ -226,7 +231,7 @@ object MappingPediaUtility {
 
   @throws(classOf[IOException])
   def materializeFileInputStream(source: FileInputStream, uuidDirectoryName: String, fileName: String): File = {
-    val uploadDirectoryPath: String = "upload-dir"
+    val uploadDirectoryPath: String = MappingPediaConstant.DEFAULT_UPLOAD_DIRECTORY;
     val outputDirectory: File = new File(uploadDirectoryPath)
     if (!outputDirectory.exists) {
       outputDirectory.mkdirs
@@ -237,6 +242,7 @@ object MappingPediaUtility {
     if (!uuidDirectory.exists) {
       uuidDirectory.mkdirs
     }
+
     val uploadedFilePath: String = uuidDirectory + "/" + fileName
     val dest: File = new File(uploadedFilePath)
     dest.createNewFile
