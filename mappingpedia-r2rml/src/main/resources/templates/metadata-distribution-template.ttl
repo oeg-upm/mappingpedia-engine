@@ -1,3 +1,0 @@
-mpidss:distribution-$distributionID a dcat:Distribution;
-    dcat:mediaType $mediaType ;
-.

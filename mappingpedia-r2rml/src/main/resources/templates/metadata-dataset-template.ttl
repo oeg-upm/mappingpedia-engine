@@ -1,9 +1,9 @@
 mpv:Dataset rdfs:subClassOf dcat:Dataset .
-mpids:dataset-$mappingDocumentID a mpv:Dataset ;
-    mpv:datasetIdentifier "dataset-$mappingDocumentID" ;
+mpids:dataset-$datasetID a mpv:Dataset ;
+    mpv:datasetIdentifier "dataset-$datasetID" ;
     dcterms:title "$datasetTitle" ;
     dcat:keyword "$datasetKeywords" ;
-    mpv:datasetPublisher $datasetPublisher ;
-    mpv:datasetLanguage $datasetLanguage ;
-    #dcat:distribution mpi:ds-1-csv ;
+    #mpv:datasetPublisher mpi:user-1 ;
+    #mpv:datasetLanguage <http://id.loc.gov/vocabulary/iso639-1/en> ;
+    #dcat:distribution mpidd:ds-1-csv ;
 .
