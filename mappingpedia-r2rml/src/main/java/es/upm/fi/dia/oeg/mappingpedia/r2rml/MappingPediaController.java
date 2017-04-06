@@ -159,21 +159,26 @@ public class MappingPediaController {
 
 	@RequestMapping(value = "/datasets/{mappingpediaUsername}", method= RequestMethod.POST)
 	public MappingPediaExecutionResult uploadNewDataset(
-		@PathVariable("mappingpediaUsername") String mappingpediaUsername
-		, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-		, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-		, @RequestParam("datasetFile") MultipartFile datasetFileRef
-		, @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
-		, @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
-		, @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
-		, @RequestParam(value="datasetLanguage", defaultValue="Dataset Language") String datasetLanguage
+			@PathVariable("mappingpediaUsername") String mappingpediaUsername
+			, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
+			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
+			, @RequestParam("datasetFile") MultipartFile datasetFileRef
+			, @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
+			, @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
+			, @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
+			, @RequestParam(value="datasetLanguage", defaultValue="Dataset Language") String datasetLanguage
+			, @RequestParam(value="distributionAccessURL") String distributionAccessURL
+			, @RequestParam(value="distributionDownloadURL") String distributionDownloadURL
+			, @RequestParam(value="distributionMediaType") String distributionMediaType
 	)
 	{
 		logger.info("[POST] /datasets/{mappingpediaUsername}");
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername);
 
 		return MappingPediaR2RML.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
-			, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage);
+				, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+				, distributionAccessURL, distributionDownloadURL, distributionMediaType
+		);
 	}
 
 	@RequestMapping(value = "/datasets/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -186,12 +191,17 @@ public class MappingPediaController {
 			, @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
 			, @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
 			, @RequestParam(value="datasetLanguage", defaultValue="Dataset Language") String datasetLanguage
+			, @RequestParam(value="distributionAccessURL") String distributionAccessURL
+			, @RequestParam(value="distributionDownloadURL") String distributionDownloadURL
+			, @RequestParam(value="distributionMediaType") String distributionMediaType
 			, @PathVariable("datasetID") String datasetID
 	)
 	{
 		logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
 		return MappingPediaR2RML.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
-			, datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage);
+			, datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+				, distributionAccessURL, distributionDownloadURL
+		);
 	}
 
 	@RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)

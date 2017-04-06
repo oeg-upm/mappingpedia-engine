@@ -106,15 +106,19 @@ object MappingPediaR2RML {
   }
 
 	def addDatasetFile(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String, mappingpediaUsername:String
-										 , datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
-										) : MappingPediaExecutionResult = {
+		, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
+		, distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String
+	) : MappingPediaExecutionResult = {
 		val datasetID = UUID.randomUUID.toString;
 		this.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
-			, datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage);
+			, datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+			, distributionAccessURL, distributionDownloadURL, distributionMediaType
+		);
 	}
 
 	def addDatasetFile(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String, mappingpediaUsername:String
 		, datasetID:String, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
+		, distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String
 	) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
@@ -129,7 +133,9 @@ object MappingPediaR2RML {
 					try {
 						val templateFiles = List(
 							"templates/metadata-namespaces-template.ttl"
-							, "templates/metadata-dataset-template.ttl");
+							, "templates/metadata-dataset-template.ttl"
+							, "templates/metadata-distributions-template.ttl"
+						);
 
 						val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
 
@@ -139,6 +145,10 @@ object MappingPediaR2RML {
 							, "$datasetKeywords" -> datasetKeywords
 							, "$datasetPublisher" -> datasetPublisher
 							, "$datasetLanguage" -> datasetLanguage
+							, "$distributionID" -> datasetID
+							, "$distributionAccessURL" -> distributionAccessURL
+							, "$distributionDownloadURL" -> distributionDownloadURL
+							, "$distributionMediaType" -> distributionMediaType
 						);
 
 						val filename = "metadata-dataset.ttl";
@@ -189,11 +199,11 @@ object MappingPediaR2RML {
 			if(HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
 				&& HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus) {
 				val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
-					, null, null, HttpURLConnection.HTTP_OK.toString, HttpURLConnection.HTTP_OK)
+					, null, null, "OK", HttpURLConnection.HTTP_OK)
 				return executionResult;
 			} else {
 				val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
-					, null, null, HttpURLConnection.HTTP_INTERNAL_ERROR.toString, HttpURLConnection.HTTP_INTERNAL_ERROR)
+					, null, null, "Internal Error", HttpURLConnection.HTTP_INTERNAL_ERROR)
 				return executionResult;
 			}
 		} catch {
