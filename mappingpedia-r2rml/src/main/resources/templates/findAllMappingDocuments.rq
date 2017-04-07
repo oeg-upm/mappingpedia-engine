@@ -1,0 +1,10 @@
+prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#> 
+
+SELECT *
+FROM <http://mappingpedia.linkeddata.es/graph/develop>
+WHERE {
+   ?md a <http://mappingpedia.linkeddata.es/vocabulary#R2RMLMappingDocument> .
+   OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
+   OPTIONAL { ?md mpv:hasDataset ?dataset . }
+   OPTIONAL { ?md mpv:hasMappingDocumentFile ?filePath . }
+}

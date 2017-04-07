@@ -62,10 +62,19 @@ public class MappingPediaController {
 		return MappingPediaProperties.graphName();
 	}
 
-	@RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-	public ListResult getAnnotations() {
-		logger.info("/ogd/annotations(GET) ...");
+	@RequestMapping(value="/triplesMaps", method= RequestMethod.GET)
+	public ListResult getTriplesMaps() {
+		logger.info("/triplesMaps ...");
 		ListResult listResult = MappingPediaR2RML.getAllTriplesMaps();
+		logger.info("listResult = " + listResult);
+
+		return listResult;
+	}
+
+	@RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
+	public ListResult getMappingDocuments() {
+		logger.info("/ogd/annotations(GET) ...");
+		ListResult listResult = MappingPediaR2RML.findAllMappingDocuments();
 		logger.info("listResult = " + listResult);
 
 		return listResult;
