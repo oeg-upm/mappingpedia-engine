@@ -1,5 +1,5 @@
 mpidd:distribution-$distributionID a dcat:Distribution;
     dcat:mediaType "$distributionMediaType" ;
-    dcat:accessURL "$distributionAccessURL" ;
-    dcat:downloadURL "$distributionDownloadURL" ;
+    dcat:accessURL $distributionAccessURL ;
+    dcat:downloadURL $distributionDownloadURL ;
 .

@@ -178,12 +178,13 @@ object MappingPediaR2RML {
 						val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
 
 						val mapValues:Map[String,String] = Map(
-							"$mappingDocumentID" -> datasetID
+							"$mappingDocumentID" -> mappingDocumentID
 							, "$mappingDocumentTitle" -> mappingDocumentTitle
 							, "$mappingDocumentDateTimeSubmitted" -> mappingDocumentDateTimeSubmitted
 							, "$mappingDocumentCreator" -> mappingDocumentCreator
 							, "$mappingDocumentSubjects" -> mappingDocumentSubjects
 							, "$mappingDocumentFilePath" -> mappingDocumentGitHubURL
+							, "$datasetID" -> datasetID
 							//, "$datasetTitle" -> datasetTitle
 							//, "$datasetKeywords" -> datasetKeywords
 							//, "$datasetPublisher" -> datasetPublisher
@@ -735,7 +736,10 @@ object MappingPediaR2RML {
 				val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
 				val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
 				val filePath = MappingPediaUtility.getStringOrElse(qs, "filePath", null);
-				val md = new MappingDocument(id, title, dataset, filePath);
+				val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
+				val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
+				val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
+				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution, distributionAccessURL);
 				results = md :: results;
 			}
 		} finally qexec.close
@@ -769,7 +773,10 @@ object MappingPediaR2RML {
 				val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
 				val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
 				val filePath = MappingPediaUtility.getStringOrElse(qs, "filePath", null);
-				val md = new MappingDocument(id, title, dataset, filePath);
+				val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
+				val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
+				val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
+				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution, distributionAccessURL);
 				results = md :: results;
 			}
 		} finally qexec.close
