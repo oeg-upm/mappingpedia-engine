@@ -1,8 +1,9 @@
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
 prefix rr: <http://www.w3.org/ns/r2rml#>
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
 
-SELECT DISTINCT ?md ?title ?dataset
+SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?accessURL
 FROM <http://mappingpedia.linkeddata.es/graph/develop>
 WHERE {
    {
@@ -18,7 +19,11 @@ WHERE {
    ?md a <http://mappingpedia.linkeddata.es/vocabulary#R2RMLMappingDocument> .
    ?md mpv:hasTriplesMaps ?tm .
    OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
-   OPTIONAL { ?md mpv:hasDataset ?dataset . }
+   OPTIONAL {
+      ?md mpv:hasDataset ?dataset .
+      ?dataset dcat:distribution ?distribution .
+      ?distribution dcat:accessURL ?accessURL .
+   }
    OPTIONAL { ?md mpv:hasMappingDocumentFile ?filePath . }
-
+   OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
 }
