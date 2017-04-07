@@ -1,0 +1,24 @@
+prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
+prefix rr: <http://www.w3.org/ns/r2rml#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT DISTINCT ?md ?title ?dataset
+FROM <http://mappingpedia.linkeddata.es/graph/develop>
+WHERE {
+   {
+      ?tm rr:subjectMap ?sm .
+      ?sm rr:class $mappedClass .
+   }
+   UNION
+   {
+      ?tm rr:predicateObjectMap ?pom .
+      ?pom rr:predicateMap ?pm . ?pm rr:constant rdf:type .
+      ?pom rr:objectMap ?om . ?om rr:constant $mappedClass .
+   }
+   ?md a <http://mappingpedia.linkeddata.es/vocabulary#R2RMLMappingDocument> .
+   ?md mpv:hasTriplesMaps ?tm .
+   OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
+   OPTIONAL { ?md mpv:hasDataset ?dataset . }
+   OPTIONAL { ?md mpv:hasMappingDocumentFile ?filePath . }
+
+}

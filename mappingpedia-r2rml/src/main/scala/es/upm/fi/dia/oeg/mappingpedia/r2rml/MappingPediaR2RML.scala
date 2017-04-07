@@ -744,4 +744,37 @@ object MappingPediaR2RML {
 		listResult
 	}
 
+	def findMappingDocumentsByMappedClass(mappedClass:String) : ListResult = {
+
+		//val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
+		val mapValues:Map[String,String] = Map(
+			"$graphURL" -> MappingPediaProperties.graphName
+			, "$mappedClass" -> mappedClass
+		);
+
+		val queryString: String = MappingPediaR2RML.generateStringFromTemplateFile(mapValues, "templates/findTriplesMapsByMappedClass.rq")
+
+		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
+			, MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
+
+		logger.debug("Executing query=\n" + queryString)
+
+		val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+		var results:List[MappingDocument] = List.empty;
+		try {
+			val rs = qexec.execSelect
+			while (rs.hasNext) {
+				val qs = rs.nextSolution
+				val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
+				val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
+				val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
+				val filePath = MappingPediaUtility.getStringOrElse(qs, "filePath", null);
+				val md = new MappingDocument(id, title, dataset, filePath);
+				results = md :: results;
+			}
+		} finally qexec.close
+
+		val listResult = new ListResult(results.length, results);
+		listResult
+	}
 }
