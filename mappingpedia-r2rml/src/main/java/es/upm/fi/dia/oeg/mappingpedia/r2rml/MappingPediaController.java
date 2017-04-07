@@ -62,14 +62,30 @@ public class MappingPediaController {
 		return MappingPediaProperties.graphName();
 	}
 
-	@RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-	public ListResult getAnnotations() {
-		logger.info("/ogd/annotations(GET) ...");
+	@RequestMapping(value="/triplesMaps", method= RequestMethod.GET)
+	public ListResult getTriplesMaps() {
+		logger.info("/triplesMaps ...");
 		ListResult listResult = MappingPediaR2RML.getAllTriplesMaps();
 		logger.info("listResult = " + listResult);
 
 		return listResult;
 	}
+
+	@RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
+	public ListResult getMappingDocuments(@RequestParam(value="mappedClass", required = false) String mappedClass) {
+		logger.info("/ogd/annotations(GET) ...");
+		if(mappedClass == null) {
+			ListResult listResult = MappingPediaR2RML.findAllMappingDocuments();
+			logger.info("listResult = " + listResult);
+			return listResult;
+		} else {
+			ListResult listResult = MappingPediaR2RML.findMappingDocumentsByMappedClass(mappedClass);
+			logger.info("listResult = " + listResult);
+			return listResult;
+
+		}
+	}
+
 
 	@RequestMapping(value="/githubRepoContentsURL", method= RequestMethod.GET)
 	public String getGitHubRepoContentsURL() {

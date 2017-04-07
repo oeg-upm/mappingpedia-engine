@@ -2,7 +2,6 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml
 
 import java.nio.channels.FileChannel
 
-
 import org.eclipse.egit.github.core.RepositoryContents
 
 import scala.None
@@ -16,18 +15,21 @@ import org.apache.logging.log4j.LogManager
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import java.io._
+
 import org.apache.jena.util.FileManager
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
 import org.eclipse.egit.github.core.client.GitHubClient
 import org.eclipse.egit.github.core.service.{ContentsService, RepositoryService}
+
 import scala.collection.JavaConversions._
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
+
+import es.upm.fi.dia.oeg.mappingpedia.r2rml.MappingPediaR2RML.getClass
 import virtuoso.jena.driver.VirtModel
 import org.apache.jena.vocabulary.DC
-import org.apache.jena.query.Query
-import org.apache.jena.query.QueryFactory
+import org.apache.jena.query.{Query, QueryFactory, QuerySolution}
 import virtuoso.jena.driver.VirtuosoQueryExecutionFactory
 
 
@@ -297,6 +299,24 @@ object MappingPediaUtility {
     } else {
       false
     }
+  }
+
+  def readFromResourcesDirectory(filePath:String) : String = {
+    //var lines: String = Source.fromResource(templateFilePath).getLines.mkString("\n");
+    val is: InputStream = getClass.getResourceAsStream("/" + filePath)
+    val lines= scala.io.Source.fromInputStream(is).getLines.mkString("\n");
+    lines;
+
+  }
+
+  def getStringOrElse(qs:QuerySolution, varName:String, obj:Object) : String = {
+    val result = qs.get(varName);
+    if(result == null) {
+      null
+    } else {
+      result.toString;
+    }
+
   }
 
 

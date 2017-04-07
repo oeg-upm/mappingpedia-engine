@@ -67,15 +67,20 @@ object MappingPediaRunner {
     if(manifestModel != null) {
       logger.info("Storing manifest triples.");
       val manifestTriples = MappingPediaUtility.toTriples(manifestModel);
+      //logger.info("manifestTriples = " + manifestTriples.mkString("\n"));
       MappingPediaUtility.store(manifestTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
   
       logger.info("Storing generated triples.");
       val additionalTriples = mappingpediaR2RML.generateAdditionalTriples();
-      MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);      
+      //logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
+
+      MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
     }
     
     logger.info("Storing R2RML triples in Virtuoso.");
     val r2rmlTriples = MappingPediaUtility.toTriples(mappingDocumentModel);
+    //logger.info("r2rmlTriples = " + r2rmlTriples.mkString("\n"));
+
     MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
     logger.info("Bye!");
