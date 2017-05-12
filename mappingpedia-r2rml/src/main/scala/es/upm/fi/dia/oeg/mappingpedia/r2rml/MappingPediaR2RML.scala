@@ -160,7 +160,7 @@ object MappingPediaR2RML {
 				logger.info("Mapping stored on GitHub")
 				response.getBody.getObject.getJSONObject("content").getString("url")
 			} else {
-				logger.error("Error when storing mappign on GitHub: " + responseStatusText)
+				logger.error("Error when storing mapping on GitHub: " + responseStatusText)
 				null
 			}
 
@@ -254,14 +254,15 @@ object MappingPediaR2RML {
 		, distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String
 	) : MappingPediaExecutionResult = {
 		val datasetID = UUID.randomUUID.toString;
-		this.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
+		this.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
 			, datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
 			, distributionAccessURL, distributionDownloadURL, distributionMediaType
 		);
 	}
 
-	def addDatasetFile(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String, mappingpediaUsername:String
-		, datasetID:String, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
+	def addDatasetFileWithID(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String, mappingpediaUsername:String
+		, datasetID:String
+		, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
 		, distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String
 	) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
@@ -309,8 +310,12 @@ object MappingPediaR2RML {
 				}
 			}
 
-			logger.info("storing the manifest-dataset triples on virtuoso ...")
-			MappingPediaUtility.store(manifestFile, MappingPediaProperties.graphName)
+			if(manifestFile != null) {
+				logger.info("storing the manifest-dataset triples on virtuoso ...")
+				logger.debug("manifestFile = " + manifestFile);
+				MappingPediaUtility.store(manifestFile, MappingPediaProperties.graphName)
+
+			}
 
 
 
@@ -328,20 +333,25 @@ object MappingPediaR2RML {
 				datasetURL = addNewDatasetResponse.getBody.getObject.getJSONObject("content").getString("url")
 			}
 
-			logger.info("storing manifest-dataset file on github ...")
-			var manifestURL:String = null;
-			val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-			val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser
-				, MappingPediaProperties.githubAccessToken, mappingpediaUsername
-				, datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
-			val addNewManifestResponseStatus = addNewManifestResponse.getStatus
-
-			if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus) {
-				manifestURL = addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
+			val manifestURL:String = if(manifestFile == null) {
+				null
+			} else {
+				logger.info("storing manifest-dataset file on github ...")
+				val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+				val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser
+					, MappingPediaProperties.githubAccessToken, mappingpediaUsername
+					, datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+				val addNewManifestResponseStatus = addNewManifestResponse.getStatus
+				if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus) {
+					addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
+				} else {
+					null
+				}
 			}
 
-			if(HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
-				&& HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus) {
+
+
+			if(HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus) {
 				val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
 					, null, null, "OK", HttpURLConnection.HTTP_OK)
 				return executionResult;
