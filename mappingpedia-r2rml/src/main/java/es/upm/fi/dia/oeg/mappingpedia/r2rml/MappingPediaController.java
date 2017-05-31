@@ -98,7 +98,7 @@ public class MappingPediaController {
 			, @PathVariable("mappingDirectory") String mappingDirectory
 			, @PathVariable("mappingFilename") String mappingFilename
 			, @RequestParam(value="datasetFile") String datasetFile
-			, @RequestParam(value="queryFile") String queryFile
+			, @RequestParam(value="queryFile", required = false) String queryFile
 			, @RequestParam(value="outputFilename", required = false) String outputFilename
 	)
 	{
