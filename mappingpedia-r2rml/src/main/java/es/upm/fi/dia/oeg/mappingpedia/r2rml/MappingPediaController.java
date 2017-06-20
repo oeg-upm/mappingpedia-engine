@@ -72,17 +72,17 @@ public class MappingPediaController {
 	}
 
 	@RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-	public ListResult getMappingDocuments(@RequestParam(value="mappedClass", required = false) String mappedClass) {
+	public ListResult getMappingDocuments(@RequestParam(value="mappedClass", required = false) String mappedClass,
+										  @RequestParam(value="mappedProperty", required = false) String mappedProperty) {
 		logger.info("/ogd/annotations(GET) ...");
-		if(mappedClass == null) {
+		if(mappedClass == null && mappedProperty == null) {
 			ListResult listResult = MappingPediaR2RML.findAllMappingDocuments();
 			logger.info("listResult = " + listResult);
 			return listResult;
 		} else {
-			ListResult listResult = MappingPediaR2RML.findMappingDocumentsByMappedClass(mappedClass);
+			ListResult listResult = MappingPediaR2RML.findMappingDocumentsByMappedClass(mappedClass, mappedProperty);
 			logger.info("listResult = " + listResult);
 			return listResult;
-
 		}
 	}
 

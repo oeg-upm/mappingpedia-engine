@@ -758,15 +758,28 @@ object MappingPediaR2RML {
 		listResult
 	}
 
-	def findMappingDocumentsByMappedClass(mappedClass:String) : ListResult = {
+	def findMappingDocumentsByMappedClass(mappedClass:String, mappedProperty:String) : ListResult = {
+		val queryString = if(mappedClass != null && mappedProperty == null) {
+			val mapValues:Map[String,String] = Map(
+				"$graphURL" -> MappingPediaProperties.graphName
+				, "$mappedClass" -> mappedClass
+				//, "$mappedProperty" -> mappedProperty
+			);
 
-		//val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
-		val mapValues:Map[String,String] = Map(
-			"$graphURL" -> MappingPediaProperties.graphName
-			, "$mappedClass" -> mappedClass
-		);
+			MappingPediaR2RML.generateStringFromTemplateFile(mapValues, "templates/findTriplesMapsByMappedClass.rq")
+		} else if(mappedClass == null && mappedProperty != null) {
+			val mapValues:Map[String,String] = Map(
+				"$graphURL" -> MappingPediaProperties.graphName
+				//, "$mappedClass" -> mappedClass
+				, "$mappedProperty" -> mappedProperty
+			);
 
-		val queryString: String = MappingPediaR2RML.generateStringFromTemplateFile(mapValues, "templates/findTriplesMapsByMappedClass.rq")
+			MappingPediaR2RML.generateStringFromTemplateFile(mapValues, "templates/findTriplesMapsByMappedProperty.rq")
+		} else if(mappedClass != null && mappedProperty != null) {
+			//TODO Implement this
+		} else {
+			//TODO Implement this
+		}
 
 		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
 			, MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
