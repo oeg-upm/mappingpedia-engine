@@ -758,29 +758,51 @@ object MappingPediaR2RML {
 		listResult
 	}
 
-	def findMappingDocumentsByMappedClass(mappedClass:String, mappedProperty:String) : ListResult = {
-		val queryString = if(mappedClass != null && mappedProperty == null) {
-			val mapValues:Map[String,String] = Map(
-				"$graphURL" -> MappingPediaProperties.graphName
-				, "$mappedClass" -> mappedClass
-				//, "$mappedProperty" -> mappedProperty
-			);
+	def findMappingDocumentsByMappedClass(mappedClass:String) : ListResult = {
+		val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
 
-			MappingPediaR2RML.generateStringFromTemplateFile(mapValues, "templates/findTriplesMapsByMappedClass.rq")
-		} else if(mappedClass == null && mappedProperty != null) {
-			val mapValues:Map[String,String] = Map(
-				"$graphURL" -> MappingPediaProperties.graphName
-				//, "$mappedClass" -> mappedClass
-				, "$mappedProperty" -> mappedProperty
-			);
+		val mapValues:Map[String,String] = Map(
+			"$graphURL" -> MappingPediaProperties.graphName
+			, "$mappedClass" -> mappedClass
+			//, "$mappedProperty" -> mappedProperty
+		);
 
-			MappingPediaR2RML.generateStringFromTemplateFile(mapValues, "templates/findTriplesMapsByMappedProperty.rq")
-		} else if(mappedClass != null && mappedProperty != null) {
-			//TODO Implement this
+		val queryString:String =	MappingPediaR2RML.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+		this.findMappingDocuments(queryString);
+	}
+
+	def findMappingDocumentsByMappedProperty(mappedProperty:String) : ListResult = {
+		val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
+
+		val mapValues:Map[String,String] = Map(
+			"$graphURL" -> MappingPediaProperties.graphName
+		, "$mappedProperty" -> mappedProperty
+		);
+
+		val queryString:String =	MappingPediaR2RML.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+		this.findMappingDocuments(queryString);
+	}
+
+	def findMappingDocuments(searchType:String, searchTerm:String) : ListResult = {
+		val result:ListResult = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
+			logger.info("findMappingDocumentsByMappedClass:" + searchTerm)
+			val listResult = MappingPediaR2RML.findMappingDocumentsByMappedClass(searchTerm)
+			listResult
+		} else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_PROPERTY.equals(searchType) && searchTerm != null) {
+			logger.info("findMappingDocumentsByMappedProperty:" + searchTerm)
+			val listResult = MappingPediaR2RML.findMappingDocumentsByMappedProperty(searchTerm)
+			listResult
 		} else {
-			//TODO Implement this
+			logger.info("findAllMappingDocuments")
+			val listResult = MappingPediaR2RML.findAllMappingDocuments
+			listResult
 		}
+		logger.info("result = " + result)
 
+		result;
+	}
+
+	def findMappingDocuments(queryString:String) : ListResult = {
 		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
 			, MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
 
