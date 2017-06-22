@@ -6,16 +6,9 @@ prefix dcat: <http://www.w3.org/ns/dcat#>
 SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?accessURL
 FROM <$graphURL>
 WHERE {
-    ?tm rr:predicateObjectMap ?pom .
-    {
-        ?pom rr:predicate ?searchedProperty .
-        FILTER regex(str(?searchedProperty), "$mappedProperty", "i")
-    }
-    UNION
-    {
-        ?pom rr:predicateMap ?pm . ?pm rr:constant ?searchedProperty .
-        FILTER regex(str(?searchedProperty), "$mappedProperty", "i")
-    }
+    ?tm rr:logicalTable ?lt .
+    ?lt rr:tableName ?tableName .
+    FILTER regex(?tableName, "$mappedTable", "i")
     ?md a mpv:R2RMLMappingDocument .
     ?md mpv:hasTriplesMaps ?tm .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
