@@ -41,5 +41,9 @@ object MappingPediaConstant {
 	val DEFAULT_GITHUB_REPOSITORY="https://github.com/oeg-upm/mappingpedia-contents";
 	val DEFAULT_GITHUB_REPOSITORY_CONTENTS="https://api.github.com/repos/oeg-upm/mappingpedia-contents";
 
+	val SEARCH_MAPPINGDOCUMENT_BY_CLASS="1";
+	val SEARCH_MAPPINGDOCUMENT_BY_PROPERTY="2";
+	val SEARCH_MAPPINGDOCUMENT_BY_TABLE="4";
+	val SEARCH_MAPPINGDOCUMENT_BY_COLUMN="8";
 
 }

@@ -4,21 +4,21 @@ prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
 
 SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?accessURL
-FROM <http://mappingpedia.linkeddata.es/graph/develop>
+FROM <$graphURL>
 WHERE {
    {
       ?tm rr:subjectMap ?sm .
-      ?sm rr:class $searchClass .
-      FILTER regex(str(?searchClass), "$mappedClass", "i")
+      ?sm rr:class ?searchedClass .
+      FILTER regex(str(?searchedClass), "$mappedClass", "i")
    }
    UNION
    {
       ?tm rr:predicateObjectMap ?pom .
       ?pom rr:predicateMap ?pm . ?pm rr:constant rdf:type .
-      ?pom rr:objectMap ?om . ?om rr:constant $searchClass .
-      FILTER regex(str(?searchClass), "$mappedClass", "i")
+      ?pom rr:objectMap ?om . ?om rr:constant ?searchedClass .
+      FILTER regex(str(?searchedClass), "$mappedClass", "i")
    }
-   ?md a <http://mappingpedia.linkeddata.es/vocabulary#R2RMLMappingDocument> .
+   ?md a mpv:R2RMLMappingDocument .
    ?md mpv:hasTriplesMaps ?tm .
    OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
    OPTIONAL {
