@@ -783,6 +783,18 @@ object MappingPediaR2RML {
 		this.findMappingDocuments(queryString);
 	}
 
+	def findMappingDocumentsByMappedColumn(mappedColumn:String) : ListResult = {
+		val queryTemplateFile = "templates/findTriplesMapsByMappedColumn.rq";
+
+		val mapValues:Map[String,String] = Map(
+			"$graphURL" -> MappingPediaProperties.graphName
+			, "$mappedColumn" -> mappedColumn
+		);
+
+		val queryString:String =	MappingPediaR2RML.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+		this.findMappingDocuments(queryString);
+	}
+
 	def findMappingDocumentsByMappedTable(mappedTable:String) : ListResult = {
 		val queryTemplateFile = "templates/findTriplesMapsByMappedTable.rq";
 
@@ -807,6 +819,10 @@ object MappingPediaR2RML {
 		} else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_TABLE.equals(searchType) && searchTerm != null) {
 			logger.info("findMappingDocumentsByMappedTable:" + searchTerm)
 			val listResult = MappingPediaR2RML.findMappingDocumentsByMappedTable(searchTerm)
+			listResult
+		} else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_COLUMN.equals(searchType) && searchTerm != null) {
+			logger.info("findMappingDocumentsByMappedColumn:" + searchTerm)
+			val listResult = MappingPediaR2RML.findMappingDocumentsByMappedColumn(searchTerm)
 			listResult
 		} else {
 			logger.info("findAllMappingDocuments")
