@@ -865,7 +865,7 @@ object MappingPediaR2RML {
 		listResult
 	}
 
-	def getSchemaOrgSubclasses(aClass:String, outputType:String, inputType:String) : MapResult = {
+	def getSchemaOrgSubclasses(aClass:String, outputType:String, inputType:String) : ListResult = {
 		MappingPediaUtility.getSubclasses(aClass, this.schemaOrgModel, outputType, inputType);
 
 	}
