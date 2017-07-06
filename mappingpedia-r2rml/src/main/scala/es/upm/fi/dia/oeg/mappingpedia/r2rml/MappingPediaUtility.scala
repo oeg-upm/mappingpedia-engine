@@ -25,8 +25,8 @@ import org.eclipse.egit.github.core.service.{ContentsService, RepositoryService}
 import scala.collection.JavaConversions._
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
-
 import es.upm.fi.dia.oeg.mappingpedia.r2rml.MappingPediaR2RML.getClass
+import org.apache.jena.ontology.{OntClass, OntModel, OntModelSpec}
 import virtuoso.jena.driver.VirtModel
 import org.apache.jena.vocabulary.DC
 import org.apache.jena.query.{Query, QueryFactory, QuerySolution}
@@ -319,5 +319,29 @@ object MappingPediaUtility {
 
   }
 
+  def loadSchemaOrgOntology() : OntModel = {
+    val ontologyFileName = "tree.jsonld";
+    val ontologyFormat = "JSON-LD";
+    val ontModelSpec = OntModelSpec.RDFS_MEM_TRANS_INF;
 
+    val defaultModel = MappingPediaUtility.readModelFromFile(ontologyFileName, ontologyFormat);
+    val rdfsModel = ModelFactory.createOntologyModel(OntModelSpec.RDFS_MEM_TRANS_INF, defaultModel)
+    rdfsModel;
+  }
+
+  def getSubclasses(aClass:String, ontModel:OntModel) : ListResult = {
+    val resource = ontModel.getResource(aClass);
+    var result:List[String] = List(aClass);
+
+    val cls = resource.as(classOf[OntClass])
+    val subclasses = cls.listSubClasses(false);
+    while(subclasses.hasNext) {
+      val subclass = subclasses.next();
+      result = subclass.getURI :: result;
+    }
+
+    val listResult = new ListResult(result.size, result);
+    listResult;
+
+  }
 }

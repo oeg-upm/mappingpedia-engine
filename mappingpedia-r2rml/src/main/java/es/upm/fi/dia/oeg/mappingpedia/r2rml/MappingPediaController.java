@@ -239,4 +239,14 @@ public class MappingPediaController {
 		return MappingPediaR2RML.storeRDFFile(fileRef, graphURI);
 	}
 
+	@RequestMapping(value="/ogd/utility/subclasses", method= RequestMethod.GET)
+	public ListResult getSubclasses(@RequestParam(value="aClass") String aClass
+	) {
+		logger.info("GET /ogd/utility/subclasses...");
+		logger.info("aClass = " + aClass);
+		ListResult listResult = MappingPediaR2RML.getSchemaOrgSubclasses(aClass);
+		logger.info("listResult = " + listResult);
+		return listResult;
+	}
+
 }

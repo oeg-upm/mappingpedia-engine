@@ -24,6 +24,7 @@ import scala.io.Source
 import java.text.SimpleDateFormat
 
 import es.upm.fi.dia.oeg.mappingpedia.r2rml.model.MappingDocument
+import org.apache.jena.ontology.OntModel
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 class MappingPediaR2RML() {
@@ -31,7 +32,6 @@ class MappingPediaR2RML() {
 	var manifestModel:Model = null;
 	var mappingDocumentModel:Model = null;
 	var clearGraph:Boolean = false;
-
 
   def generateAdditionalTriples() : List[Triple] = {
     var newTriples:List[Triple] = List.empty;
@@ -62,7 +62,9 @@ class MappingPediaR2RML() {
 
 		newTriples;
   }
-  
+
+
+
   
   //def getMappingpediaGraph() = this.mappingpediaGraph;
 
@@ -71,6 +73,7 @@ class MappingPediaR2RML() {
 object MappingPediaR2RML {
   val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
 
   def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
@@ -861,4 +864,10 @@ object MappingPediaR2RML {
 		val listResult = new ListResult(results.length, results);
 		listResult
 	}
+
+	def getSchemaOrgSubclasses(aClass:String) : ListResult = {
+		MappingPediaUtility.getSubclasses(aClass, this.schemaOrgModel);
+
+	}
+
 }
