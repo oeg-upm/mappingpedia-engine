@@ -329,7 +329,7 @@ object MappingPediaUtility {
     rdfsModel;
   }
 
-  def getSubclasses(aClass:String, ontModel:OntModel) : ListResult = {
+  def getSubclasses(aClass:String, ontModel:OntModel, outputType:String) : ListResult = {
     val resource = ontModel.getResource(aClass);
     var result:List[String] = List(aClass);
 
@@ -337,7 +337,13 @@ object MappingPediaUtility {
     val subclasses = cls.listSubClasses(false);
     while(subclasses.hasNext) {
       val subclass = subclasses.next();
-      result = subclass.getURI :: result;
+      if(outputType.equals("0")) {
+        result = subclass.getLocalName :: result;
+
+      } else {
+        result = subclass.getURI :: result;
+
+      }
     }
 
     val listResult = new ListResult(result.size, result);
