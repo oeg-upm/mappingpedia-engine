@@ -329,7 +329,18 @@ object MappingPediaUtility {
     rdfsModel;
   }
 
+  def getClassesLocalNames(listOfClasses:List[OntClass]) : List[String] = {
+    val result = listOfClasses.map(ontClass => ontClass.getLocalName);
+    result;
+  }
+
+  def getClassesURIs(listOfClasses:List[OntClass]) : List[String] = {
+    val result = listOfClasses.map(ontClass => ontClass.getURI);
+    result;
+  }
+
   def getSubclasses(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
+
     val defaultInputPrefix = if(inputType.equals("0")) {
       "http://schema.org/";
     } else {
@@ -339,24 +350,25 @@ object MappingPediaUtility {
     val resource = ontModel.getResource(defaultInputPrefix + aClass);
 
     val cls = resource.as(classOf[OntClass])
-    val clsSuperclass = cls.getSuperClass;
+    val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
 
-    var result:List[List[String]] = if(outputType.equals("0")) {
-      List(List(cls.getLocalName, clsSuperclass.getLocalName));
+    var result:List[Tuple2[String, List[String]]] = if(outputType.equals("0")) {
+      List((cls.getLocalName, MappingPediaUtility.getClassesLocalNames(clsSuperclasses)));
     } else {
-      List(List(cls.getURI, clsSuperclass.getURI));
+      List((cls.getURI, MappingPediaUtility.getClassesURIs(clsSuperclasses)));
     }
+
 
     val subclasses = cls.listSubClasses(false);
     while(subclasses.hasNext) {
       val subclass = subclasses.next();
-      val subclassParent = subclass.getSuperClass;
+      val subclassParents = subclass.listSuperClasses(true).toList.toList;
 
       if(outputType.equals("0")) {
-        result = List(subclass.getLocalName, subclassParent.getLocalName) :: result;
+        result = (subclass.getLocalName, MappingPediaUtility.getClassesLocalNames(subclassParents)) :: result;
 
       } else {
-        result = List(subclass.getURI , subclassParent.getURI):: result;
+        result = (subclass.getURI , MappingPediaUtility.getClassesURIs(subclassParents)) :: result;
 
       }
     }
