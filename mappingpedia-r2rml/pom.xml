@@ -132,6 +132,12 @@
 			<version>1.4.9</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.github.jsonld-java</groupId>
+			<artifactId>jsonld-java</artifactId>
+			<version>0.10.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<repositories>
