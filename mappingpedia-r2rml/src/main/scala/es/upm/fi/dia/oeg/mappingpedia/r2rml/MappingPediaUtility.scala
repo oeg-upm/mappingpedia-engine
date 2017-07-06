@@ -339,20 +339,24 @@ object MappingPediaUtility {
     val resource = ontModel.getResource(defaultInputPrefix + aClass);
 
     val cls = resource.as(classOf[OntClass])
-    var result:List[String] = if(outputType.equals("0")) {
-      List(cls.getLocalName);
+    val clsSuperclass = cls.getSuperClass;
+
+    var result:List[List[String]] = if(outputType.equals("0")) {
+      List(List(cls.getLocalName, clsSuperclass.getLocalName));
     } else {
-      List(cls.getURI);
+      List(List(cls.getURI, clsSuperclass.getURI));
     }
 
     val subclasses = cls.listSubClasses(false);
     while(subclasses.hasNext) {
       val subclass = subclasses.next();
+      val subclassParent = subclass.getSuperClass;
+
       if(outputType.equals("0")) {
-        result = subclass.getLocalName :: result;
+        result = List(subclass.getLocalName, subclassParent.getLocalName) :: result;
 
       } else {
-        result = subclass.getURI :: result;
+        result = List(subclass.getURI , subclassParent.getURI):: result;
 
       }
     }
