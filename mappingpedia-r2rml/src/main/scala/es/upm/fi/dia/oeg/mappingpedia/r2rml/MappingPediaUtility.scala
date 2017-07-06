@@ -331,7 +331,6 @@ object MappingPediaUtility {
 
   def getSubclasses(aClass:String, ontModel:OntModel, outputType:String) : ListResult = {
     val resource = ontModel.getResource(aClass);
-    ontModel.getResource(aClass)
 
     val cls = resource.as(classOf[OntClass])
     var result:List[String] = if(outputType.equals("0")) {
