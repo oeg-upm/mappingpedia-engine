@@ -339,7 +339,7 @@ object MappingPediaUtility {
     result;
   }
 
-  def getSubclasses(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
+  def getSubclasses(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : MapResult = {
 
     val defaultInputPrefix = if(inputType.equals("0")) {
       "http://schema.org/";
@@ -358,6 +358,11 @@ object MappingPediaUtility {
       List((cls.getURI, MappingPediaUtility.getClassesURIs(clsSuperclasses)));
     }
 
+    var resultInMap:Map[String, List[String]] = if(outputType.equals("0")) {
+      Map(cls.getLocalName -> MappingPediaUtility.getClassesLocalNames(clsSuperclasses));
+    } else {
+      Map(cls.getURI -> MappingPediaUtility.getClassesURIs(clsSuperclasses));
+    }
 
     val subclasses = cls.listSubClasses(false);
     while(subclasses.hasNext) {
@@ -366,15 +371,19 @@ object MappingPediaUtility {
 
       if(outputType.equals("0")) {
         result = (subclass.getLocalName, MappingPediaUtility.getClassesLocalNames(subclassParents)) :: result;
-
+        resultInMap += (subclass.getLocalName -> MappingPediaUtility.getClassesLocalNames(subclassParents));
       } else {
         result = (subclass.getURI , MappingPediaUtility.getClassesURIs(subclassParents)) :: result;
-
+        resultInMap += (subclass.getURI -> MappingPediaUtility.getClassesURIs(subclassParents));
       }
     }
 
     val listResult = new ListResult(result.size, result);
-    listResult;
+
+    val mapResult = new MapResult(result.size, resultInMap);
+    println("mapResult = " + mapResult.toString());
+
+    mapResult;
 
   }
 }
