@@ -331,9 +331,14 @@ object MappingPediaUtility {
 
   def getSubclasses(aClass:String, ontModel:OntModel, outputType:String) : ListResult = {
     val resource = ontModel.getResource(aClass);
-    var result:List[String] = List(aClass);
 
     val cls = resource.as(classOf[OntClass])
+    var result:List[String] = if(outputType.equals("0")) {
+      List(cls.getLocalName);
+    } else {
+      List(cls.getURI);
+    }
+
     val subclasses = cls.listSubClasses(false);
     while(subclasses.hasNext) {
       val subclass = subclasses.next();
