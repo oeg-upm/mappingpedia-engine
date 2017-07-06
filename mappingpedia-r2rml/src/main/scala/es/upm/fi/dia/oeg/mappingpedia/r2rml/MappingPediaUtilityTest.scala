@@ -3,7 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml
 /**
   * Created by fpriyatna on 6/7/17.
   */
-object MappingPediaUtilityTest extends App {
+object MappingPediaUtilityTest  {
   val model = MappingPediaUtility.loadSchemaOrgOntology();
 
   val aClass = "MedicalBusiness"
