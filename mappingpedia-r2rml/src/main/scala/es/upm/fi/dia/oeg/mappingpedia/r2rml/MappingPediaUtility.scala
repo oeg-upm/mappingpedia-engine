@@ -25,6 +25,8 @@ import org.eclipse.egit.github.core.service.{ContentsService, RepositoryService}
 import scala.collection.JavaConversions._
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
+
+import es.upm.fi.dia.oeg.mappingpedia.OntologyClass
 import es.upm.fi.dia.oeg.mappingpedia.r2rml.MappingPediaR2RML.getClass
 import org.apache.jena.ontology.{OntClass, OntModel, OntModelSpec}
 import virtuoso.jena.driver.VirtModel
@@ -339,7 +341,7 @@ object MappingPediaUtility {
     result;
   }
 
-  def getSubclasses(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : MapResult = {
+  def getSubclasses(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
 
     val defaultInputPrefix = if(inputType.equals("0")) {
       "http://schema.org/";
@@ -350,12 +352,13 @@ object MappingPediaUtility {
     val resource = ontModel.getResource(defaultInputPrefix + aClass);
 
     val cls = resource.as(classOf[OntClass])
+    val clsSuperClass = cls.getSuperClass;
     val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
 
-    var result:List[Tuple2[String, List[String]]] = if(outputType.equals("0")) {
-      List((cls.getLocalName, MappingPediaUtility.getClassesLocalNames(clsSuperclasses)));
+    var result:List[OntologyClass] = if(outputType.equals("0")) {
+      List(new OntologyClass(cls.getLocalName, clsSuperClass.getLocalName));
     } else {
-      List((cls.getURI, MappingPediaUtility.getClassesURIs(clsSuperclasses)));
+      List(new OntologyClass(cls.getURI, clsSuperClass.getURI));
     }
 
     var resultInMap:Map[String, List[String]] = if(outputType.equals("0")) {
@@ -368,12 +371,13 @@ object MappingPediaUtility {
     while(subclasses.hasNext) {
       val subclass = subclasses.next();
       val subclassParents = subclass.listSuperClasses(true).toList.toList;
+      val subclassParent = subclass.getSuperClass;
 
       if(outputType.equals("0")) {
-        result = (subclass.getLocalName, MappingPediaUtility.getClassesLocalNames(subclassParents)) :: result;
+        result = new OntologyClass(subclass.getLocalName, subclassParent.getLocalName) :: result;
         resultInMap += (subclass.getLocalName -> MappingPediaUtility.getClassesLocalNames(subclassParents));
       } else {
-        result = (subclass.getURI , MappingPediaUtility.getClassesURIs(subclassParents)) :: result;
+        result = new OntologyClass(subclass.getURI , subclassParent.getURI) :: result;
         resultInMap += (subclass.getURI -> MappingPediaUtility.getClassesURIs(subclassParents));
       }
     }
@@ -383,7 +387,7 @@ object MappingPediaUtility {
     val mapResult = new MapResult(result.size, resultInMap);
     println("mapResult = " + mapResult.toString());
 
-    mapResult;
+    listResult;
 
   }
 }
