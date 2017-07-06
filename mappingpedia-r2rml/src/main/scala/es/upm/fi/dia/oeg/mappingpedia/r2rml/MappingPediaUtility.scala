@@ -356,9 +356,9 @@ object MappingPediaUtility {
     val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
 
     var result:List[OntologyClass] = if(outputType.equals("0")) {
-      List(new OntologyClass(cls.getLocalName, clsSuperClass.getLocalName));
+      List(new OntologyClass(cls.getLocalName, clsSuperClass.getLocalName, MappingPediaUtility.getClassesLocalNames(clsSuperclasses)));
     } else {
-      List(new OntologyClass(cls.getURI, clsSuperClass.getURI));
+      List(new OntologyClass(cls.getURI, clsSuperClass.getURI, MappingPediaUtility.getClassesURIs(clsSuperclasses)));
     }
 
     var resultInMap:Map[String, List[String]] = if(outputType.equals("0")) {
@@ -374,10 +374,10 @@ object MappingPediaUtility {
       val subclassParent = subclass.getSuperClass;
 
       if(outputType.equals("0")) {
-        result = new OntologyClass(subclass.getLocalName, subclassParent.getLocalName) :: result;
+        result = new OntologyClass(subclass.getLocalName, subclassParent.getLocalName, MappingPediaUtility.getClassesLocalNames(subclassParents)) :: result;
         resultInMap += (subclass.getLocalName -> MappingPediaUtility.getClassesLocalNames(subclassParents));
       } else {
-        result = new OntologyClass(subclass.getURI , subclassParent.getURI) :: result;
+        result = new OntologyClass(subclass.getURI , subclassParent.getURI, MappingPediaUtility.getClassesURIs(subclassParents)) :: result;
         resultInMap += (subclass.getURI -> MappingPediaUtility.getClassesURIs(subclassParents));
       }
     }
