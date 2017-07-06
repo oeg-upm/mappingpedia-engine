@@ -329,8 +329,14 @@ object MappingPediaUtility {
     rdfsModel;
   }
 
-  def getSubclasses(aClass:String, ontModel:OntModel, outputType:String) : ListResult = {
-    val resource = ontModel.getResource(aClass);
+  def getSubclasses(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
+    val defaultInputPrefix = if(inputType.equals("0")) {
+      "http://schema.org/";
+    } else {
+      ""
+    }
+
+    val resource = ontModel.getResource(defaultInputPrefix + aClass);
 
     val cls = resource.as(classOf[OntClass])
     var result:List[String] = if(outputType.equals("0")) {

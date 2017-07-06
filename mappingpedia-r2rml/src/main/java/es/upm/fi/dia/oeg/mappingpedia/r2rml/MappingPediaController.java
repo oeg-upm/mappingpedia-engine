@@ -241,11 +241,14 @@ public class MappingPediaController {
 
 	@RequestMapping(value="/ogd/utility/subclasses", method= RequestMethod.GET)
 	public ListResult getSubclasses(@RequestParam(value="aClass") String aClass,
-									@RequestParam(value="outputType", defaultValue = "0") String outputType
+									@RequestParam(value="outputType", defaultValue = "0") String outputType,
+									@RequestParam(value="inputType", defaultValue = "0") String inputType
+
+
 	) {
 		logger.info("GET /ogd/utility/subclasses...");
 		logger.info("aClass = " + aClass);
-		ListResult listResult = MappingPediaR2RML.getSchemaOrgSubclasses(aClass, outputType) ;
+		ListResult listResult = MappingPediaR2RML.getSchemaOrgSubclasses(aClass, outputType, inputType) ;
 		logger.info("listResult = " + listResult);
 		return listResult;
 	}
