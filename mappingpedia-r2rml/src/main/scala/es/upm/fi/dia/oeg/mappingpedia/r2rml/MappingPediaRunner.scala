@@ -72,7 +72,7 @@ object MappingPediaRunner {
   
       logger.info("Storing generated triples.");
       val additionalTriples = mappingpediaR2RML.generateAdditionalTriples();
-      //logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
+      logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
 
       MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
     }

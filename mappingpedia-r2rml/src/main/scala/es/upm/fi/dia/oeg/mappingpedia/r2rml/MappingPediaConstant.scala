@@ -20,6 +20,8 @@ object MappingPediaConstant {
 	val R2RML_NS = "http://www.w3.org/ns/r2rml#";
 	val R2RML_TRIPLESMAP_URI = R2RML_NS + "TriplesMap";
 	val R2RML_TRIPLESMAP_CLASS = ResourceFactory.createResource(R2RML_TRIPLESMAP_URI);
+	val R2RML_LOGICALTABLE_URI = R2RML_NS + "logicalTable";
+	val R2RML_LOGICALTABLE_PROPERTY = ResourceFactory.createProperty(R2RML_LOGICALTABLE_URI);
 
 	//Mappingpedia related constants
 	private val MAPPINGPEDIA_NS = "http://mappingpedia.linkeddata.es/vocabulary#";

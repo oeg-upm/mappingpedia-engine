@@ -23,6 +23,7 @@ import scala.collection.JavaConversions._
 import scala.io.Source
 import java.text.SimpleDateFormat
 
+import es.upm.fi.dia.oeg.mappingpedia.OntologyClass
 import es.upm.fi.dia.oeg.mappingpedia.r2rml.model.MappingDocument
 import org.apache.jena.ontology.OntModel
 
@@ -38,15 +39,20 @@ class MappingPediaR2RML() {
     
     val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
 				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
-		
+		logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
+
 		if(r2rmlMappingDocumentResources != null) {
 		  while(r2rmlMappingDocumentResources.hasNext()) {
   			val r2rmlMappingDocumentResource = r2rmlMappingDocumentResources.nextResource();
+				logger.info("r2rmlMappingDocumentResource = " + r2rmlMappingDocumentResource);
 
 				//improve this code using, get all x from ?x rr:LogicalTable ?lt
 				//mapping documents do not always explicitly have a TriplesMap
-  			val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
-  				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
+  			//val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
+//  				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
+				val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
+					MappingPediaConstant.R2RML_LOGICALTABLE_PROPERTY);
+				logger.info("triplesMapResources = " + triplesMapResources);
   			if(triplesMapResources != null) {
   			  while(triplesMapResources.hasNext()) {
   			    val triplesMapResource = triplesMapResources.nextResource();
@@ -266,10 +272,25 @@ object MappingPediaR2RML {
 	def addDatasetFileWithID(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String, mappingpediaUsername:String
 		, datasetID:String
 		, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
-		, distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String
+		, pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String
 	) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
+
+		var distributionAccessURL = pDistributionAccessURL;
+		if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
+			distributionAccessURL = "<" + distributionAccessURL;
+		}
+		if(distributionAccessURL != null && !distributionAccessURL.endsWith(">")) {
+			distributionAccessURL = distributionAccessURL + ">";
+		}
+		var distributionDownloadURL = pDistributionDownloadURL;
+		if(distributionDownloadURL != null && !distributionDownloadURL.startsWith("<")) {
+			distributionDownloadURL = "<" + distributionDownloadURL;
+		}
+		if(distributionDownloadURL != null && !distributionDownloadURL.endsWith(">")) {
+			distributionDownloadURL = distributionDownloadURL + ">";
+		}
 
 		try {
 			val manifestFile:File = if (manifestFileRef != null) {
@@ -322,19 +343,32 @@ object MappingPediaR2RML {
 
 
 
-			val datasetFile:File = MappingPediaUtility.multipartFileToFile(datasetFileRef, datasetID)
-
-			logger.info("storing a new dataset file on github ...")
-			var datasetURL:String = null;
-			val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
-			val addNewDatasetResponse = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser
-				, MappingPediaProperties.githubAccessToken, mappingpediaUsername
-				, datasetID, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
-			val addNewDatasetResponseStatus = addNewDatasetResponse.getStatus
-
-			if (HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus) {
-				datasetURL = addNewDatasetResponse.getBody.getObject.getJSONObject("content").getString("url")
+			val optionDatasetFile:Option[File] = if(datasetFileRef == null) {
+				None
+			}  else {
+				Some(MappingPediaUtility.multipartFileToFile(datasetFileRef, datasetID))
 			}
+
+
+			var datasetURL:String = null;
+			val addNewDatasetResponseStatus = if(optionDatasetFile.isDefined) {
+				logger.info("storing a new dataset file on github ...")
+				val datasetFile = optionDatasetFile.get;
+				val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
+				val addNewDatasetResponse = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser
+					, MappingPediaProperties.githubAccessToken, mappingpediaUsername
+					, datasetID, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
+				val addNewDatasetResponseStatus = addNewDatasetResponse.getStatus
+
+				if (HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus) {
+					datasetURL = addNewDatasetResponse.getBody.getObject.getJSONObject("content").getString("url")
+				}
+				addNewDatasetResponseStatus;
+			} else {
+				HttpURLConnection.HTTP_OK;
+			}
+
+
 
 			val manifestURL:String = if(manifestFile == null) {
 				null
@@ -345,6 +379,8 @@ object MappingPediaR2RML {
 					, MappingPediaProperties.githubAccessToken, mappingpediaUsername
 					, datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
 				val addNewManifestResponseStatus = addNewManifestResponse.getStatus
+				logger.info("addNewManifestResponseStatus = " + addNewManifestResponseStatus)
+
 				if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus) {
 					addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
 				} else {
@@ -354,7 +390,7 @@ object MappingPediaR2RML {
 
 
 
-			if(HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus) {
+			if(HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus || HttpURLConnection.HTTP_OK == addNewDatasetResponseStatus) {
 				val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
 					, null, null, "OK", HttpURLConnection.HTTP_OK)
 				return executionResult;
@@ -413,6 +449,67 @@ object MappingPediaR2RML {
 				val executionResult = new MappingPediaExecutionResult(null, null, null
 					, null, null, errorMessage, errorCode)
 				return executionResult
+		}
+	}
+
+	def executeMapping(mappingURL: String, datasetDistributionURL: String, queryFile:String
+										 , pOutputFilename: String) : MappingPediaExecutionResult = {
+		val mappingpediaUsername = "executions"
+		val mappingDirectory = UUID.randomUUID.toString
+
+		val properties: MorphCSVProperties = new MorphCSVProperties
+		properties.setDatabaseName(mappingpediaUsername + "/" + mappingDirectory)
+		properties.setMappingDocumentFilePath(mappingURL)
+		val outputFileName = if (pOutputFilename == null) {
+			//"output.nt";
+			//MappingPediaConstant.DEFAULT_OUTPUT_FILENAME;
+			UUID.randomUUID.toString
+		} else {
+			pOutputFilename;
+		}
+		val outputFilepath = "executions/" + mappingDirectory + "/" + outputFileName
+
+		properties.setOutputFilePath(outputFilepath);
+
+		properties.setCSVFile(datasetDistributionURL);
+		logger.debug("datasetDistributionURL = " + datasetDistributionURL)
+
+		properties.setQueryFilePath(queryFile);
+		try {
+			val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
+			val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
+			runner.run
+			logger.info("mapping execution success!")
+			val outputFile: File = new File(outputFilepath)
+			val response = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser, MappingPediaProperties.githubAccessToken
+				, mappingpediaUsername, mappingDirectory, outputFileName
+				, "add mapping execution result by mappingpedia engine", outputFile);
+
+			val responseStatus: Int = response.getStatus
+			logger.info("responseStatus = " + responseStatus)
+			val responseStatusText: String = response.getStatusText
+			logger.info("responseStatusText = " + responseStatusText)
+			if (HttpURLConnection.HTTP_CREATED== responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
+				val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+					,null , outputGitHubURL, responseStatusText, responseStatus)
+				return executionResult
+			}
+			else {
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+					, null, null, responseStatusText, responseStatus)
+				return executionResult
+			}
+		}
+		catch {
+			case e: Exception => {
+				e.printStackTrace
+				val errorMessage: String = "Error occured: " + e.getMessage
+				logger.error("mapping execution failed: " + errorMessage)
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+					, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR)
+				return executionResult
+			}
 		}
 	}
 
@@ -752,7 +849,9 @@ object MappingPediaR2RML {
 				val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
 				val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
 				val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
-				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution, distributionAccessURL);
+				val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
+				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
+					, distributionAccessURL, mappingDocumentURL);
 				results = md :: results;
 			}
 		} finally qexec.close
@@ -856,7 +955,9 @@ object MappingPediaR2RML {
 				val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
 				val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
 				val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
-				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution, distributionAccessURL);
+				val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
+				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
+					, distributionAccessURL, mappingDocumentURL);
 				results = md :: results;
 			}
 		} finally qexec.close
@@ -867,6 +968,28 @@ object MappingPediaR2RML {
 
 	def getSchemaOrgSubclasses(aClass:String, outputType:String, inputType:String) : ListResult = {
 		MappingPediaUtility.getSubclasses(aClass, this.schemaOrgModel, outputType, inputType);
+
+	}
+
+	def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
+		val subclassesListResult = MappingPediaUtility.getSubclasses(aClass, this.schemaOrgModel, outputType, inputType);
+		val subclassesInList:List[String] = subclassesListResult.results.map(result => result.asInstanceOf[OntologyClass].aClass).distinct
+		logger.debug("subclassesInList" + subclassesInList)
+		//new ListResult(subclassesInList.size, subclassesInList);
+
+		val mappingDocuments:List[Object] = subclassesInList.flatMap(subclass =>
+			MappingPediaR2RML.findMappingDocumentsByMappedClass(subclass).getResults())
+
+		val executionResults:List[String] = mappingDocuments.map(mappingDocument => {
+			val md = mappingDocument.asInstanceOf[MappingDocument];
+			val outputFilename = UUID.randomUUID.toString + ".nt"
+			val executionResult = MappingPediaR2RML.executeMapping(
+				md.mappingDocumentDownloadURL, md.distributionAccessURL, null, outputFilename);
+			executionResult.mappingExecutionResultDownloadURL;
+			//mappingDocumentURL + " -- " + datasetDistributionURL
+		})
+		new ListResult(executionResults.size, executionResults);
+
 
 	}
 
