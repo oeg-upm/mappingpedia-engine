@@ -90,6 +90,20 @@ public class MappingPediaController {
 		return MappingPediaProperties.githubRepoContents();
 	}
 
+	@RequestMapping(value="/executions2", method= RequestMethod.POST)
+	public MappingPediaExecutionResult executeMapping(
+			@RequestParam("mappingURL") String mappingURL
+			, @RequestParam("datasetDistributionURL") String datasetDistributionURL
+			, @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
+			, @RequestParam(value="queryFile", required = false) String queryFile
+			, @RequestParam(value="outputFilename", required = false) String outputFilename
+	)
+	{
+		logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
+		return MappingPediaR2RML.executeMapping(mappingURL, datasetDistributionURL, fieldSeparator
+				, queryFile, outputFilename);
+	}
+
 	@RequestMapping(value="/executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.POST)
 	public MappingPediaExecutionResult executeMapping(@PathVariable("mappingpediaUsername") String mappingpediaUsername
 			, @PathVariable("mappingDirectory") String mappingDirectory
@@ -175,7 +189,7 @@ public class MappingPediaController {
 			@PathVariable("mappingpediaUsername") String mappingpediaUsername
 			, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
 			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-			, @RequestParam("datasetFile") MultipartFile datasetFileRef
+			, @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
 			, @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
 			, @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
 			, @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
@@ -199,7 +213,7 @@ public class MappingPediaController {
 			@PathVariable("mappingpediaUsername") String mappingpediaUsername
 			, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
 			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-			, @RequestParam("datasetFile") MultipartFile datasetFileRef
+			, @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
 			, @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
 			, @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
 			, @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
@@ -246,9 +260,23 @@ public class MappingPediaController {
 
 
 	) {
-		logger.info("GET /ogd/utility/subclasses...");
+		logger.info("GET /ogd/utility/subclasses ...");
 		logger.info("aClass = " + aClass);
 		ListResult result = MappingPediaR2RML.getSchemaOrgSubclasses(aClass, outputType, inputType) ;
+		logger.info("result = " + result);
+		return result;
+	}
+
+	@RequestMapping(value="/ogd/instances", method= RequestMethod.GET)
+	public ListResult getInstances(@RequestParam(value="aClass") String aClass,
+									@RequestParam(value="outputType", defaultValue = "0") String outputType,
+									@RequestParam(value="inputType", defaultValue = "0") String inputType
+
+
+	) {
+		logger.info("GET /ogd/instances ...");
+		logger.info("aClass = " + aClass);
+		ListResult result = MappingPediaR2RML.getInstances(aClass, outputType, inputType) ;
 		logger.info("result = " + result);
 		return result;
 	}
