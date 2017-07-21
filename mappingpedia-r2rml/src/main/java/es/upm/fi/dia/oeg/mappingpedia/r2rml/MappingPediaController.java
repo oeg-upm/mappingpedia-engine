@@ -94,12 +94,13 @@ public class MappingPediaController {
 	public MappingPediaExecutionResult executeMapping(
 			@RequestParam("mappingURL") String mappingURL
 			, @RequestParam("datasetDistributionURL") String datasetDistributionURL
+			, @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
 			, @RequestParam(value="queryFile", required = false) String queryFile
 			, @RequestParam(value="outputFilename", required = false) String outputFilename
 	)
 	{
 		logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
-		return MappingPediaR2RML.executeMapping(mappingURL, datasetDistributionURL
+		return MappingPediaR2RML.executeMapping(mappingURL, datasetDistributionURL, fieldSeparator
 				, queryFile, outputFilename);
 	}
 

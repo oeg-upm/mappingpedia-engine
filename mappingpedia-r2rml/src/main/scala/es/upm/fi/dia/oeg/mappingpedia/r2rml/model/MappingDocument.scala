@@ -6,9 +6,12 @@ import org.apache.logging.log4j.{LogManager, Logger}
 /**
   * Created by fpriyatna on 07/04/2017.
   */
-class MappingDocument(val id:String, val title:String, val dataset:String, val filePath:String, val creator:String
-                      , val distribution:String, val distributionAccessURL:String, val pMappingDocumentURL:String) {
+class MappingDocument(val id:String, val title:String, val dataset:String
+  , val filePath:String, val creator:String
+  , val distribution:String, val distributionAccessURL:String
+  , val pMappingDocumentURL:String) {
   val logger : Logger = LogManager.getLogger(this.getClass);
+  var distributionFieldSeparator:Option[String] = None;
 
   val mappingDocumentURL = if(pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
     pMappingDocumentURL.substring(1, pMappingDocumentURL.length-1)

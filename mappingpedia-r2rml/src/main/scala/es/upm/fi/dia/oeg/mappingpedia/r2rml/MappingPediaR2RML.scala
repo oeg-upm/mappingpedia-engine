@@ -452,8 +452,8 @@ object MappingPediaR2RML {
 		}
 	}
 
-	def executeMapping(mappingURL: String, datasetDistributionURL: String, queryFile:String
-										 , pOutputFilename: String) : MappingPediaExecutionResult = {
+	def executeMapping(mappingURL: String, datasetDistributionURL: String, fieldSeparator:String
+										 , queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
 		val mappingpediaUsername = "executions"
 		val mappingDirectory = UUID.randomUUID.toString
 
@@ -475,6 +475,9 @@ object MappingPediaR2RML {
 		logger.debug("datasetDistributionURL = " + datasetDistributionURL)
 
 		properties.setQueryFilePath(queryFile);
+		if(fieldSeparator != null) {
+			properties.fieldSeparator = Some(fieldSeparator);
+		}
 		try {
 			val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
 			val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
@@ -513,8 +516,9 @@ object MappingPediaR2RML {
 		}
 	}
 
-	def executeMapping(mappingpediaUsername:String, mappingDirectory: String, mappingFilename: String
-		, datasetFile: String, queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
+	def executeMapping(mappingpediaUsername:String, mappingDirectory: String
+										 , mappingFilename: String, datasetFile: String
+										 , queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("mappingDirectory = " + mappingDirectory)
 		logger.debug("mappingFilename = " + mappingFilename)
@@ -976,15 +980,26 @@ object MappingPediaR2RML {
 		val subclassesInList:List[String] = subclassesListResult.results.map(result => result.asInstanceOf[OntologyClass].aClass).distinct
 		logger.debug("subclassesInList" + subclassesInList)
 		//new ListResult(subclassesInList.size, subclassesInList);
+		val queryFile:String = null;
 
 		val mappingDocuments:List[Object] = subclassesInList.flatMap(subclass =>
 			MappingPediaR2RML.findMappingDocumentsByMappedClass(subclass).getResults())
 
+
 		val executionResults:List[String] = mappingDocuments.map(mappingDocument => {
 			val md = mappingDocument.asInstanceOf[MappingDocument];
+			val distributionFieldSeparator = if(md.distributionFieldSeparator != null && md.distributionFieldSeparator.isDefined) {
+				md.distributionFieldSeparator.get
+			} else {
+				null
+			}
 			val outputFilename = UUID.randomUUID.toString + ".nt"
 			val executionResult = MappingPediaR2RML.executeMapping(
-				md.mappingDocumentDownloadURL, md.distributionAccessURL, null, outputFilename);
+				md.mappingDocumentDownloadURL
+				, md.distributionAccessURL, distributionFieldSeparator
+				, queryFile, outputFilename);
+
+
 			executionResult.mappingExecutionResultDownloadURL;
 			//mappingDocumentURL + " -- " + datasetDistributionURL
 		})
