@@ -1,14 +1,16 @@
 package es.upm.fi.dia.oeg.mappingpedia
 
 import es.upm.fi.dia.oeg.mappingpedia.r2rml.MappingPediaUtility
+import collection.JavaConverters._
 
 /**
   * Created by fpriyatna on 6/7/17.
   */
-class OntologyClass (val aClass:String, val superClass:String, val superclasses:List[String]) {
+class OntologyClass (val aClass:String, val superClasses:List[String], val subClasses:List[String]) {
   def getAClass = this.aClass;
-  //def getSuperClass = this.superClass;
-  def getSuperclasses = this.superclasses.mkString(",")
+  def getSuperClasses = this.superClasses.mkString(",")
+  def getSubClasses = this.subClasses.mkString(",")
+  def getSubClassesList = this.subClasses.asJava
+  def getSuperClassesList = this.superClasses.asJava
 
-  override def toString: String = this.aClass + " - " + this.superclasses.mkString;
 }
