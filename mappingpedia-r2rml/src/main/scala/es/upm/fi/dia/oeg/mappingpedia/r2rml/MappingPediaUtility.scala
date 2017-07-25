@@ -352,13 +352,23 @@ object MappingPediaUtility {
     val resource = ontModel.getResource(defaultInputPrefix + aClass);
 
     val cls = resource.as(classOf[OntClass])
+    logger.info("cls = " + cls)
     val clsSuperClass = cls.getSuperClass;
     val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
+    logger.info("clsSuperclasses = " + clsSuperclasses.mkString(","))
+    val clsSubClasses:List[OntClass] = cls.listSubClasses(true).toList.toList;
+    logger.info("clsSubClasses = " + clsSubClasses.mkString(","))
 
     var result:List[OntologyClass] = if(outputType.equals("0")) {
-      List(new OntologyClass(cls.getLocalName, clsSuperClass.getLocalName, MappingPediaUtility.getClassesLocalNames(clsSuperclasses)));
+      List(new OntologyClass(cls.getLocalName
+        , MappingPediaUtility.getClassesLocalNames(clsSuperclasses)
+        , MappingPediaUtility.getClassesLocalNames(clsSubClasses)
+      ));
     } else {
-      List(new OntologyClass(cls.getURI, clsSuperClass.getURI, MappingPediaUtility.getClassesURIs(clsSuperclasses)));
+      List(new OntologyClass(cls.getURI
+        , MappingPediaUtility.getClassesURIs(clsSuperclasses)
+        , MappingPediaUtility.getClassesURIs(clsSubClasses)
+      ));
     }
 
     var resultInMap:Map[String, List[String]] = if(outputType.equals("0")) {
@@ -371,13 +381,19 @@ object MappingPediaUtility {
     while(subclasses.hasNext) {
       val subclass = subclasses.next();
       val subclassParents = subclass.listSuperClasses(true).toList.toList;
-      val subclassParent = subclass.getSuperClass;
+      val subclassChildren = subclass.listSubClasses(true).toList.toList;
 
       if(outputType.equals("0")) {
-        result = new OntologyClass(subclass.getLocalName, subclassParent.getLocalName, MappingPediaUtility.getClassesLocalNames(subclassParents)) :: result;
+        result = new OntologyClass(subclass.getLocalName
+          , MappingPediaUtility.getClassesLocalNames(subclassParents)
+          , MappingPediaUtility.getClassesLocalNames(subclassChildren)
+        ) :: result;
         resultInMap += (subclass.getLocalName -> MappingPediaUtility.getClassesLocalNames(subclassParents));
       } else {
-        result = new OntologyClass(subclass.getURI , subclassParent.getURI, MappingPediaUtility.getClassesURIs(subclassParents)) :: result;
+        result = new OntologyClass(subclass.getURI
+          , MappingPediaUtility.getClassesURIs(subclassParents)
+          , MappingPediaUtility.getClassesURIs(subclassChildren)
+        ) :: result;
         resultInMap += (subclass.getURI -> MappingPediaUtility.getClassesURIs(subclassParents));
       }
     }
