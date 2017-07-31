@@ -14,7 +14,8 @@ import org.apache.commons.lang.text.StrSubstitutor;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +32,8 @@ import scala.collection.JavaConversions.*;
 //@RequestMapping(value = "/mappingpedia")
 @MultipartConfig(fileSizeThreshold = 20971520)
 public class MappingPediaController {
-	static Logger logger = LogManager.getLogger("MappingPediaController");
+	//static Logger logger = LogManager.getLogger("MappingPediaController");
+	 Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	private static final String template = "Hello, %s!";
 	private final AtomicLong counter = new AtomicLong();

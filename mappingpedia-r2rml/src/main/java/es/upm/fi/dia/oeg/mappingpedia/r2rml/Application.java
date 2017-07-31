@@ -10,7 +10,8 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import org.apache.jena.ontology.OntModel;
 import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -18,7 +19,9 @@ import virtuoso.jena.driver.VirtGraph;
 
 @SpringBootApplication
 public class Application {
-	static Logger logger = LogManager.getLogger("Application");
+	//static Logger logger = LogManager.getLogger("Application");
+	 static Logger logger = LoggerFactory.getLogger("Application");
+
 	static MappingPediaR2RML mappingpediaR2RML = null;
 
 	//static VirtGraph mappingpediaGraph = null;

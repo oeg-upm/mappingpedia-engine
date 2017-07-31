@@ -8,8 +8,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRun
 import org.apache.commons.lang.text.StrSubstitutor
 import org.apache.jena.vocabulary.RDF
 import org.apache.jena.graph.Triple
-import org.apache.logging.log4j.Logger
-import org.apache.logging.log4j.LogManager
 import virtuoso.jena.driver.{VirtGraph, VirtModel, VirtuosoQueryExecutionFactory}
 import java.util.{Date, UUID}
 
@@ -26,10 +24,17 @@ import java.text.SimpleDateFormat
 import es.upm.fi.dia.oeg.mappingpedia.OntologyClass
 import es.upm.fi.dia.oeg.mappingpedia.r2rml.model.MappingDocument
 import org.apache.jena.ontology.OntModel
+import org.slf4j.{Logger, LoggerFactory}
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 class MappingPediaR2RML() {
-	val logger : Logger = LogManager.getLogger(this.getClass);
+
+
+	//val logger : Logger = LogManager.getLogger(this.getClass);
+	val logger : Logger = LoggerFactory.getLogger(this.getClass);
+	logger.info("Starting mappingpedia version 0.8.0 ......");
+	println("Running mappingpedia version 0.8.0 ......");
+
 	var manifestModel:Model = null;
 	var mappingDocumentModel:Model = null;
 	var clearGraph:Boolean = false;
@@ -77,7 +82,9 @@ class MappingPediaR2RML() {
 }
 
 object MappingPediaR2RML {
-  val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
+
+  //val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
+	val logger : Logger = LoggerFactory.getLogger(this.getClass);
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
 
