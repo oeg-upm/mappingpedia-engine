@@ -1,7 +1,7 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml.model
 
 import com.mashape.unirest.http.Unirest
-import org.apache.logging.log4j.{LogManager, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
   * Created by fpriyatna on 07/04/2017.
@@ -10,7 +10,9 @@ class MappingDocument(val id:String, val title:String, val dataset:String
   , val filePath:String, val creator:String
   , val distribution:String, val distributionAccessURL:String
   , val pMappingDocumentURL:String) {
-  val logger : Logger = LogManager.getLogger(this.getClass);
+ // val logger : Logger = LogManager.getLogger(this.getClass);
+  val logger : Logger = LoggerFactory.getLogger(this.getClass);
+
   var distributionFieldSeparator:Option[String] = None;
 
   val mappingDocumentURL = if(pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {

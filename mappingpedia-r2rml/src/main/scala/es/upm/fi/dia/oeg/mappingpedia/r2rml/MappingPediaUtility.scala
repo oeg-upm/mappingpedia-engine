@@ -10,8 +10,6 @@ import org.apache.jena.rdf.model.Resource
 import org.apache.jena.rdf.model.Literal
 import org.apache.jena.graph.Triple
 import virtuoso.jena.driver.VirtGraph
-import org.apache.logging.log4j.Logger
-import org.apache.logging.log4j.LogManager
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import java.io._
@@ -32,11 +30,13 @@ import org.apache.jena.ontology.{OntClass, OntModel, OntModelSpec}
 import virtuoso.jena.driver.VirtModel
 import org.apache.jena.vocabulary.DC
 import org.apache.jena.query.{Query, QueryFactory, QuerySolution}
+import org.slf4j.{Logger, LoggerFactory}
 import virtuoso.jena.driver.VirtuosoQueryExecutionFactory
 
 
 object MappingPediaUtility {
-	val logger : Logger = LogManager.getLogger("MappingPediaUtility");
+	//val logger : Logger = LogManager.getLogger("MappingPediaUtility");
+  val logger : Logger = LoggerFactory.getLogger(this.getClass);
 
 
   def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {

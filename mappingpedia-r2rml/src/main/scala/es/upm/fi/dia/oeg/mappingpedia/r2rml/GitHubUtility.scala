@@ -3,10 +3,11 @@ package es.upm.fi.dia.oeg.mappingpedia.r2rml
 import com.google.common.base.Charsets
 import com.google.common.io.BaseEncoding
 import com.mashape.unirest.http.Unirest
-import org.apache.logging.log4j.{LogManager, Logger}
 import org.json.JSONObject
 import java.io.FileInputStream
 import java.io.File
+
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
   * Created by fpriyatna on 21/02/2017.
@@ -34,7 +35,8 @@ object GitHubUtility {
   println("decodedString = " + decodedString);
   */
   
-  val logger : Logger = LogManager.getLogger("GitHubUtility");
+ // val logger : Logger = LogManager.getLogger("GitHubUtility");
+  val logger : Logger = LoggerFactory.getLogger(this.getClass);
 
   def getFile(githubUsername:String, githubAccessToken:String
               , mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String) = {

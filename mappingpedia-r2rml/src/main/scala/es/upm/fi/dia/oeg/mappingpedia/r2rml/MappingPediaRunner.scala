@@ -1,7 +1,5 @@
 package es.upm.fi.dia.oeg.mappingpedia.r2rml;
 
-import org.apache.logging.log4j.Logger
-import org.apache.logging.log4j.LogManager
 import org.apache.jena.graph.Triple
 import virtuoso.jena.driver.VirtGraph
 import java.io.File
@@ -9,11 +7,13 @@ import java.io.BufferedWriter
 import java.io.FileWriter
 
 import es.upm.fi.dia.oeg.mappingpedia.r2rml
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.io.Source._
 
 object MappingPediaRunner {
-  val logger : Logger = LogManager.getLogger("MappingPediaRunner");
+ // val logger : Logger = LogManager.getLogger("MappingPediaRunner");
+  val logger : Logger = LoggerFactory.getLogger(this.getClass);
 
   def run(manifestFilePath:String, pMappingFilePath:String, clearGraphString:String
       , mappingpediaR2RML:MappingPediaR2RML, pReplaceMappingBaseURI:String, newMappingBaseURI:String
