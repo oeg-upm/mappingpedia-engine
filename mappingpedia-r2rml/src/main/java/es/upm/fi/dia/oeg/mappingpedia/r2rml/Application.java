@@ -25,8 +25,10 @@ public class Application {
 	//static MappingPediaProperties prop = null;
 	
 	public static void main(String[] args) {
-		System.out.println("Working Directory = " +
-				System.getProperty("user.dir"));
+		logger.info("Working Directory = " + System.getProperty("user.dir"));
+
+		logger.info("Starting MappingPedia Engine version 1.8.1 ...");
+		System.out.println("Running MappingPedia Engine version 1.8.1 ...");
 
 		//Application.prop = new MappingPediaProperties();
 		InputStream is = null;
