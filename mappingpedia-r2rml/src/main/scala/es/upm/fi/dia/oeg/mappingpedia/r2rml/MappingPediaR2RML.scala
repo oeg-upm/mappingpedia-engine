@@ -28,13 +28,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 class MappingPediaR2RML() {
-
-
-	//val logger : Logger = LogManager.getLogger(this.getClass);
-	val logger : Logger = LoggerFactory.getLogger(this.getClass);
-	logger.info("Starting mappingpedia version 0.8.0 ......");
-	println("Running mappingpedia version 0.8.0 ......");
-
+	val logger: Logger = LoggerFactory.getLogger(this.getClass);
 	var manifestModel:Model = null;
 	var mappingDocumentModel:Model = null;
 	var clearGraph:Boolean = false;
@@ -82,9 +76,7 @@ class MappingPediaR2RML() {
 }
 
 object MappingPediaR2RML {
-
-  //val logger : Logger = LogManager.getLogger("MappingPediaR2RML");
-	val logger : Logger = LoggerFactory.getLogger(this.getClass);
+	val logger: Logger = LoggerFactory.getLogger(this.getClass);
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
 

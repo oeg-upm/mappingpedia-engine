@@ -12,8 +12,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.io.Source._
 
 object MappingPediaRunner {
- // val logger : Logger = LogManager.getLogger("MappingPediaRunner");
-  val logger : Logger = LoggerFactory.getLogger(this.getClass);
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def run(manifestFilePath:String, pMappingFilePath:String, clearGraphString:String
       , mappingpediaR2RML:MappingPediaR2RML, pReplaceMappingBaseURI:String, newMappingBaseURI:String

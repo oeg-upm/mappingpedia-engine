@@ -10,9 +10,7 @@ class MappingDocument(val id:String, val title:String, val dataset:String
   , val filePath:String, val creator:String
   , val distribution:String, val distributionAccessURL:String
   , val pMappingDocumentURL:String) {
- // val logger : Logger = LogManager.getLogger(this.getClass);
-  val logger : Logger = LoggerFactory.getLogger(this.getClass);
-
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
   var distributionFieldSeparator:Option[String] = None;
 
   val mappingDocumentURL = if(pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {

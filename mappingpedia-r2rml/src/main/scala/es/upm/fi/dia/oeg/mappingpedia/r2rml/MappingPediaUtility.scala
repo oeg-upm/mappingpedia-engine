@@ -35,8 +35,7 @@ import virtuoso.jena.driver.VirtuosoQueryExecutionFactory
 
 
 object MappingPediaUtility {
-	//val logger : Logger = LogManager.getLogger("MappingPediaUtility");
-  val logger : Logger = LoggerFactory.getLogger(this.getClass);
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
 
   def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {
