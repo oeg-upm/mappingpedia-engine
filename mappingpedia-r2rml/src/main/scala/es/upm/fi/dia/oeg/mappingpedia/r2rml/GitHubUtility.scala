@@ -35,8 +35,8 @@ object GitHubUtility {
   println("decodedString = " + decodedString);
   */
   
- // val logger : Logger = LogManager.getLogger("GitHubUtility");
-  val logger : Logger = LoggerFactory.getLogger(this.getClass);
+  //val logger : Logger = LogManager.getLogger("GitHubUtility");
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def getFile(githubUsername:String, githubAccessToken:String
               , mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String) = {
