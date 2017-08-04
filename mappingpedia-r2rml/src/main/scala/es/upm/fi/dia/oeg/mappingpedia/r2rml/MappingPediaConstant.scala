@@ -48,4 +48,12 @@ object MappingPediaConstant {
 	val SEARCH_MAPPINGDOCUMENT_BY_TABLE="4";
 	val SEARCH_MAPPINGDOCUMENT_BY_COLUMN="8";
 
+	val MAPPING_LANGUAGE_R2RML = "r2rml";
+	val MAPPING_LANGUAGE_RML = "rml";
+	val MAPPING_LANGUAGE_xR2RML = "xr2rml";
+
+	val TEMPLATE_MAPPINGDOCUMENT_METADATA = "templates/metadata-mappingdocument-template.ttl";
+	val TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE = "templates/metadata-namespaces-template.ttl";
+
+
 }

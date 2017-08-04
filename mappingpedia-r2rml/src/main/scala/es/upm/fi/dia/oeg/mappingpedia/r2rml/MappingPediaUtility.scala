@@ -310,12 +310,22 @@ object MappingPediaUtility {
 
   }
 
-  def getStringOrElse(qs:QuerySolution, varName:String, obj:Object) : String = {
+  def getStringOrElse(qs:QuerySolution, varName:String, obj:String) : String = {
     val result = qs.get(varName);
     if(result == null) {
-      null
+      obj
     } else {
       result.toString;
+    }
+
+  }
+
+  def getOptionString(qs:QuerySolution, varName:String) : Option[String] = {
+    val result = qs.get(varName);
+    if(result == null) {
+      None
+    } else {
+      Some(result.toString);
     }
 
   }

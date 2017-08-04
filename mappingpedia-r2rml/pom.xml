@@ -153,6 +153,34 @@
 			<version>0.10.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>be.ugent.mmlab.rml</groupId>
+			<artifactId>RML-Processor</artifactId>
+			<version>0.3</version>
+<!--			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-context-support</artifactId>
+				</exclusion>
+
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-orm</artifactId>
+				</exclusion>
+
+				<exclusion>
+					<groupId>be.ugent.mmlab.rml</groupId>
+					<artifactId>RML-DataRetrievalHandler</artifactId>
+				</exclusion>
+
+			</exclusions>-->
+		</dependency>
+
 	</dependencies>
 
 	<repositories>
