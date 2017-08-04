@@ -28,7 +28,7 @@ public class Application {
 		logger.info("Working Directory = " + System.getProperty("user.dir"));
 
 		logger.info("Starting MappingPedia Engine version 1.8.1 ...");
-		System.out.println("Running MappingPedia Engine version 1.8.1 ...");
+		//System.out.println("Running MappingPedia Engine version 1.8.1 ...");
 
 		//Application.prop = new MappingPediaProperties();
 		InputStream is = null;
@@ -121,7 +121,17 @@ public class Application {
 
 
 		if(args== null || args.length==0) {
-			SpringApplication.run(Application.class, args);	
+			logger.info("Starting SpringApplication ....");
+			SpringApplication.run(Application.class, args);
+			/*
+				SpringApplication app = new SpringApplication(Application.class);
+				app.setHeadless(false);
+				app.setWebEnvironment(false);
+				app.run(args);
+				*/
+			logger.info("SpringApplication started.");
+
+
 		} else {
 
 			for(int i=0; i <args.length; i++) {
@@ -169,8 +179,11 @@ public class Application {
 			}
 		}
 
+		//logger.info("Exiting Application.main()");
+
 	}
 
 	//MappingPediaUtility.loadSchemaOrgOntology();
+
 
 }
