@@ -9,7 +9,7 @@ import org.slf4j.{Logger, LoggerFactory}
 class MappingDocument(val id:String, val title:String, val dataset:String
   , val filePath:String, val creator:String
   , val distribution:String, val distributionAccessURL:String
-  , val pMappingDocumentURL:String) {
+  , val pMappingDocumentURL:String, val mappingLanguage:Option[String]) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   var distributionFieldSeparator:Option[String] = None;
 

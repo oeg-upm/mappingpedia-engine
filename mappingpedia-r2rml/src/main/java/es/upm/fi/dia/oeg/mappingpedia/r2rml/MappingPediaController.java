@@ -91,8 +91,9 @@ public class MappingPediaController {
 	}
 
 	@RequestMapping(value="/executions2", method= RequestMethod.POST)
-	public MappingPediaExecutionResult executeMapping(
+	public MappingPediaExecutionResult executeMapping2(
 			@RequestParam("mappingURL") String mappingURL
+			, @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
 			, @RequestParam("datasetDistributionURL") String datasetDistributionURL
 			, @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
 			, @RequestParam(value="queryFile", required = false) String queryFile
@@ -100,8 +101,18 @@ public class MappingPediaController {
 	)
 	{
 		logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
-		return MappingPediaR2RML.executeMapping(mappingURL, datasetDistributionURL, fieldSeparator
-				, queryFile, outputFilename);
+		try {
+			return MappingPediaR2RML.executeMapping2(mappingURL, mappingLanguage, datasetDistributionURL, fieldSeparator
+					, queryFile, outputFilename);
+		} catch (Exception e) {
+			e.printStackTrace();
+			String errorMessage = "Error occured: " + e.getMessage();
+			logger.error("mapping execution failed: " + errorMessage);
+			MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+					, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR);
+			return executionResult;
+		}
+
 	}
 
 	@RequestMapping(value="/executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.POST)
@@ -120,43 +131,50 @@ public class MappingPediaController {
 
 	@RequestMapping(value = "/mappings/{mappingpediaUsername}", method= RequestMethod.POST)
 	public MappingPediaExecutionResult uploadNewMapping(
-		@PathVariable("mappingpediaUsername") String mappingpediaUsername
-		, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-		, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
-		, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
-		, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-		, @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
-		, @RequestParam(value="mappingDocumentCreator", defaultValue="Mapping Document Creator") String mappingDocumentCreator
-		, @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
+			@PathVariable("mappingpediaUsername") String mappingpediaUsername
+			, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
+			, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
+			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
+			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
+			, @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
+			, @RequestParam(value="mappingDocumentCreator", defaultValue="Mapping Document Creator") String mappingDocumentCreator
+			, @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
+			, @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
 
 	)
 	{
 		logger.info("[POST] /mappings/{mappingpediaUsername}");
-		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, manifestFileRef, mappingFileRef
-			, replaceMappingBaseURI, generateManifestFile
-			, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
+		String datasetID = null;
+
+		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
+				, replaceMappingBaseURI, generateManifestFile
+				, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
 			//, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+				, mappingLanguage
 		);
 	}
 
 	@RequestMapping(value = "/mappings/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
 	public MappingPediaExecutionResult uploadNewMapping(
-		@PathVariable("mappingpediaUsername") String mappingpediaUsername
-		, @PathVariable("datasetID") String datasetID
-		, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-		, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
-		, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
-		, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-		, @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
-		, @RequestParam(value="mappingDocumentCreator", defaultValue="Mapping Document Creator") String mappingDocumentCreator
-		, @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
+			@PathVariable("mappingpediaUsername") String mappingpediaUsername
+			, @PathVariable("datasetID") String datasetID
+			, @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
+			, @RequestParam(value="mappingFile") MultipartFile mappingFileRef
+			, @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
+			, @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
+			, @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
+			, @RequestParam(value="mappingDocumentCreator", defaultValue="Mapping Document Creator") String mappingDocumentCreator
+			, @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
+			, @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
+
 	)
 	{
 		logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
 		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
-			, replaceMappingBaseURI, generateManifestFile
-			, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
-			//, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+			    , replaceMappingBaseURI, generateManifestFile
+			    , mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
+			    //, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+				, mappingLanguage
 		);
 	}
 

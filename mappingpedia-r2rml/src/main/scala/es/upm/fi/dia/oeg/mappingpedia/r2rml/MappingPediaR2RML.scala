@@ -25,6 +25,24 @@ import es.upm.fi.dia.oeg.mappingpedia.OntologyClass
 import es.upm.fi.dia.oeg.mappingpedia.r2rml.model.MappingDocument
 import org.apache.jena.ontology.OntModel
 import org.slf4j.{Logger, LoggerFactory}
+import be.ugent.mmlab.rml.config.RMLConfiguration
+import be.ugent.mmlab.rml.core.RMLEngine
+import be.ugent.mmlab.rml.core.StdMetadataRMLEngine
+import be.ugent.mmlab.rml.core.StdRMLEngine
+import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory
+import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval
+import be.ugent.mmlab.rml.model.RMLMapping
+import org.apache.jena.sparql.function.library.leviathan.log
+import org.apache.log4j.BasicConfigurator
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util
+
+import be.ugent.mmlab.rml.config.RMLConfiguration
+import org.apache.commons.cli.CommandLine
+import org.openrdf.rio.RDFFormat
+
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 class MappingPediaR2RML() {
@@ -117,7 +135,7 @@ object MappingPediaR2RML {
 
   }
 
-	def uploadNewMapping(mappingpediaUsername: String, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile
+/*	def uploadNewMapping(mappingpediaUsername: String, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile
 											 , replaceMappingBaseURI: String, generateManifestFile:String
 											 , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
 											 //, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
@@ -130,14 +148,22 @@ object MappingPediaR2RML {
 			, generateManifestFile, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
 			//, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
 		);
-	}
+	}*/
 
-	def uploadNewMapping(mappingpediaUsername: String, datasetID: String, manifestFileRef: MultipartFile
+	def uploadNewMapping(mappingpediaUsername: String, pDatasetID: String, manifestFileRef: MultipartFile
 											 , mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
 											 , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
 											 //, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
+											, pMappingLanguage:String
 
 											) : MappingPediaExecutionResult = {
+		val datasetID = if(pDatasetID == null) UUID.randomUUID.toString else pDatasetID;
+		val mappingLanguage = if(pMappingLanguage == null) {
+			MappingPediaConstant.MAPPING_LANGUAGE_R2RML
+		} else {
+			pMappingLanguage
+		}
+
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
 
@@ -180,8 +206,8 @@ object MappingPediaR2RML {
 						//GENERATE MANIFEST FILE IF NOT PROVIDED
 						logger.info("GENERATING MANIFEST FILE ...")
 						val templateFiles = List(
-							"templates/metadata-namespaces-template.ttl"
-							, "templates/metadata-mappingdocument-template.ttl");
+							MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
+							, MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
 
 						val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
 
@@ -193,6 +219,8 @@ object MappingPediaR2RML {
 							, "$mappingDocumentSubjects" -> mappingDocumentSubjects
 							, "$mappingDocumentFilePath" -> mappingDocumentGitHubURL
 							, "$datasetID" -> datasetID
+							, "$mappingLanguage" -> mappingLanguage
+
 							//, "$datasetTitle" -> datasetTitle
 							//, "$datasetKeywords" -> datasetKeywords
 							//, "$datasetPublisher" -> datasetPublisher
@@ -451,14 +479,18 @@ object MappingPediaR2RML {
 		}
 	}
 
-	def executeMapping(mappingURL: String, datasetDistributionURL: String, fieldSeparator:String
+	@throws(classOf[Exception])
+	def executeMapping2(mappingURL: String, pMappingLanguage:String
+											, datasetDistributionURL: String, fieldSeparator:String
 										 , queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
+		val mappingLanguage = if(pMappingLanguage == null) {
+			MappingPediaConstant.MAPPING_LANGUAGE_R2RML
+		} else {
+			pMappingLanguage
+		}
+
 		val mappingpediaUsername = "executions"
 		val mappingDirectory = UUID.randomUUID.toString
-
-		val properties: MorphCSVProperties = new MorphCSVProperties
-		properties.setDatabaseName(mappingpediaUsername + "/" + mappingDirectory)
-		properties.setMappingDocumentFilePath(mappingURL)
 		val outputFileName = if (pOutputFilename == null) {
 			//"output.nt";
 			//MappingPediaConstant.DEFAULT_OUTPUT_FILENAME;
@@ -468,19 +500,104 @@ object MappingPediaR2RML {
 		}
 		val outputFilepath = "executions/" + mappingDirectory + "/" + outputFileName
 
-		properties.setOutputFilePath(outputFilepath);
-
-		properties.setCSVFile(datasetDistributionURL);
-		logger.debug("datasetDistributionURL = " + datasetDistributionURL)
-
-		properties.setQueryFilePath(queryFile);
-		if(fieldSeparator != null) {
-			properties.fieldSeparator = Some(fieldSeparator);
-		}
 		try {
-			val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
-			val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
-			runner.run
+			if(MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
+
+				val properties: MorphCSVProperties = new MorphCSVProperties
+				properties.setDatabaseName(mappingpediaUsername + "/" + mappingDirectory)
+				properties.setMappingDocumentFilePath(mappingURL)
+				properties.setOutputFilePath(outputFilepath);
+				properties.setCSVFile(datasetDistributionURL);
+				properties.setQueryFilePath(queryFile);
+				if(fieldSeparator != null) {
+					properties.fieldSeparator = Some(fieldSeparator);
+				}
+
+				val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
+				val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
+				runner.run
+			} else if(MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
+				val args:Array[String] = Array("-m", mappingURL, "-o", outputFilepath);
+				//be.ugent.mmlab.rml.main.Main.main(args);
+
+				// code taken from https://github.com/RMLio/RML-Processor/blob/ab26dac414692b3235164b271b376304869225ca/src/main/java/be/ugent/mmlab/rml/main/Main.java
+				var map_doc:String = null
+				var triplesMap:String = null
+				var exeTriplesMap:Array[String] = null
+				var parameters:Map[String, String] = null
+				BasicConfigurator.configure()
+				var commandLine:CommandLine = null
+				val mappingFactory:StdRMLMappingFactory = new StdRMLMappingFactory
+
+				logger.info("=================================================")
+				logger.info("RML Processor")
+				logger.info("=================================================")
+				logger.info("")
+
+				try {
+					commandLine = RMLConfiguration.parseArguments(args)
+					var outputFile:String = null
+					var outputFormat:String = "turtle"
+					var graphName:String = ""
+					var metadataVocab:String = null
+					var metadataLevel:String = "None"
+					var metadataFormat:String = null
+					var baseIRI:String = null
+					if (commandLine.hasOption("h")) RMLConfiguration.displayHelp()
+					if (commandLine.hasOption("o")) outputFile = commandLine.getOptionValue("o", null)
+					if (commandLine.hasOption("g")) graphName = commandLine.getOptionValue("g", "")
+					if (commandLine.hasOption("p")) parameters = retrieveParameters(commandLine)
+					if (commandLine.hasOption("f")) outputFormat = commandLine.getOptionValue("f", null)
+					if (commandLine.hasOption("b")) baseIRI = commandLine.getOptionValue("b", null)
+					if (commandLine.hasOption("m")) map_doc = commandLine.getOptionValue("m", null)
+					if (commandLine.hasOption("md")) metadataVocab = commandLine.getOptionValue("md", null)
+					if (commandLine.hasOption("mdl")) metadataLevel = commandLine.getOptionValue("mdl", null)
+					if (commandLine.hasOption("mdf")) metadataFormat = commandLine.getOptionValue("mdf", null)
+					logger.info("========================================")
+					logger.info("Retrieving the RML Mapping Document...")
+					logger.info("========================================")
+					val mapDocRetrieval = new RMLDocRetrieval
+					val repository = mapDocRetrieval.getMappingDoc(map_doc, RDFFormat.TURTLE)
+					if (repository == null) {
+						logger.debug("Problem retrieving the RML Mapping Document")
+						System.exit(1)
+					}
+					logger.info("========================================")
+					logger.info("Extracting the RML Mapping Definitions..")
+					logger.info("========================================")
+					val mapping = mappingFactory.extractRMLMapping(repository)
+					logger.info("========================================")
+					logger.info("Executing the RML Mapping..")
+					logger.info("========================================")
+					logger.debug("Generation Execution plan...")
+					if (commandLine.hasOption("tm")) {
+						triplesMap = commandLine.getOptionValue("tm", null)
+						if (triplesMap != null) exeTriplesMap = RMLConfiguration.processTriplesMap(triplesMap, map_doc, baseIRI)
+					}
+					if (metadataLevel == "None" && metadataFormat == null && (metadataVocab == null || !metadataVocab.contains("co"))) {
+						logger.debug("Mapping without metadata...")
+						val engine = new StdRMLEngine(outputFile)
+						engine.run(mapping, outputFile, outputFormat, graphName, parameters, exeTriplesMap, null, null, null)
+					}
+					else {
+						logger.debug("Mapping with metadata...")
+						val engine = new StdMetadataRMLEngine(outputFile)
+						engine.run(mapping, outputFile, outputFormat, graphName, parameters, exeTriplesMap, metadataLevel, metadataFormat, metadataVocab)
+					}
+					val path = Paths.get(outputFile)
+					val lines = Files.readAllLines(path)
+				} catch {
+					case ex: Exception =>
+						logger.error("Exception " + ex)
+						//RMLConfiguration.displayHelp()
+						throw new Exception("Error while executing RML mapping: " + ex);
+				}
+			} else if(MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
+				throw new Exception(mappingLanguage + " Language is not supported yet");
+			} else {
+				throw new Exception(mappingLanguage + " Language is not supported yet");
+			}
+
 			logger.info("mapping execution success!")
 			val outputFile: File = new File(outputFilepath)
 			val response = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser, MappingPediaProperties.githubAccessToken
@@ -493,15 +610,16 @@ object MappingPediaR2RML {
 			logger.info("responseStatusText = " + responseStatusText)
 			if (HttpURLConnection.HTTP_CREATED== responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
 				val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
-				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
-					,null , outputGitHubURL, responseStatusText, responseStatus)
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, datasetDistributionURL, mappingURL
+					,queryFile , outputGitHubURL, responseStatusText, responseStatus)
 				return executionResult
 			}
 			else {
-				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
-					, null, null, responseStatusText, responseStatus)
+				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, datasetDistributionURL, mappingURL
+					, queryFile, null, responseStatusText, responseStatus)
 				return executionResult
 			}
+
 		}
 		catch {
 			case e: Exception => {
@@ -513,6 +631,11 @@ object MappingPediaR2RML {
 				return executionResult
 			}
 		}
+
+
+
+
+
 	}
 
 	def executeMapping(mappingpediaUsername:String, mappingDirectory: String
@@ -832,9 +955,12 @@ object MappingPediaR2RML {
 			"$graphURL" -> MappingPediaProperties.graphName
 		);
 
-		val queryString: String = MappingPediaR2RML.generateStringFromTemplateFile(mapValues, "templates/findAllMappingDocuments.rq")
+		val queryString: String = MappingPediaR2RML.generateStringFromTemplateFile(
+			mapValues, "templates/findAllMappingDocuments.rq")
 
-		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
+		this.findMappingDocuments(queryString);
+
+/*		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
 			, MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
 
 		logger.debug("Executing query=\n" + queryString)
@@ -853,14 +979,16 @@ object MappingPediaR2RML {
 				val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
 				val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
 				val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
+				val mappingLanguage = MappingPediaUtility.getOptionString(qs, "mappingLanguage");
+
 				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
-					, distributionAccessURL, mappingDocumentURL);
+					, distributionAccessURL, mappingDocumentURL, mappingLanguage);
 				results = md :: results;
 			}
 		} finally qexec.close
 
 		val listResult = new ListResult(results.length, results);
-		listResult
+		listResult*/
 	}
 
 	def findMappingDocumentsByMappedClass(mappedClass:String) : ListResult = {
@@ -959,8 +1087,11 @@ object MappingPediaR2RML {
 				val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
 				val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
 				val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
+				val mappingLanguage = MappingPediaUtility.getOptionString(qs, "mappingLanguage");
+
+
 				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
-					, distributionAccessURL, mappingDocumentURL);
+					, distributionAccessURL, mappingDocumentURL, mappingLanguage);
 				results = md :: results;
 			}
 		} finally qexec.close
@@ -987,6 +1118,7 @@ object MappingPediaR2RML {
 
 		val executionResults:List[String] = mappingDocuments.map(mappingDocument => {
 			val md = mappingDocument.asInstanceOf[MappingDocument];
+			val mappingLanguage = md.mappingLanguage.getOrElse(null);
 			val distributionFieldSeparator = if(md.distributionFieldSeparator != null && md.distributionFieldSeparator.isDefined) {
 				md.distributionFieldSeparator.get
 			} else {
@@ -994,7 +1126,7 @@ object MappingPediaR2RML {
 			}
 			val outputFilename = UUID.randomUUID.toString + ".nt"
 			val executionResult = MappingPediaR2RML.executeMapping(
-				md.mappingDocumentDownloadURL
+				md.mappingDocumentDownloadURL, mappingLanguage
 				, md.distributionAccessURL, distributionFieldSeparator
 				, queryFile, outputFilename);
 
@@ -1004,7 +1136,25 @@ object MappingPediaR2RML {
 		})
 		new ListResult(executionResults.size, executionResults);
 
-
 	}
 
+	/**
+		*
+		* @param commandLine
+		* @return
+		*         code taken from https://github.com/RMLio/RML-Processor/blob/ab26dac414692b3235164b271b376304869225ca/src/main/java/be/ugent/mmlab/rml/main/Main.java
+		*/
+	def retrieveParameters(commandLine:CommandLine): Map[String, String] = {
+		val parameters:Map[String, String] = Map.empty;
+		var parameterKeyValue:Array[String] = null
+		val parameter:String = commandLine.getOptionValue("p", null)
+		val subParameters:Array[String] = parameter.split(",")
+		for (subParameter <- subParameters) {
+			parameterKeyValue = subParameter.split("=")
+			val key = parameterKeyValue(0)
+			val value = parameterKeyValue(1)
+			parameters.put(key, value)
+		}
+		parameters
+	}
 }
