@@ -1,7 +1,10 @@
 package es.upm.fi.dia.oeg.mappingpedia
 
-import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.ResourceFactory
 
+/**
+  * Created by freddy on 10/08/2017.
+  */
 object MappingPediaConstant {
   //RDB2RDF Test related constants
 	//private val RDB2RDFTEST_NS = "http://purl.org/NET/rdb2rdf-test#";
@@ -9,7 +12,7 @@ object MappingPediaConstant {
 	//val RDB2RDFTEST_R2RML_CLASS = ResourceFactory.createResource(RDB2RDFTEST_R2RML_URI);
 	//private val RDB2RDFTEST_MAPPING_DOCUMENT_URI = RDB2RDFTEST_NS + "mappingDocument";
 	//val RDB2RDFTEST_MAPPING_DOCUMENT_PROPERTY = ResourceFactory.createProperty(RDB2RDFTEST_MAPPING_DOCUMENT_URI);
-	
+
 	//W3C Test Description related constants
 	//private val TEST_NS = "http://www.w3.org/2006/03/test-description#";
 	//private val TEST_PURPOSE_URI = TEST_NS + "purpose";
@@ -32,7 +35,7 @@ object MappingPediaConstant {
 	val DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY = ResourceFactory.createProperty(DEFAULT_MAPPINGDOCUMENTFILE_URI);
   val MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_URI = MAPPINGPEDIA_NS + "R2RMLMappingDocument";
 	val MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS = ResourceFactory.createResource(MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_URI);
-	
+
 	val MANIFEST_FILE_LANGUAGE = "TURTLE";
 	val R2RML_FILE_LANGUAGE = "TURTLE";
 	val DEFAULT_OUTPUT_FILENAME = "output.nt";

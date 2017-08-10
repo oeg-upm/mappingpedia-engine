@@ -7,7 +7,6 @@ import javax.servlet.annotation.MultipartConfig;
 
 import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult;
-import es.upm.fi.dia.oeg.mappingpedia.r2rml.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.web.bind.annotation.*;
@@ -51,7 +50,7 @@ public class MappingPediaController {
 	@RequestMapping(value="/triplesMaps", method= RequestMethod.GET)
 	public ListResult getTriplesMaps() {
 		logger.info("/triplesMaps ...");
-		ListResult listResult = MappingPediaR2RML.getAllTriplesMaps();
+		ListResult listResult = MappingPediaEngine.getAllTriplesMaps();
 		logger.info("listResult = " + listResult);
 
 		return listResult;
@@ -64,7 +63,7 @@ public class MappingPediaController {
 		logger.info("/ogd/annotations(GET) ...");
 		logger.info("searchType = " + searchType);
 		logger.info("searchTerm = " + searchTerm);
-		ListResult listResult = MappingPediaR2RML.findMappingDocuments(searchType, searchTerm);
+		ListResult listResult = MappingPediaEngine.findMappingDocuments(searchType, searchTerm);
 		logger.info("listResult = " + listResult);
 		return listResult;
 	}
@@ -88,7 +87,7 @@ public class MappingPediaController {
 	{
 		logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
 		try {
-			return MappingPediaR2RML.executeMapping2(mappingURL, mappingLanguage, datasetDistributionURL, fieldSeparator
+			return MappingPediaEngine.executeMapping2(mappingURL, mappingLanguage, datasetDistributionURL, fieldSeparator
 					, queryFile, outputFilename);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -111,7 +110,7 @@ public class MappingPediaController {
 	)
 	{
 		logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
-		return MappingPediaR2RML.executeMapping(mappingpediaUsername, mappingDirectory, mappingFilename
+		return MappingPediaEngine.executeMapping(mappingpediaUsername, mappingDirectory, mappingFilename
 				, datasetFile, queryFile, outputFilename);
 	}
 
@@ -132,7 +131,7 @@ public class MappingPediaController {
 		logger.info("[POST] /mappings/{mappingpediaUsername}");
 		String datasetID = null;
 
-		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
+		return MappingPediaEngine.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
 				, replaceMappingBaseURI, generateManifestFile
 				, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
 			//, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
@@ -156,7 +155,7 @@ public class MappingPediaController {
 	)
 	{
 		logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
-		return MappingPediaR2RML.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
+		return MappingPediaEngine.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
 			    , replaceMappingBaseURI, generateManifestFile
 			    , mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
 			    //, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
@@ -172,7 +171,7 @@ public class MappingPediaController {
 	)
 	{
 		logger.info("GET /mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
-		return MappingPediaR2RML.getMapping(mappingpediaUsername, mappingDirectory, mappingFilename);
+		return MappingPediaEngine.getMapping(mappingpediaUsername, mappingDirectory, mappingFilename);
 	}
 	
 	@RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.PUT)
@@ -184,7 +183,7 @@ public class MappingPediaController {
 	)
 	{
 		logger.info("PUT /mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
-		return MappingPediaR2RML.updateExistingMapping(mappingpediaUsername, mappingDirectory, mappingFilename
+		return MappingPediaEngine.updateExistingMapping(mappingpediaUsername, mappingDirectory, mappingFilename
 				, mappingFileRef);
 	}
 
@@ -206,7 +205,7 @@ public class MappingPediaController {
 		logger.info("[POST] /datasets/{mappingpediaUsername}");
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername);
 
-		return MappingPediaR2RML.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
+		return MappingPediaEngine.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
 				, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
 				, distributionAccessURL, distributionDownloadURL, distributionMediaType
 		);
@@ -229,7 +228,7 @@ public class MappingPediaController {
 	)
 	{
 		logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
-		return MappingPediaR2RML.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
+		return MappingPediaEngine.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
 			, datasetID
 			, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
 			, distributionAccessURL, distributionDownloadURL, distributionMediaType
@@ -244,7 +243,7 @@ public class MappingPediaController {
 	)
 	{
 		logger.info("[POST] /queries/{mappingpediaUsername}/{datasetID}");
-		return MappingPediaR2RML.addQueryFile(queryFileRef, mappingpediaUsername, datasetID);
+		return MappingPediaEngine.addQueryFile(queryFileRef, mappingpediaUsername, datasetID);
 	}
 
 
@@ -254,7 +253,7 @@ public class MappingPediaController {
 			, @RequestParam(value="graphURI") String graphURI)
 	{
 		logger.info("/storeRDFFile...");
-		return MappingPediaR2RML.storeRDFFile(fileRef, graphURI);
+		return MappingPediaEngine.storeRDFFile(fileRef, graphURI);
 	}
 
 	@RequestMapping(value="/ogd/utility/subclasses", method= RequestMethod.GET)
@@ -266,7 +265,7 @@ public class MappingPediaController {
 	) {
 		logger.info("GET /ogd/utility/subclasses ...");
 		logger.info("aClass = " + aClass);
-		ListResult result = MappingPediaR2RML.getSchemaOrgSubclasses(aClass, outputType, inputType) ;
+		ListResult result = MappingPediaEngine.getSchemaOrgSubclasses(aClass, outputType, inputType) ;
 		logger.info("result = " + result);
 		return result;
 	}
@@ -280,7 +279,7 @@ public class MappingPediaController {
 	) {
 		logger.info("GET /ogd/instances ...");
 		logger.info("aClass = " + aClass);
-		ListResult result = MappingPediaR2RML.getInstances(aClass, outputType, inputType) ;
+		ListResult result = MappingPediaEngine.getInstances(aClass, outputType, inputType) ;
 		logger.info("result = " + result);
 		return result;
 	}

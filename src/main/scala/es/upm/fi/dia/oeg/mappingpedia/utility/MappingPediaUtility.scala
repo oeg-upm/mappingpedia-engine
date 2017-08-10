@@ -1,10 +1,11 @@
-package es.upm.fi.dia.oeg.mappingpedia
+package es.upm.fi.dia.oeg.mappingpedia.utility
 
 import java.io._
 import java.nio.channels.FileChannel
 import java.util.UUID
 
 import es.upm.fi.dia.oeg.mappingpedia.model.{ListResult, MapResult, OntologyClass}
+import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaProperties}
 import org.apache.jena.graph.{Node, NodeFactory, Triple}
 import org.apache.jena.ontology.{OntClass, OntModel, OntModelSpec}
 import org.apache.jena.query.QuerySolution
@@ -17,6 +18,9 @@ import virtuoso.jena.driver.VirtGraph
 import scala.collection.JavaConversions._
 
 
+/**
+  * Created by freddy on 10/08/2017.
+  */
 object MappingPediaUtility {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
@@ -66,7 +70,7 @@ object MappingPediaUtility {
 		logger.debug("initialGraphSize = " + initialGraphSize);
 
 		val newTriples = if(skolemizeBlankNode) { this.skolemizeTriples(pTriples, baseURI)} else { pTriples }
-		
+
 		val triplesIterator = newTriples.iterator;
 		while(triplesIterator.hasNext) {
 			val triple = triplesIterator.next();
@@ -76,8 +80,8 @@ object MappingPediaUtility {
     val finalGraphSize = virtuosoGraph.getCount();
 		logger.debug("finalGraphSize = " + finalGraphSize);
 
-		val addedTriplesSize = finalGraphSize - initialGraphSize; 
-		logger.info("No of added triples = " + addedTriplesSize);	  
+		val addedTriplesSize = finalGraphSize - initialGraphSize;
+		logger.info("No of added triples = " + addedTriplesSize);
   }
 
   def readModelFromFile(filePath:String) : Model = {
@@ -89,7 +93,7 @@ object MappingPediaUtility {
     val model = this.readModelFromInputStream(inputStream, lang);
     model;
   }
-  
+
   def readModelFromFile(filePath:String, lang:String) : Model = {
 		val inputStream = FileManager.get().open(filePath);
     val model = this.readModelFromInputStream(inputStream, lang);
@@ -108,70 +112,70 @@ object MappingPediaUtility {
     } else {
       val blankNodesHead:Set[Node] = this.collectBlankNode(triples.head);
       val blankNodesTail:Set[Node] = this.collectBlankNodes(triples.tail);
-    
-      blankNodesHead ++ blankNodesTail;      
+
+      blankNodesHead ++ blankNodesTail;
     }
 
     blankNodes;
   }
-  
+
   def collectBlankNode(tp:Triple) : Set[Node] = {
     val tpSubject = tp.getSubject;
     val tpObject = tp.getObject;
-    
+
     var blankNodes:Set[Node] = Set.empty;
-    
-    if(tpSubject.isBlank()) { 
+
+    if(tpSubject.isBlank()) {
       blankNodes = blankNodes + tpSubject;
     }
-    
+
     if(tpObject.isBlank()) {
       blankNodes = blankNodes + tpObject;
     }
-    
+
     blankNodes;
   }
-  
+
   def skolemizeTriples(triples:List[Triple], baseURI:String) : List[Triple] = {
     val blankNodes = this.collectBlankNodes(triples);
     val mapNewNodes = this.skolemizeBlankNodes(blankNodes, baseURI);
     val newTriples = this.replaceBlankNodesInTriples(triples, mapNewNodes);
     newTriples;
   }
-  
+
   def replaceBlankNodesInTriples(triples:List[Triple], mapNewNodes:Map[Node, Node]) : List[Triple] = {
     val newTriples = triples.map(x => {this.replaceBlankNodesInTriple(x, mapNewNodes)});
     newTriples;
   }
-  
+
   def replaceBlankNodesInTriple(tp:Triple, mapNewNodes:Map[Node, Node]) : Triple = {
     val tpSubject = tp.getSubject;
     val tpObject = tp.getObject;
-    
+
     val tpSubjectNew:Node = if(tpSubject.isBlank()) { mapNewNodes.get(tpSubject).get } else { tpSubject; }
     val tpObjectNew:Node = if(tpObject.isBlank()) { mapNewNodes.get(tpObject).get } else { tpObject; }
-    
+
     val newTriple = new Triple(tpSubjectNew, tp.getPredicate, tpObjectNew);
     newTriple;
   }
-  
+
   def skolemizeBlankNodes(blankNodes:Set[Node], baseURI:String) : Map[Node, Node] = {
     val mapNewNodes = blankNodes.map(x => {(x -> this.skolemizeBlankNode(x, baseURI))}).toMap;
     mapNewNodes;
   }
-  
+
   def skolemizeBlankNode(blankNode:Node, baseURI:String) : Node = {
     //val absoluteBaseURI = if(baseURI.endsWith("/")) { baseURI } else { baseURI + "/" }
-    
+
     val newNodeURI = baseURI + ".well-known/genid/" + blankNode.getBlankNodeLabel;
     val newNode = NodeFactory.createURI(newNodeURI);
     newNode;
   }
-  
+
   def toTriples(model:Model) : List[Triple] = {
     val statements = model.listStatements();
     //val statementList = statements.toList();
-    var triples:List[Triple] = List.empty; 
+    var triples:List[Triple] = List.empty;
     if(statements != null) {
       while(statements.hasNext()) {
         val statement = statements.nextStatement();
@@ -239,7 +243,7 @@ object MappingPediaUtility {
   def pushContentToGitHub(file:File) = {
 
   }
-  
+
   def multipartFileToFile(fileRef:MultipartFile) : File = {
 			// Path where the uploaded files will be stored.
 		val uuid = UUID.randomUUID().toString();
@@ -247,9 +251,9 @@ object MappingPediaUtility {
 		val file = this.multipartFileToFile(fileRef, uuid);
 		file;
   }
-  
+
   def multipartFileToFile(fileRef:MultipartFile, uuid:String) : File = {
-		
+
 		// Create the input stream to uploaded files to read data from it.
 		val fis:FileInputStream = try {
 			if(fileRef != null) {
@@ -265,14 +269,14 @@ object MappingPediaUtility {
   			throw e;
 		  }
 		}
-		
+
 			// Get the name of uploaded files.
 		val fileName = fileRef.getOriginalFilename();
 
     val file = MappingPediaUtility.materializeFileInputStream(fis, uuid, fileName);
     file;
   }
-  
+
   def stringToBoolean(aString:String) : Boolean = {
     if(aString != null) {
       if(aString.equalsIgnoreCase("true") || aString.equalsIgnoreCase("yes")) {

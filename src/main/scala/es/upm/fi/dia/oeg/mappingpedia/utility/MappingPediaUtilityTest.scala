@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.mappingpedia
+package es.upm.fi.dia.oeg.mappingpedia.utility
 
 /**
   * Created by fpriyatna on 6/7/17.

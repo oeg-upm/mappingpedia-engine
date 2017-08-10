@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.mappingpedia.r2rml;
+package es.upm.fi.dia.oeg.mappingpedia;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,9 +7,6 @@ import java.util.UUID;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaConstant;
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaProperties;
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaRunner;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -19,7 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class Application {
 	static Logger logger = LogManager.getLogger("Application");
-	static MappingPediaR2RML mappingpediaR2RML = null;
+	static MappingPediaEngine mappingpediaEngine = null;
 
 	//static VirtGraph mappingpediaGraph = null;
 	//static MappingPediaProperties prop = null;
@@ -115,7 +112,7 @@ public class Application {
 		//VirtGraph mappingpediaGraph = MappingPediaUtility.getVirtuosoGraph(
 		//		    virtuosoJDBC, virtuosoUser, virtuosoPwd, graphName);
 		//Application.mappingpediaR2RML = new MappingPediaR2RML(mappingpediaGraph);
-		Application.mappingpediaR2RML = new MappingPediaR2RML();
+		Application.mappingpediaEngine = new MappingPediaEngine();
 		
 		//Application.mappingpediaR2RML.clearGraph_$eq(false);
 
@@ -156,7 +153,7 @@ public class Application {
 			String uuid = UUID.randomUUID().toString();
 			String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
 			MappingPediaRunner.run(manifestFilePath, mappingFilePath, clearGraph
-					, Application.mappingpediaR2RML, replaceMappingBaseURI, newMappingBaseURI);
+					, Application.mappingpediaEngine, replaceMappingBaseURI, newMappingBaseURI);
 			logger.info("Storing R2RML triples in GitHub.");
 
 			String filename = mappingFilePath;
@@ -164,7 +161,7 @@ public class Application {
 				filename = uuid + ".ttl";
 			}
 			String commitMessage = "Commit From mappingpedia-engine.Application";
-			String mappingContent = MappingPediaR2RML.getMappingContent(manifestFilePath, mappingFilePath);
+			String mappingContent = MappingPediaEngine.getMappingContent(manifestFilePath, mappingFilePath);
 			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
 			String mappingpediaUserName = "mappingpedia-testuser";
 			HttpResponse<JsonNode> response = GitHubUtility.putEncodedContent(

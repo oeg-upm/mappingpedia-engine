@@ -2,6 +2,9 @@ package es.upm.fi.dia.oeg.mappingpedia
 
 import java.util.Properties
 
+/**
+  * Created by freddy on 10/08/2017.
+  */
 object MappingPediaProperties extends Properties {
 	var virtuosoJDBC:String = null;
 	var virtuosoUser:String = null;
@@ -16,4 +19,3 @@ object MappingPediaProperties extends Properties {
 	//def setVirtuosoJDBC(pVirtuosoJDBC:String) = {this.virtuosoJDBC = pVirtuosoJDBC; }
 
 }
-
