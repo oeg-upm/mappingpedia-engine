@@ -1,7 +1,7 @@
 package es.upm.fi.dia.oeg.mappingpedia
 
 import java.io.{BufferedWriter, File, FileWriter, InputStream}
-import java.net.HttpURLConnection
+import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Paths}
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
@@ -10,6 +10,7 @@ import be.ugent.mmlab.rml.config.RMLConfiguration
 import be.ugent.mmlab.rml.core.{StdMetadataRMLEngine, StdRMLEngine}
 import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory
 import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval
+import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.model.{ListResult, MappingDocument, MappingPediaExecutionResult, OntologyClass}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
@@ -29,7 +30,7 @@ import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
 
 import scala.collection.JavaConversions._
 import scala.io.Source.fromFile
-
+import org.apache.commons.io.{FileUtils, FilenameUtils}
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 class MappingPediaEngine() {
@@ -504,81 +505,17 @@ object MappingPediaEngine {
 				val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
 				runner.run
 			} else if(MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
-				val args:Array[String] = Array("-m", mappingURL, "-o", outputFilepath);
-				//be.ugent.mmlab.rml.main.Main.main(args);
+/*				val url = new URL(datasetDistributionURL);
+				val file = new File(FilenameUtils.getName(url.getPath()));
+				file.deleteOnExit();
+				FileUtils.copyURLToFile(url, file)
+				logger.info("file = " + file)*/
 
-				// code taken from https://github.com/RMLio/RML-Processor/blob/ab26dac414692b3235164b271b376304869225ca/src/main/java/be/ugent/mmlab/rml/main/Main.java
-				var map_doc:String = null
-				var triplesMap:String = null
-				var exeTriplesMap:Array[String] = null
-				var parameters:Map[String, String] = null
-				BasicConfigurator.configure()
-				var commandLine:CommandLine = null
-				val mappingFactory:StdRMLMappingFactory = new StdRMLMappingFactory
 
-				logger.info("=================================================")
-				logger.info("RML Processor")
-				logger.info("=================================================")
-				logger.info("")
+				val rmlConnector = new RMLMapperConnector();
+				//rmlConnector.execute(mappingURL, outputFilepath);
+				rmlConnector.executeWithMain(mappingURL, outputFilepath);
 
-				try {
-					commandLine = RMLConfiguration.parseArguments(args)
-					var outputFile:String = null
-					var outputFormat:String = "turtle"
-					var graphName:String = ""
-					var metadataVocab:String = null
-					var metadataLevel:String = "None"
-					var metadataFormat:String = null
-					var baseIRI:String = null
-					if (commandLine.hasOption("h")) RMLConfiguration.displayHelp()
-					if (commandLine.hasOption("o")) outputFile = commandLine.getOptionValue("o", null)
-					if (commandLine.hasOption("g")) graphName = commandLine.getOptionValue("g", "")
-					if (commandLine.hasOption("p")) parameters = retrieveParameters(commandLine)
-					if (commandLine.hasOption("f")) outputFormat = commandLine.getOptionValue("f", null)
-					if (commandLine.hasOption("b")) baseIRI = commandLine.getOptionValue("b", null)
-					if (commandLine.hasOption("m")) map_doc = commandLine.getOptionValue("m", null)
-					if (commandLine.hasOption("md")) metadataVocab = commandLine.getOptionValue("md", null)
-					if (commandLine.hasOption("mdl")) metadataLevel = commandLine.getOptionValue("mdl", null)
-					if (commandLine.hasOption("mdf")) metadataFormat = commandLine.getOptionValue("mdf", null)
-					logger.info("========================================")
-					logger.info("Retrieving the RML Mapping Document...")
-					logger.info("========================================")
-					val mapDocRetrieval = new RMLDocRetrieval
-					val repository = mapDocRetrieval.getMappingDoc(map_doc, RDFFormat.TURTLE)
-					if (repository == null) {
-						logger.debug("Problem retrieving the RML Mapping Document")
-						System.exit(1)
-					}
-					logger.info("========================================")
-					logger.info("Extracting the RML Mapping Definitions..")
-					logger.info("========================================")
-					val mapping = mappingFactory.extractRMLMapping(repository)
-					logger.info("========================================")
-					logger.info("Executing the RML Mapping..")
-					logger.info("========================================")
-					logger.debug("Generation Execution plan...")
-					if (commandLine.hasOption("tm")) {
-						triplesMap = commandLine.getOptionValue("tm", null)
-						if (triplesMap != null) exeTriplesMap = RMLConfiguration.processTriplesMap(triplesMap, map_doc, baseIRI)
-					}
-					if (metadataLevel == "None" && metadataFormat == null && (metadataVocab == null || !metadataVocab.contains("co"))) {
-						logger.debug("Mapping without metadata...")
-						val engine = new StdRMLEngine(outputFile)
-						engine.run(mapping, outputFile, outputFormat, graphName, parameters, exeTriplesMap, null, null, null)
-					}
-					else {
-						logger.debug("Mapping with metadata...")
-						val engine = new StdMetadataRMLEngine(outputFile)
-						engine.run(mapping, outputFile, outputFormat, graphName, parameters, exeTriplesMap, metadataLevel, metadataFormat, metadataVocab)
-					}
-					val path = Paths.get(outputFile)
-					val lines = Files.readAllLines(path)
-				} catch {
-					case ex: Exception =>
-						logger.error("Exception " + ex)
-						//RMLConfiguration.displayHelp()
-						throw new Exception("Error while executing RML mapping: " + ex);
-				}
 			} else if(MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
 				throw new Exception(mappingLanguage + " Language is not supported yet");
 			} else {
