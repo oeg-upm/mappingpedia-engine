@@ -505,16 +505,9 @@ object MappingPediaEngine {
 				val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
 				runner.run
 			} else if(MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
-/*				val url = new URL(datasetDistributionURL);
-				val file = new File(FilenameUtils.getName(url.getPath()));
-				file.deleteOnExit();
-				FileUtils.copyURLToFile(url, file)
-				logger.info("file = " + file)*/
-
-
 				val rmlConnector = new RMLMapperConnector();
 				//rmlConnector.execute(mappingURL, outputFilepath);
-				rmlConnector.executeWithMain(mappingURL, outputFilepath);
+				rmlConnector.executeWithMain(datasetDistributionURL, mappingURL, outputFilepath);
 
 			} else if(MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
 				throw new Exception(mappingLanguage + " Language is not supported yet");
