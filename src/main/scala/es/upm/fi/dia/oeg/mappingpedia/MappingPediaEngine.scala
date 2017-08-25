@@ -187,6 +187,7 @@ object MappingPediaEngine {
 				null
 			}
 
+			logger.info("storing/creating manifest file ...")
 			val manifestFile = if (manifestFileRef != null) {
 				MappingPediaUtility.multipartFileToFile(manifestFileRef, datasetID)
 			} else {
