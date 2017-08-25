@@ -179,8 +179,9 @@ object MappingPediaEngine {
 
 			val mappingDocumentGitHubURL = if (HttpURLConnection.HTTP_OK == responseStatus
 				|| HttpURLConnection.HTTP_CREATED == responseStatus) {
+				val url = response.getBody.getObject.getJSONObject("content").getString("url")
 				logger.info("Mapping stored on GitHub")
-				response.getBody.getObject.getJSONObject("content").getString("url")
+				url;
 			} else {
 				logger.error("Error when storing mapping on GitHub: " + responseStatusText)
 				null
