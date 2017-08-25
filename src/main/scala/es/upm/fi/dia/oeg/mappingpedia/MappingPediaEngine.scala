@@ -194,7 +194,7 @@ object MappingPediaEngine {
 			} else {
 				logger.info("Manifest file is not provided")
 				logger.debug("generateManifestFile = " + generateManifestFile)
-				if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+				if(generateManifestFile != null && ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile))) {
 					try {
 						//GENERATE MANIFEST FILE IF NOT PROVIDED
 						logger.info("GENERATING MANIFEST FILE ...")
