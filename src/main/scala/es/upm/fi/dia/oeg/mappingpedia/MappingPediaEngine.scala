@@ -166,7 +166,7 @@ object MappingPediaEngine {
 			val commitMessage = "add a new mapping file by mappingpedia-engine"
 			val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
 			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
-			logger.info("STORING MAPPING FILE ON GITHUB ...")
+			logger.info("Storing mapping file on GitHub ...")
 			val response = GitHubUtility.putEncodedContent(MappingPediaProperties.githubUser
 				, MappingPediaProperties.githubAccessToken, mappingpediaUsername, datasetID, mappingFile.getName
 				, commitMessage, base64EncodedContent)
@@ -189,8 +189,11 @@ object MappingPediaEngine {
 
 			logger.info("storing/creating manifest file ...")
 			val manifestFile = if (manifestFileRef != null) {
+				logger.info("Manifest file is provided")
 				MappingPediaUtility.multipartFileToFile(manifestFileRef, datasetID)
 			} else {
+				logger.info("Manifest file is not provided")
+				logger.debug("generateManifestFile = " + generateManifestFile)
 				if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
 					try {
 						//GENERATE MANIFEST FILE IF NOT PROVIDED
