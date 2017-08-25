@@ -166,7 +166,7 @@ object MappingPediaEngine {
 			val commitMessage = "add a new mapping file by mappingpedia-engine"
 			val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
 			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
-			logger.info("STORING MAPPING FILE ON GITHUB ...")
+			logger.info("Storing mapping file on GitHub ...")
 			val response = GitHubUtility.putEncodedContent(MappingPediaProperties.githubUser
 				, MappingPediaProperties.githubAccessToken, mappingpediaUsername, datasetID, mappingFile.getName
 				, commitMessage, base64EncodedContent)
@@ -179,17 +179,22 @@ object MappingPediaEngine {
 
 			val mappingDocumentGitHubURL = if (HttpURLConnection.HTTP_OK == responseStatus
 				|| HttpURLConnection.HTTP_CREATED == responseStatus) {
+				val url = response.getBody.getObject.getJSONObject("content").getString("url")
 				logger.info("Mapping stored on GitHub")
-				response.getBody.getObject.getJSONObject("content").getString("url")
+				url;
 			} else {
 				logger.error("Error when storing mapping on GitHub: " + responseStatusText)
 				null
 			}
 
+			logger.info("storing/creating manifest file ...")
 			val manifestFile = if (manifestFileRef != null) {
+				logger.info("Manifest file is provided")
 				MappingPediaUtility.multipartFileToFile(manifestFileRef, datasetID)
 			} else {
-				if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+				logger.info("Manifest file is not provided")
+				logger.debug("generateManifestFile = " + generateManifestFile)
+				if(generateManifestFile != null && ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile))) {
 					try {
 						//GENERATE MANIFEST FILE IF NOT PROVIDED
 						logger.info("GENERATING MANIFEST FILE ...")
@@ -217,6 +222,8 @@ object MappingPediaEngine {
 
 						val filename = "metadata-mappingdocument.ttl";
 						MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, datasetID);
+
+
 					} catch {
 						case e:Exception => {
 							e.printStackTrace();
@@ -225,11 +232,13 @@ object MappingPediaEngine {
 							null
 						}
 					}
+
 				} else {
 					null
 				}
 			}
-			val manifestFilePath = manifestFile.getPath;
+
+			val manifestFilePath:String = if(manifestFile == null) { null }  else { manifestFile.getPath; }
 			logger.debug("manifestFilePath = " + manifestFilePath)
 
 			//STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
@@ -240,20 +249,24 @@ object MappingPediaEngine {
 
 
 			//STORING MANIFEST FILE ON GITHUB
-			logger.info("STORING MANIFEST FILE ON GITHUB ...")
-			val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-			val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser
-				, MappingPediaProperties.githubAccessToken, mappingpediaUsername
-				, datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
-			val addNewManifestResponseStatus = addNewManifestResponse.getStatus
-			val addNewManifestResponseStatusText = addNewManifestResponse.getStatusText
+			val manifestGitHubURL = if(manifestFile != null) {
+				logger.info("STORING MANIFEST FILE ON GITHUB ...")
+				val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+				val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaProperties.githubUser
+					, MappingPediaProperties.githubAccessToken, mappingpediaUsername
+					, datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+				val addNewManifestResponseStatus = addNewManifestResponse.getStatus
+				val addNewManifestResponseStatusText = addNewManifestResponse.getStatusText
 
-			val manifestGitHubURL = if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
-				|| HttpURLConnection.HTTP_OK == addNewManifestResponseStatus) {
-				logger.info("Manifest file stored on GitHub")
-				addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
+				if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
+					|| HttpURLConnection.HTTP_OK == addNewManifestResponseStatus) {
+					logger.info("Manifest file stored on GitHub")
+					addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
+				} else {
+					logger.info("Error occured when storing manifest file on GitHub: " + addNewManifestResponseStatusText)
+					null
+				}
 			} else {
-				logger.info("Error occured when storing manifest file on GitHub: " + addNewManifestResponseStatusText)
 				null
 			}
 
