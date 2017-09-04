@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.annotation.MultipartConfig;
 
 import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
+import es.upm.fi.dia.oeg.mappingpedia.model.MapResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
