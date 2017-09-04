@@ -11,7 +11,7 @@ import be.ugent.mmlab.rml.core.{StdMetadataRMLEngine, StdRMLEngine}
 import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory
 import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
-import es.upm.fi.dia.oeg.mappingpedia.model.{ListResult, MappingDocument, MappingPediaExecutionResult, OntologyClass}
+import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
@@ -1037,16 +1037,22 @@ object MappingPediaEngine {
 
 	def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
 		val subclassesListResult = MappingPediaUtility.getSubclasses(aClass, this.schemaOrgModel, outputType, inputType);
-		val subclassesInList:List[String] = subclassesListResult.results.map(result => result.asInstanceOf[OntologyClass].aClass).distinct
+		val subclassesInList:Iterable[String] = subclassesListResult.results.map(
+      result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
+//		val subclassesInList:Iterable[String] = subclassesListResult.results.values.map(
+//      result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
+
 		logger.debug("subclassesInList" + subclassesInList)
 		//new ListResult(subclassesInList.size, subclassesInList);
 		val queryFile:String = null;
 
-		val mappingDocuments:List[Object] = subclassesInList.flatMap(subclass =>
+		val mappingDocuments:Iterable[MappingDocument] = subclassesInList.flatMap(subclass =>
 			MappingPediaEngine.findMappingDocumentsByMappedClass(subclass).getResults())
+      .asInstanceOf[Iterable[MappingDocument]];
 
+    var executedMappings:List[(String, String)]= Nil;
 
-		val executionResults:List[String] = mappingDocuments.map(mappingDocument => {
+		val executionResults:Iterable[Execution] = mappingDocuments.flatMap(mappingDocument => {
 			val md = mappingDocument.asInstanceOf[MappingDocument];
 			val mappingLanguage = md.mappingLanguage.getOrElse(null);
 			val distributionFieldSeparator = if(md.distributionFieldSeparator != null && md.distributionFieldSeparator.isDefined) {
@@ -1060,14 +1066,28 @@ object MappingPediaEngine {
 			val mdDistributionAccessURL = md.distributionAccessURL;
 			logger.info("mdDistributionAccessURL = " + mdDistributionAccessURL);
 
-			val executionResult = MappingPediaEngine.executeMapping2(
-				mappingDocumentDownloadURL, mappingLanguage
-				, mdDistributionAccessURL, distributionFieldSeparator
-				, queryFile, outputFilename);
+      if(mappingDocumentDownloadURL != null && mdDistributionAccessURL != null) {
+        if(executedMappings.contains((mappingDocumentDownloadURL,mdDistributionAccessURL))) {
+          None
+        } else {
+          val executionResult = MappingPediaEngine.executeMapping2(
+            mappingDocumentDownloadURL, mappingLanguage
+            , mdDistributionAccessURL, distributionFieldSeparator
+            , queryFile, outputFilename);
+
+          executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
+
+          val executionResultURL = executionResult.mappingExecutionResultDownloadURL;
+          //executionResultURL;
+
+          Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL))
+          //mappingDocumentURL + " -- " + datasetDistributionURL
+        }
+      } else {
+        None
+      }
 
 
-			executionResult.mappingExecutionResultDownloadURL;
-			//mappingDocumentURL + " -- " + datasetDistributionURL
 		})
 		new ListResult(executionResults.size, executionResults);
 
