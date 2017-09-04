@@ -39,45 +39,45 @@ class MappingPediaEngine() {
 	var mappingDocumentModel:Model = null;
 	var clearGraph:Boolean = false;
 
-  def generateAdditionalTriples() : List[Triple] = {
-    var newTriples:List[Triple] = List.empty;
-    
-    val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
+	def generateAdditionalTriples() : List[Triple] = {
+		var newTriples:List[Triple] = List.empty;
+
+		val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
+			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
 		logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
 
 		if(r2rmlMappingDocumentResources != null) {
-		  while(r2rmlMappingDocumentResources.hasNext()) {
-  			val r2rmlMappingDocumentResource = r2rmlMappingDocumentResources.nextResource();
+			while(r2rmlMappingDocumentResources.hasNext()) {
+				val r2rmlMappingDocumentResource = r2rmlMappingDocumentResources.nextResource();
 				logger.info("r2rmlMappingDocumentResource = " + r2rmlMappingDocumentResource);
 
 				//improve this code using, get all x from ?x rr:LogicalTable ?lt
 				//mapping documents do not always explicitly have a TriplesMap
-  			//val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
-//  				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
+				//val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
+				//  				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
 				val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
 					MappingPediaConstant.R2RML_LOGICALTABLE_PROPERTY);
 				logger.info("triplesMapResources = " + triplesMapResources);
-  			if(triplesMapResources != null) {
-  			  while(triplesMapResources.hasNext()) {
-  			    val triplesMapResource = triplesMapResources.nextResource();
-  			    val newStatement = new StatementImpl(r2rmlMappingDocumentResource
+				if(triplesMapResources != null) {
+					while(triplesMapResources.hasNext()) {
+						val triplesMapResource = triplesMapResources.nextResource();
+						val newStatement = new StatementImpl(r2rmlMappingDocumentResource
 							, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
-  			    logger.info("adding new hasTriplesMap statement: " + newStatement);
-  			    val newTriple = newStatement.asTriple();
-  			    newTriples = newTriples ::: List(newTriple);
-  			  }
-  			}
-		  }
+						logger.info("adding new hasTriplesMap statement: " + newStatement);
+						val newTriple = newStatement.asTriple();
+						newTriples = newTriples ::: List(newTriple);
+					}
+				}
+			}
 		}
 
 		newTriples;
-  }
+	}
 
 
 
-  
-  //def getMappingpediaGraph() = this.mappingpediaGraph;
+
+	//def getMappingpediaGraph() = this.mappingpediaGraph;
 
 }
 
@@ -86,63 +86,63 @@ object MappingPediaEngine {
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
 
-  def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
+	def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 
 		val manifestModel = MappingPediaUtility.readModelFromFile(manifestFilePath, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
-		
+
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
-				RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
-		
+			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
+
 		if(r2rmlResources != null) {
 			val r2rmlResource = r2rmlResources.nextResource();
 
 			val mappingDocumentFilePath = MappingPediaUtility.getFirstPropertyObjectValueLiteral(
-					r2rmlResource, MappingPediaConstant.DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY).toString();
+				r2rmlResource, MappingPediaConstant.DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY).toString();
 
 			var mappingDocumentFile = new File(mappingDocumentFilePath.toString());
 			val isMappingDocumentFilePathAbsolute = mappingDocumentFile.isAbsolute();
-			var r2rmlMappingDocumentPath : String = null; 
+			var r2rmlMappingDocumentPath : String = null;
 			if(isMappingDocumentFilePathAbsolute) {
 				r2rmlMappingDocumentPath = mappingDocumentFilePath
 			} else {
-			  val manifestFile = new File(manifestFilePath);
-			  if(manifestFile.isAbsolute()) {
-				r2rmlMappingDocumentPath = manifestFile.getParentFile().toString() + File.separator + mappingDocumentFile; 
-			  } else {
-			    r2rmlMappingDocumentPath = mappingDocumentFilePath
-			  }
+				val manifestFile = new File(manifestFilePath);
+				if(manifestFile.isAbsolute()) {
+					r2rmlMappingDocumentPath = manifestFile.getParentFile().toString() + File.separator + mappingDocumentFile;
+				} else {
+					r2rmlMappingDocumentPath = mappingDocumentFilePath
+				}
 			}
 			r2rmlMappingDocumentPath
-			
+
 		} else {
-        val errorMessage = "mapping file is not specified in the manifest file";
-        logger.error(errorMessage);
-        throw new Exception(errorMessage);
+			val errorMessage = "mapping file is not specified in the manifest file";
+			logger.error(errorMessage);
+			throw new Exception(errorMessage);
 		}
 
-  }
+	}
 
-/*	def uploadNewMapping(mappingpediaUsername: String, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile
-											 , replaceMappingBaseURI: String, generateManifestFile:String
-											 , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
-											 //, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
-											): MappingPediaExecutionResult = {
-		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
-		// Path where the uploaded files will be stored.
-		val uuid = UUID.randomUUID.toString
-		logger.debug("uuid = " + uuid)
-		this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI
-			, generateManifestFile, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
-			//, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
-		);
-	}*/
+	/*	def uploadNewMapping(mappingpediaUsername: String, manifestFileRef: MultipartFile, mappingFileRef: MultipartFile
+                         , replaceMappingBaseURI: String, generateManifestFile:String
+                         , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
+                         //, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
+                        ): MappingPediaExecutionResult = {
+      logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+      // Path where the uploaded files will be stored.
+      val uuid = UUID.randomUUID.toString
+      logger.debug("uuid = " + uuid)
+      this.uploadNewMapping(mappingpediaUsername, uuid, manifestFileRef, mappingFileRef, replaceMappingBaseURI
+        , generateManifestFile, mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
+        //, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+      );
+    }*/
 
 	def uploadNewMapping(mappingpediaUsername: String, pDatasetID: String, manifestFileRef: MultipartFile
 											 , mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
 											 , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
 											 //, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
-											, pMappingLanguage:String
+											 , pMappingLanguage:String
 
 											) : MappingPediaExecutionResult = {
 		val datasetID = if(pDatasetID == null) UUID.randomUUID.toString else pDatasetID;
@@ -287,9 +287,9 @@ object MappingPediaEngine {
 	}
 
 	def addDatasetFile(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String, mappingpediaUsername:String
-		, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
-		, distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String
-	) : MappingPediaExecutionResult = {
+										 , datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
+										 , distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String
+										) : MappingPediaExecutionResult = {
 		val datasetID = UUID.randomUUID.toString;
 		this.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
 			, datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
@@ -298,10 +298,10 @@ object MappingPediaEngine {
 	}
 
 	def addDatasetFileWithID(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String, mappingpediaUsername:String
-		, datasetID:String
-		, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
-		, pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String
-	) : MappingPediaExecutionResult = {
+													 , datasetID:String
+													 , datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
+													 , pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String
+													) : MappingPediaExecutionResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
 
@@ -483,7 +483,7 @@ object MappingPediaEngine {
 	@throws(classOf[Exception])
 	def executeMapping2(mappingURL: String, pMappingLanguage:String
 											, datasetDistributionURL: String, fieldSeparator:String
-										 , queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
+											, queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
 		val mappingLanguage = if(pMappingLanguage == null) {
 			MappingPediaConstant.MAPPING_LANGUAGE_R2RML
 		} else {
@@ -890,35 +890,35 @@ object MappingPediaEngine {
 
 		this.findMappingDocuments(queryString);
 
-/*		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
-			, MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
+		/*		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
+          , MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
 
-		logger.debug("Executing query=\n" + queryString)
+        logger.debug("Executing query=\n" + queryString)
 
-		val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
-		var results:List[MappingDocument] = List.empty;
-		try {
-			val rs = qexec.execSelect
-			while (rs.hasNext) {
-				val qs = rs.nextSolution
-				val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
-				val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
-				val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
-				val filePath = MappingPediaUtility.getStringOrElse(qs, "filePath", null);
-				val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
-				val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
-				val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
-				val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
-				val mappingLanguage = MappingPediaUtility.getOptionString(qs, "mappingLanguage");
+        val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+        var results:List[MappingDocument] = List.empty;
+        try {
+          val rs = qexec.execSelect
+          while (rs.hasNext) {
+            val qs = rs.nextSolution
+            val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
+            val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
+            val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
+            val filePath = MappingPediaUtility.getStringOrElse(qs, "filePath", null);
+            val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
+            val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
+            val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
+            val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
+            val mappingLanguage = MappingPediaUtility.getOptionString(qs, "mappingLanguage");
 
-				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
-					, distributionAccessURL, mappingDocumentURL, mappingLanguage);
-				results = md :: results;
-			}
-		} finally qexec.close
+            val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
+              , distributionAccessURL, mappingDocumentURL, mappingLanguage);
+            results = md :: results;
+          }
+        } finally qexec.close
 
-		val listResult = new ListResult(results.length, results);
-		listResult*/
+        val listResult = new ListResult(results.length, results);
+        listResult*/
 	}
 
 	def findMappingDocumentsByMappedClass(mappedClass:String) : ListResult = {
@@ -939,7 +939,7 @@ object MappingPediaEngine {
 
 		val mapValues:Map[String,String] = Map(
 			"$graphURL" -> MappingPediaProperties.graphName
-		, "$mappedProperty" -> mappedProperty
+			, "$mappedProperty" -> mappedProperty
 		);
 
 		val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
@@ -1055,9 +1055,14 @@ object MappingPediaEngine {
 				null
 			}
 			val outputFilename = UUID.randomUUID.toString + ".nt"
-			val executionResult = MappingPediaEngine.executeMapping(
-				md.mappingDocumentDownloadURL, mappingLanguage
-				, md.distributionAccessURL, distributionFieldSeparator
+			val mappingDocumentDownloadURL = md.mappingDocumentDownloadURL;
+			logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
+			val mdDistributionAccessURL = md.distributionAccessURL;
+			logger.info("mdDistributionAccessURL = " + mdDistributionAccessURL);
+
+			val executionResult = MappingPediaEngine.executeMapping2(
+				mappingDocumentDownloadURL, mappingLanguage
+				, mdDistributionAccessURL, distributionFieldSeparator
 				, queryFile, outputFilename);
 
 
