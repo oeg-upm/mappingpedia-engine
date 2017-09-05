@@ -1030,13 +1030,17 @@ object MappingPediaEngine {
 		listResult
 	}
 
-	def getSchemaOrgSubclasses(aClass:String, outputType:String, inputType:String) : ListResult = {
-		MappingPediaUtility.getSubclasses(aClass, this.schemaOrgModel, outputType, inputType);
-
+	def getSchemaOrgSubclassesSummary(aClass:String, outputType:String, inputType:String) : ListResult = {
+      MappingPediaUtility.getSubclassesSummary(aClass, this.schemaOrgModel, outputType, inputType);
 	}
 
-	def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
-		val subclassesListResult = MappingPediaUtility.getSubclasses(aClass, this.schemaOrgModel, outputType, inputType);
+  def getSchemaOrgSubclassesDetail(aClass:String, outputType:String, inputType:String) : ListResult = {
+    MappingPediaUtility.getSubclassesDetail(aClass, this.schemaOrgModel, outputType, inputType);
+  }
+
+  def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
+		val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
+      aClass, this.schemaOrgModel, outputType, inputType);
 		val subclassesInList:Iterable[String] = subclassesListResult.results.map(
       result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
 //		val subclassesInList:Iterable[String] = subclassesListResult.results.values.map(

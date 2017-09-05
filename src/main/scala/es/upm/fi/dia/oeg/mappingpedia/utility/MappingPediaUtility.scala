@@ -337,7 +337,7 @@ object MappingPediaUtility {
     result;
   }
 
-  def getSubclasses(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
+  def getSubclassesDetail(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
 
     val defaultInputPrefix = if(inputType.equals("0")) {
       "http://schema.org/";
@@ -400,6 +400,24 @@ object MappingPediaUtility {
     println("mapResult = " + mapResult.toString());
 
     listResult;
+
+  }
+
+  def getSubclassesSummary(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
+    val subclassesListResult = this.getSubclassesDetail(aClass, ontModel, outputType, inputType)
+    if(subclassesListResult != null) {
+      if(subclassesListResult != null) {
+        val subclassesInList:Iterable[String] = subclassesListResult.results.map(
+          result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
+        val result = new ListResult(subclassesInList.size, subclassesInList);
+        result
+      } else {
+        null
+      }
+    } else {
+      null
+    }
+
 
   }
 }
