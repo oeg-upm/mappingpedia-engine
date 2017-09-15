@@ -922,6 +922,7 @@ object MappingPediaEngine {
 	}
 
 	def findMappingDocumentsByMappedClass(mappedClass:String) : ListResult = {
+		logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
 		val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
 
 		val mapValues:Map[String,String] = Map(
@@ -972,7 +973,7 @@ object MappingPediaEngine {
 
 	def findMappingDocuments(searchType:String, searchTerm:String) : ListResult = {
 		val result:ListResult = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
-			logger.info("findMappingDocumentsByMappedClass:" + searchTerm)
+
 			val listResult = MappingPediaEngine.findMappingDocumentsByMappedClass(searchTerm)
 			listResult
 		} else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_PROPERTY.equals(searchType) && searchTerm != null) {
@@ -1030,28 +1031,34 @@ object MappingPediaEngine {
 		listResult
 	}
 
-	def getSchemaOrgSubclassesSummary(aClass:String, outputType:String, inputType:String) : ListResult = {
-      MappingPediaUtility.getSubclassesSummary(aClass, this.schemaOrgModel, outputType, inputType);
+	def getSubclassesLocalNames(aClass:String, outputType:String, inputType:String) : ListResult = {
+      MappingPediaUtility.getSubclassesLocalNames(aClass, this.schemaOrgModel, outputType, inputType);
 	}
 
   def getSchemaOrgSubclassesDetail(aClass:String, outputType:String, inputType:String) : ListResult = {
     MappingPediaUtility.getSubclassesDetail(aClass, this.schemaOrgModel, outputType, inputType);
   }
 
+  def getInstances(aClass:String) : ListResult = {
+    this.getInstances(aClass, "0", "0")
+  }
+
   def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
 		val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
       aClass, this.schemaOrgModel, outputType, inputType);
-		val subclassesInList:Iterable[String] = subclassesListResult.results.map(
-      result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
+		logger.info(s"subclassesListResult = subclassesListResult")
+
+		val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
+      result => result.asInstanceOf[OntologyClass].getURI).toList.distinct
 //		val subclassesInList:Iterable[String] = subclassesListResult.results.values.map(
 //      result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
 
-		logger.debug("subclassesInList" + subclassesInList)
+		logger.debug("subclassesInList" + subclassesURIs)
 		//new ListResult(subclassesInList.size, subclassesInList);
 		val queryFile:String = null;
 
-		val mappingDocuments:Iterable[MappingDocument] = subclassesInList.flatMap(subclass =>
-			MappingPediaEngine.findMappingDocumentsByMappedClass(subclass).getResults())
+		val mappingDocuments:Iterable[MappingDocument] = subclassesURIs.flatMap(subclassURI =>
+			MappingPediaEngine.findMappingDocumentsByMappedClass(subclassURI).getResults())
       .asInstanceOf[Iterable[MappingDocument]];
 
     var executedMappings:List[(String, String)]= Nil;

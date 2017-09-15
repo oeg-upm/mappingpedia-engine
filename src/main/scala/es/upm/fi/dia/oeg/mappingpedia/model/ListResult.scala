@@ -11,5 +11,5 @@ class ListResult (val count:Integer, val results:Iterable[Object]) {
   def getResults() = this.results.asJava;
 
 
-
+  override def toString = s"ListResult($getCount, $getResults)"
 }

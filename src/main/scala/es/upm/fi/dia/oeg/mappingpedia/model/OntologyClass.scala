@@ -1,15 +1,24 @@
 package es.upm.fi.dia.oeg.mappingpedia.model
 
-import scala.collection.JavaConverters._
+import org.apache.jena.enhanced.EnhGraph
+import org.apache.jena.ontology.OntClass
+import org.apache.jena.ontology.impl.OntClassImpl
 
+import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 /**
   * Created by fpriyatna on 6/7/17.
   */
-class OntologyClass (val aClass:String, val superClasses:List[String], val subClasses:List[String]) {
-  def getAClass = this.aClass;
-  def getSuperClasses = this.superClasses.mkString(",")
-  def getSubClasses = this.subClasses.mkString(",")
-  def getSubClassesList = this.subClasses.asJava
-  def getSuperClassesList = this.superClasses.asJava
+class OntologyClass (val ontClass:OntClass, val clsSuperclasses:List[OntClass], clsSubClasses:List[OntClass]){
+
+  def getLocalName = ontClass.getLocalName;
+  def getURI = ontClass.getURI
+
+  def getSuperClassesLocalNames = this.clsSuperclasses.map(superClass => superClass.getLocalName).mkString(",")
+  def getSuperClassesURIs = this.clsSuperclasses.map(superClass => superClass.getURI).mkString(",")
+
+  def getSubClassesLocalNames = this.clsSubClasses.map(subClass => subClass.getLocalName).mkString(",")
+  def getSubClassesURIs = this.clsSubClasses.map(subClass => subClass.getURI).mkString(",")
+
 
 }

@@ -279,7 +279,7 @@ public class MappingPediaController {
     ) {
         logger.info("GET /ogd/utility/subclassesSummary ...");
         logger.info("aClass = " + aClass);
-        ListResult result = MappingPediaEngine.getSchemaOrgSubclassesSummary(aClass, outputType, inputType) ;
+        ListResult result = MappingPediaEngine.getSubclassesLocalNames(aClass, outputType, inputType) ;
         logger.info("result = " + result);
         return result;
     }
@@ -292,9 +292,8 @@ public class MappingPediaController {
 
     ) {
         logger.info("GET /ogd/instances ...");
-        logger.info("aClass = " + aClass);
+        logger.info("Getting instances of the class:" + aClass);
         ListResult result = MappingPediaEngine.getInstances(aClass, outputType, inputType) ;
-        logger.info("result = " + result);
         return result;
     }
 
