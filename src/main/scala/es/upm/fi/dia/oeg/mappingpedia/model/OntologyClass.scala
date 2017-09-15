@@ -9,7 +9,7 @@ import scala.collection.JavaConversions._
 /**
   * Created by fpriyatna on 6/7/17.
   */
-class OntologyClass (val ontClass:OntClass, val clsSuperclasses:List[OntClass], clsSubClasses:List[OntClass]){
+class OntologyClass (val ontClass:OntClass, val clsSuperclasses:List[OntClass], val clsSubClasses:List[OntClass]){
 
   def getLocalName = ontClass.getLocalName;
   def getURI = ontClass.getURI

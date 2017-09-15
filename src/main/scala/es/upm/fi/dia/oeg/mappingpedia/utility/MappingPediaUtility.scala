@@ -378,11 +378,12 @@ object MappingPediaUtility {
   }
 
   def getSubclassesLocalNames(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
-    val subclassesListResult = this.getSubclassesDetail(aClass, ontModel, outputType, inputType)
+    val subclassesDetail= this.getSubclassesDetail(aClass, ontModel, outputType, inputType)
 
-      if(subclassesListResult != null) {
-        val subclassesInList:Iterable[String] = subclassesListResult.results.map(
-          result => result.asInstanceOf[OntologyClass].getSubClassesLocalNames).toList.distinct
+
+      if(subclassesDetail != null) {
+        val subclassesInList:Iterable[String] = subclassesDetail.results.map(
+          result => result.asInstanceOf[OntologyClass].getLocalName).toList.distinct
         val result = new ListResult(subclassesInList.size, subclassesInList);
         result
       } else {
