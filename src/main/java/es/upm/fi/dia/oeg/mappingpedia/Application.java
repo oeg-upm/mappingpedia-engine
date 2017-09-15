@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
+import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -117,70 +118,9 @@ public class Application {
 		//Application.mappingpediaR2RML.clearGraph_$eq(false);
 
 
-		if(args== null || args.length==0) {
-			logger.info("Starting SpringApplication ....");
-			SpringApplication.run(Application.class, args);
-			/*
-				SpringApplication app = new SpringApplication(Application.class);
-				app.setHeadless(false);
-				app.setWebEnvironment(false);
-				app.run(args);
-				*/
-			logger.info("SpringApplication started.");
+		SpringApplication.run(Application.class, args);
+		logger.info("Mappingpedia engine started.");
 
-
-		} else {
-
-			for(int i=0; i <args.length; i++) {
-				if(args[i].equals("-manifestFilePath")) {
-					manifestFilePath = args[i+1];
-					logger.info("manifestFilePath = " + manifestFilePath);
-				} else if(args[i].equals("-mappingFilePath")) {
-					mappingFilePath = args[i+1];
-					logger.info("mappingFilePath = " + mappingFilePath);
-				} else if(args[i].equals("-replaceMappingBaseURI")) {
-					replaceMappingBaseURI = args[i+1];
-				}
-			}
-			
-//			manifestFilePath = System.getProperty("manifestFilePath");
-//			mappingFilePath = System.getProperty("mappingFilePath");
-//			manifestText = System.getProperty("manifestText");
-//			mappingText = System.getProperty("mappingText");
-			
-			//			MappingPediaRunner.run(manifestFilePath, mappingFilePath, virtuosoJDBC, virtuosoUser, virtuosoPwd
-			//				      , graphName, clearGraph, manifestText, mappingText);
-			String uuid = UUID.randomUUID().toString();
-			String newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS() + uuid + "/";
-			MappingPediaRunner.run(manifestFilePath, mappingFilePath, clearGraph
-					, Application.mappingpediaEngine, replaceMappingBaseURI, newMappingBaseURI);
-			logger.info("Storing R2RML triples in GitHub.");
-
-			String filename = mappingFilePath;
-			if(filename == null) {
-				filename = uuid + ".ttl";
-			}
-			String commitMessage = "Commit From mappingpedia-engine.Application";
-			String mappingContent = MappingPediaEngine.getMappingContent(manifestFilePath, mappingFilePath);
-			String base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent);
-			String mappingpediaUserName = "mappingpedia-testuser";
-			HttpResponse<JsonNode> response = GitHubUtility.putEncodedContent(
-					githubUser, githubAccessToken
-					, mappingpediaUserName, uuid, filename
-					, commitMessage, base64EncodedContent
-					);
-			int responseStatus = response.getStatus();
-			if(HttpURLConnection.HTTP_CREATED == responseStatus) {
-				String githubMappingURL = response.getBody().getObject().getJSONObject("content").getString("url");
-				logger.info("githubMappingURL = " + githubMappingURL);
-			}
-		}
-
-		//logger.info("Exiting Application.main()");
 
 	}
-
-	//MappingPediaUtility.loadSchemaOrgOntology();
-
-
 }

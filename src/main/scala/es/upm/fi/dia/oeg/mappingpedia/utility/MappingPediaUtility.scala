@@ -337,87 +337,58 @@ object MappingPediaUtility {
     result;
   }
 
-  def getSubclassesDetail(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
+  def getSubclassesDetail(aClass:String, ontModel:OntModel) : ListResult = {
+    val resource = ontModel.getResource(aClass);
+    val cls = resource.as(classOf[OntClass])
+    this.getSubclassesDetail(cls, ontModel)
+  }
 
+  def getSubclassesDetail(cls:OntClass, ontModel:OntModel) : ListResult = {
+    logger.info("Retrieving subclasses of = " + cls.getURI)
+    val clsSubClasses:List[OntClass] = cls.listSubClasses(false).toList.toList;
+
+    val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
+
+    logger.info("clsSubClasses = " + clsSubClasses.mkString(","))
+
+    val resultHead:OntologyClass = new OntologyClass(cls, clsSuperclasses, clsSubClasses);
+
+    val resultTail:List[OntologyClass] = clsSubClasses.map(clsSubClass => {
+      val tail = new OntologyClass(clsSubClass
+        , clsSubClass.listSuperClasses(false).toList.toList
+        , clsSubClass.listSubClasses(false).toList.toList
+      );
+      tail
+    })
+
+    val result = resultHead :: resultTail;
+
+    val listResult = new ListResult(result.size, result);
+    listResult;
+  }
+
+  def getSubclassesDetail(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult  = {
     val defaultInputPrefix = if(inputType.equals("0")) {
       "http://schema.org/";
     } else {
       ""
     }
 
-    val resource = ontModel.getResource(defaultInputPrefix + aClass);
-
-    val cls = resource.as(classOf[OntClass])
-    logger.info("cls = " + cls)
-    val clsSuperClass = cls.getSuperClass;
-    val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
-    logger.info("clsSuperclasses = " + clsSuperclasses.mkString(","))
-    val clsSubClasses:List[OntClass] = cls.listSubClasses(true).toList.toList;
-    logger.info("clsSubClasses = " + clsSubClasses.mkString(","))
-
-    var result:List[OntologyClass] = if(outputType.equals("0")) {
-      List(new OntologyClass(cls.getLocalName
-        , MappingPediaUtility.getClassesLocalNames(clsSuperclasses)
-        , MappingPediaUtility.getClassesLocalNames(clsSubClasses)
-      ));
-    } else {
-      List(new OntologyClass(cls.getURI
-        , MappingPediaUtility.getClassesURIs(clsSuperclasses)
-        , MappingPediaUtility.getClassesURIs(clsSubClasses)
-      ));
-    }
-
-    var resultInMap:Map[String, List[String]] = if(outputType.equals("0")) {
-      Map(cls.getLocalName -> MappingPediaUtility.getClassesLocalNames(clsSuperclasses));
-    } else {
-      Map(cls.getURI -> MappingPediaUtility.getClassesURIs(clsSuperclasses));
-    }
-
-    val subclasses = cls.listSubClasses(false);
-    while(subclasses.hasNext) {
-      val subclass = subclasses.next();
-      val subclassParents = subclass.listSuperClasses(true).toList.toList;
-      val subclassChildren = subclass.listSubClasses(true).toList.toList;
-
-      if(outputType.equals("0")) {
-        result = new OntologyClass(subclass.getLocalName
-          , MappingPediaUtility.getClassesLocalNames(subclassParents)
-          , MappingPediaUtility.getClassesLocalNames(subclassChildren)
-        ) :: result;
-        resultInMap += (subclass.getLocalName -> MappingPediaUtility.getClassesLocalNames(subclassParents));
-      } else {
-        result = new OntologyClass(subclass.getURI
-          , MappingPediaUtility.getClassesURIs(subclassParents)
-          , MappingPediaUtility.getClassesURIs(subclassChildren)
-        ) :: result;
-        resultInMap += (subclass.getURI -> MappingPediaUtility.getClassesURIs(subclassParents));
-      }
-    }
-
-    val listResult = new ListResult(result.size, result);
-
-    val mapResult = new MapResult(result.size, resultInMap);
-    println("mapResult = " + mapResult.toString());
-
-    listResult;
-
+    this.getSubclassesDetail(defaultInputPrefix + aClass, ontModel);
   }
 
-  def getSubclassesSummary(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
-    val subclassesListResult = this.getSubclassesDetail(aClass, ontModel, outputType, inputType)
-    if(subclassesListResult != null) {
-      if(subclassesListResult != null) {
-        val subclassesInList:Iterable[String] = subclassesListResult.results.map(
-          result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
+  def getSubclassesLocalNames(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
+    val subclassesDetail= this.getSubclassesDetail(aClass, ontModel, outputType, inputType)
+
+
+      if(subclassesDetail != null) {
+        val subclassesInList:Iterable[String] = subclassesDetail.results.map(
+          result => result.asInstanceOf[OntologyClass].getLocalName).toList.distinct
         val result = new ListResult(subclassesInList.size, subclassesInList);
         result
       } else {
         null
       }
-    } else {
-      null
-    }
-
 
   }
 }
