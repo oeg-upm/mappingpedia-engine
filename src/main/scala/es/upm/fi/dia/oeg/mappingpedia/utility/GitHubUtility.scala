@@ -5,7 +5,7 @@ import java.io.{File, FileInputStream}
 import com.google.common.base.Charsets
 import com.google.common.io.BaseEncoding
 import com.mashape.unirest.http.Unirest
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaProperties
+import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaEngine, MappingPediaProperties}
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -43,7 +43,7 @@ object GitHubUtility {
     //val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/mappingpedia-testuser/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c.ttl";
     //val response = Unirest.get(uri).asJson();
 
-    val uri = MappingPediaProperties.githubRepoContents + "/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
+    val uri = MappingPediaEngine.mappingpediaProperties.githubRepoContents + "/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val response = Unirest.get(uri)
       .routeParam("mappingpediaUsername", mappingpediaUsername)
       .routeParam("mappingDirectory", mappingDirectory)
@@ -83,7 +83,7 @@ object GitHubUtility {
       case e:Exception => {}
     }
 
-    val uri = MappingPediaProperties.githubRepoContents + "/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
+    val uri = MappingPediaEngine.mappingpediaProperties.githubRepoContents + "/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val response = Unirest.put(uri)
       .routeParam("mappingpediaUsername", mappingpediaUsername)
       .routeParam("mappingDirectory", mappingDirectory)
@@ -118,7 +118,7 @@ object GitHubUtility {
   
   def getSHA(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
              , githubUsername:String, githubAccessToken:String) : String = {
-    val uri = MappingPediaProperties.githubRepoContents + "/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
+    val uri = MappingPediaEngine.mappingpediaProperties.githubRepoContents + "/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val response = Unirest.get(uri)
       .routeParam("mappingpediaUsername", mappingpediaUsername)
       .routeParam("mappingDirectory", mappingDirectory)

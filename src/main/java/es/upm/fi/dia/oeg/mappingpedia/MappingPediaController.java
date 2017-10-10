@@ -40,13 +40,13 @@ public class MappingPediaController {
     @RequestMapping(value="/githubRepoURL", method= RequestMethod.GET)
     public String getGitHubRepoURL() {
         logger.info("/githubRepo(GET) ...");
-        return MappingPediaProperties.githubRepo();
+        return MappingPediaEngine.mappingpediaProperties().githubRepo();
     }
 
     @RequestMapping(value="/mappingpediaGraph", method= RequestMethod.GET)
     public String getMappingPediaGraph() {
         logger.info("/getMappingPediaGraph(GET) ...");
-        return MappingPediaProperties.graphName();
+        return MappingPediaEngine.mappingpediaProperties().graphName();
     }
 
     @RequestMapping(value="/triplesMaps", method= RequestMethod.GET)
@@ -74,7 +74,7 @@ public class MappingPediaController {
     @RequestMapping(value="/githubRepoContentsURL", method= RequestMethod.GET)
     public String getGitHubRepoContentsURL() {
         logger.info("/githubRepoContentsURL(GET) ...");
-        return MappingPediaProperties.githubRepoContents();
+        return MappingPediaEngine.mappingpediaProperties().githubRepoContents();
     }
 
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
@@ -193,12 +193,12 @@ public class MappingPediaController {
     public MappingPediaExecutionResult uploadNewDataset(
             @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
             , @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
             , @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
-            , @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
-            , @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
-            , @RequestParam(value="datasetLanguage", defaultValue="Dataset Language") String datasetLanguage
+            , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
+            , @RequestParam(value="publisherId", required = true) String publisherId
+            , @RequestParam(value="datasetLanguage", defaultValue="en") String datasetLanguage
             , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
             , @RequestParam(value="distributionDownloadURL", required = false) String distributionDownloadURL
             , @RequestParam(value="distributionMediaType", required = false) String distributionMediaType
@@ -207,8 +207,8 @@ public class MappingPediaController {
         logger.info("[POST] /datasets/{mappingpediaUsername}");
         logger.debug("mappingpediaUsername = " + mappingpediaUsername);
 
-        return MappingPediaEngine.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
-                , datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+        return Dataset.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
+                , datasetTitle, datasetKeywords, publisherId, datasetLanguage
                 , distributionAccessURL, distributionDownloadURL, distributionMediaType
         );
     }
@@ -230,7 +230,7 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
-        return MappingPediaEngine.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
+        return Dataset.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
                 , datasetID
                 , datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
                 , distributionAccessURL, distributionDownloadURL, distributionMediaType

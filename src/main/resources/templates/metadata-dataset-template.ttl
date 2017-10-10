@@ -3,7 +3,7 @@ mpids:dataset-$datasetID a mpv:Dataset ;
     mpv:datasetIdentifier "dataset-$datasetID" ;
     dcterms:title "$datasetTitle" ;
     dcat:keyword "$datasetKeywords" ;
-    #mpv:datasetPublisher mpi:user-1 ;
+    #mpv:publisherId mpi:user-1 ;
     #mpv:datasetLanguage <http://id.loc.gov/vocabulary/iso639-1/en> ;
     dcat:distribution mpidd:distribution-$distributionID ;
 .

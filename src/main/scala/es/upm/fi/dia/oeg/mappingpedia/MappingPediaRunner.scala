@@ -46,8 +46,8 @@ object MappingPediaRunner {
     mappingpediaR2RML.mappingDocumentModel = mappingDocumentModel;
 
     //val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
-    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(MappingPediaProperties.virtuosoJDBC
-      , MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd, MappingPediaProperties.graphName);
+    val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd, MappingPediaEngine.mappingpediaProperties.graphName);
     if(clearGraphBoolean) {
       try {
         virtuosoGraph.clear();
