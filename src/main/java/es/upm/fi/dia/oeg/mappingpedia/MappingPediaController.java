@@ -96,7 +96,7 @@ public class MappingPediaController {
             String errorMessage = "Error occured: " + e.getMessage();
             logger.error("mapping execution failed: " + errorMessage);
             MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
-                    , null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR);
+                    , null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null);
             return executionResult;
         }
 
@@ -230,9 +230,8 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
-        return Dataset.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
-                , datasetID
-                , datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+        return Dataset.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile
+                , datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
                 , distributionAccessURL, distributionDownloadURL, distributionMediaType
         );
     }

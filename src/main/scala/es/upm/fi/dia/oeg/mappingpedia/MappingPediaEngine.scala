@@ -287,14 +287,14 @@ object MappingPediaEngine {
 
 
 			new MappingPediaExecutionResult(manifestGitHubURL, null, mappingDocumentGitHubURL
-				, null, null, "OK", HttpURLConnection.HTTP_OK)
+				, null, null, "OK", HttpURLConnection.HTTP_OK, null)
 
 		} catch {
 			case e: Exception =>
 				val errorMessage = e.getMessage
 				logger.error("error uploading a new mapping file: " + errorMessage)
 				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
-				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode)
+				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode, null)
 				executionResult
 		}
 
@@ -325,12 +325,12 @@ object MappingPediaEngine {
 				logger.debug("queryURL = " + queryURL)
 				logger.info("dataset stored.")
 				val executionResult = new MappingPediaExecutionResult(null, null, null
-					, queryURL, null, responseStatusText, responseStatus)
+					, queryURL, null, responseStatusText, responseStatus, null)
 				return executionResult
 			}
 			else {
 				val executionResult = new MappingPediaExecutionResult(null, null, null
-					, null , null, responseStatusText, responseStatus)
+					, null , null, responseStatusText, responseStatus, null)
 				return executionResult
 			}
 		} catch {
@@ -339,7 +339,7 @@ object MappingPediaEngine {
 				logger.error("error uploading a new query file: " + errorMessage)
 				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
 				val executionResult = new MappingPediaExecutionResult(null, null, null
-					, null, null, errorMessage, errorCode)
+					, null, null, errorMessage, errorCode, null)
 				return executionResult
 		}
 	}
@@ -406,12 +406,12 @@ object MappingPediaEngine {
 			if (HttpURLConnection.HTTP_CREATED== responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
 				val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
 				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, datasetDistributionURL, mappingURL
-					,queryFile , outputGitHubURL, responseStatusText, responseStatus)
+					,queryFile , outputGitHubURL, responseStatusText, responseStatus, null)
 				return executionResult
 			}
 			else {
 				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, datasetDistributionURL, mappingURL
-					, queryFile, null, responseStatusText, responseStatus)
+					, queryFile, null, responseStatusText, responseStatus, null)
 				return executionResult
 			}
 
@@ -422,7 +422,7 @@ object MappingPediaEngine {
 				val errorMessage: String = "Error occured: " + e.getMessage
 				logger.error("mapping execution failed: " + errorMessage)
 				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
-					, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR)
+					, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null)
 				return executionResult
 			}
 		}
@@ -487,12 +487,12 @@ object MappingPediaEngine {
 			if (HttpURLConnection.HTTP_CREATED== responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
 				val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
 				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
-					,null , outputGitHubURL, responseStatusText, responseStatus)
+					,null , outputGitHubURL, responseStatusText, responseStatus, null)
 				return executionResult
 			}
 			else {
 				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
-					, null, null, responseStatusText, responseStatus)
+					, null, null, responseStatusText, responseStatus, null)
 				return executionResult
 			}
 		}
@@ -502,7 +502,7 @@ object MappingPediaEngine {
 				val errorMessage: String = "Error occured: " + e.getMessage
 				logger.error("mapping execution failed: " + errorMessage)
 				val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
-					, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR)
+					, null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null)
 				return executionResult
 			}
 		}
@@ -599,9 +599,9 @@ object MappingPediaEngine {
 		val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
 			val githubMappingURL = response.getBody.getObject.getString("url")
 			logger.debug("githubMappingURL = " + githubMappingURL)
-			new MappingPediaExecutionResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus)
+			new MappingPediaExecutionResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
 		} else {
-			new MappingPediaExecutionResult(null, null, null, null, null, responseStatusText, responseStatus)
+			new MappingPediaExecutionResult(null, null, null, null, null, responseStatusText, responseStatus, null)
 		}
 		executionResult;
 	}
@@ -630,9 +630,9 @@ object MappingPediaEngine {
 			val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
 				val githubMappingURL = response.getBody.getObject.getJSONObject("content").getString("url")
 				logger.debug("githubMappingURL = " + githubMappingURL)
-				new MappingPediaExecutionResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus)
+				new MappingPediaExecutionResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
 			} else {
-				new MappingPediaExecutionResult(null, null, null, null, null, responseStatusText, responseStatus)
+				new MappingPediaExecutionResult(null, null, null, null, null, responseStatusText, responseStatus, null)
 			}
 			executionResult;
 		} catch {
@@ -641,7 +641,7 @@ object MappingPediaEngine {
 				val errorMessage = "error processing the uploaded mapping file: " + e.getMessage
 				logger.error(errorMessage)
 				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
-				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode)
+				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode, null)
 				executionResult
 		}
 	}
@@ -655,7 +655,7 @@ object MappingPediaEngine {
 			val errorCode = HttpURLConnection.HTTP_CREATED
 			val status = "success, file uploaded to: " + filePath
 			logger.info("file inserted.")
-			val executionResult = new MappingPediaExecutionResult(null, null, filePath, null, null, status, errorCode)
+			val executionResult = new MappingPediaExecutionResult(null, null, filePath, null, null, status, errorCode, null)
 			executionResult
 		} catch {
 			case e: Exception =>
@@ -663,7 +663,7 @@ object MappingPediaEngine {
 				logger.error(errorMessage)
 				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
 				val status = "failed, error message = " + e.getMessage
-				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, status, errorCode)
+				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, status, errorCode, null)
 				executionResult
 		}
 	}
