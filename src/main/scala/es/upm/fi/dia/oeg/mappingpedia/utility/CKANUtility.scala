@@ -4,6 +4,7 @@ import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaEngine, MappingPediaProperties}
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
+import org.springframework.web.multipart.MultipartFile
 
 class CKANUtility {
 
@@ -24,11 +25,14 @@ object CKANUtility {
     response;
   }
 
-  def addNewDataset(datasetId:String, organizationId:String, datasetTitle:String) = {
+  def addNewPackage(packageId:String, organizationId:String, datasetTitle:String) = {
     val jsonObj = new JSONObject();
-    jsonObj.put("name", datasetId);
+    jsonObj.put("name", packageId);
     jsonObj.put("owner_org", organizationId);
-    jsonObj.put("title", datasetId);
+    if(datasetTitle != null) {
+      jsonObj.put("title", datasetTitle);
+    }
+
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate
 
@@ -45,14 +49,17 @@ object CKANUtility {
     response;
   }
 
-  def addNewDistribution(packageId:String, description:Option[String], mimetype:Option[String]) = {
+  def addNewResource(packageId:String, description:String, mimetype:String, datasetFileRef: MultipartFile) = {
     val jsonObj = new JSONObject();
     jsonObj.put("package_id", packageId);
-    if(description != null && description.isDefined) {
-      jsonObj.put("description", description.get);
+    if(description != null) {
+      jsonObj.put("description", description);
     }
-    if(mimetype!= null && mimetype.isDefined) {
-      jsonObj.put("mimetype", mimetype.get);
+    if(mimetype!= null ) {
+      jsonObj.put("mimetype", mimetype);
+    }
+    if(mimetype!= null ) {
+      jsonObj.put("upload", datasetFileRef);
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionResourceCreate

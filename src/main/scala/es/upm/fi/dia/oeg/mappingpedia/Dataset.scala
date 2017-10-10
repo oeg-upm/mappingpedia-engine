@@ -142,7 +142,9 @@ object Dataset {
       //STORING DATASET ON CKAN
       val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        CKANUtility.addNewDataset(datasetID, publisherId, datasetTitle)
+        val addNewPackageResponse = CKANUtility.addNewPackage(datasetID, publisherId, datasetTitle)
+        val addNewResourceResponse = CKANUtility.addNewResource(datasetID, datasetTitle, distributionMediaType, datasetFileRef)
+        (addNewPackageResponse, addNewResourceResponse)
       } else {
         null
       }
@@ -150,11 +152,11 @@ object Dataset {
 
       if(HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus || HttpURLConnection.HTTP_OK == addNewDatasetResponseStatus) {
         val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
-          , null, null, "OK", HttpURLConnection.HTTP_OK, ckanResponse.getStatusText)
+          , null, null, "OK", HttpURLConnection.HTTP_OK, ckanResponse._1.getStatusText + "," + ckanResponse._2.getStatusText)
         return executionResult;
       } else {
         val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
-          , null, null, "Internal Error", HttpURLConnection.HTTP_INTERNAL_ERROR, ckanResponse.getStatusText)
+          , null, null, "Internal Error", HttpURLConnection.HTTP_INTERNAL_ERROR, ckanResponse._1.getStatusText + "," + ckanResponse._2.getStatusText)
         return executionResult;
       }
     } catch {
