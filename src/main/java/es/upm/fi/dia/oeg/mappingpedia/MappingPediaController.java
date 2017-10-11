@@ -202,6 +202,7 @@ public class MappingPediaController {
             , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
             , @RequestParam(value="distributionDownloadURL", required = false) String distributionDownloadURL
             , @RequestParam(value="distributionMediaType", required = false) String distributionMediaType
+            , @RequestParam(value="datasetDescription", required = false) String datasetDescription
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}");
@@ -210,6 +211,7 @@ public class MappingPediaController {
         return Dataset.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
                 , datasetTitle, datasetKeywords, publisherId, datasetLanguage
                 , distributionAccessURL, distributionDownloadURL, distributionMediaType
+                , datasetDescription
         );
     }
 
@@ -227,12 +229,14 @@ public class MappingPediaController {
             , @RequestParam(value="distributionDownloadURL", required = false) String distributionDownloadURL
             , @RequestParam(value="distributionMediaType", required = false) String distributionMediaType
             , @PathVariable("datasetID") String datasetID
+            , @RequestParam(value="datasetDescription", required = false) String datasetDescription
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
         return Dataset.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile
                 , datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
                 , distributionAccessURL, distributionDownloadURL, distributionMediaType
+                , datasetDescription
         );
     }
 

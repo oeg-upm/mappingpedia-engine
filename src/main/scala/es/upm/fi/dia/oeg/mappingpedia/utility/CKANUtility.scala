@@ -25,12 +25,15 @@ object CKANUtility {
     response;
   }
 
-  def addNewPackage(packageId:String, organizationId:String, datasetTitle:String) = {
+  def addNewPackage(packageId:String, organizationId:String, datasetTitle:String, datasetDescription:String) = {
     val jsonObj = new JSONObject();
     jsonObj.put("name", packageId);
     jsonObj.put("owner_org", organizationId);
     if(datasetTitle != null) {
       jsonObj.put("title", datasetTitle);
+    }
+    if(datasetDescription != null) {
+      jsonObj.put("notes", datasetDescription);
     }
 
 
@@ -49,9 +52,10 @@ object CKANUtility {
     response;
   }
 
-  def addNewResource(packageId:String, description:String, mimetype:String, datasetFileRef: MultipartFile) = {
+  def addNewResource(packageId:String, description:String, mimetype:String, datasetFileRef: MultipartFile, url:String) = {
     val jsonObj = new JSONObject();
     jsonObj.put("package_id", packageId);
+    jsonObj.put("url", url);
     if(description != null) {
       jsonObj.put("description", description);
     }

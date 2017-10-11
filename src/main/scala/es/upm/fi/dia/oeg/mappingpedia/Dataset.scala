@@ -9,22 +9,24 @@ import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
+
 object Dataset {
   def addDatasetFile(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
                      , mappingpediaUsername:String, datasetTitle:String, datasetKeywords:String, publisherId:String, datasetLanguage:String
-                     , distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String
+                     , distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String, datasetDescription:String
                     ) : MappingPediaExecutionResult = {
 
     val datasetID = UUID.randomUUID.toString;
     this.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile
       , datasetID, datasetTitle, datasetKeywords, publisherId, datasetLanguage
       , distributionAccessURL, distributionDownloadURL, distributionMediaType
+      , datasetDescription
     );
   }
 
   def addDatasetFileWithID(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
                            , datasetID:String, datasetTitle:String, datasetKeywords:String, publisherId:String, datasetLanguage:String
-                           , pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String
+                           , pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String, datasetDescription:String
                           ) : MappingPediaExecutionResult = {
     logger.debug("datasetID = " + datasetID)
 
@@ -139,11 +141,13 @@ object Dataset {
         }
       }
 
-      //STORING DATASET ON CKAN
+      //STORING DATASET & RESOURCE ON CKAN
       val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse = CKANUtility.addNewPackage(datasetID, publisherId, datasetTitle)
-        val addNewResourceResponse = CKANUtility.addNewResource(datasetID, datasetTitle, distributionMediaType, datasetFileRef)
+        val addNewPackageResponse = CKANUtility.addNewPackage(datasetID, publisherId, datasetTitle, datasetDescription)
+        val addNewResourceResponse = CKANUtility.addNewResource(datasetID, datasetTitle, distributionMediaType
+          , datasetFileRef, pDistributionDownloadURL)
+        logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
       } else {
         null
