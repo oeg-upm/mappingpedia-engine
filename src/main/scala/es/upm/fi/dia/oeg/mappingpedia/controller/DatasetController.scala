@@ -6,16 +6,16 @@ import java.util.Date
 
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, MappingPediaExecutionResult}
+import es.upm.fi.dia.oeg.mappingpedia.model.{DCATDataset, MappingPediaExecutionResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
 
 object DatasetController {
 
-  def addDataset(dataset:Dataset, datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
-                           , publisherId:String, datasetLanguage:String
-                           , pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String
+  def addDataset(dataset:DCATDataset, datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
+                 , publisherId:String, datasetLanguage:String
+                 , pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String
                           ) : MappingPediaExecutionResult = {
 
     var distributionAccessURL = pDistributionAccessURL;
@@ -35,7 +35,7 @@ object DatasetController {
 
     try {
       val manifestFile:File = if (manifestFileRef != null) {
-        MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.identifier)
+        MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
       } else {
         //GENERATE MANIFEST FILE IF NOT PROVIDED
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
@@ -50,19 +50,19 @@ object DatasetController {
             val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
 
             val mapValues:Map[String,String] = Map(
-              "$datasetID" -> dataset.identifier
-              , "$datasetTitle" -> dataset.title
-              , "$datasetKeywords" -> dataset.keywords
+              "$datasetID" -> dataset.dctIdentifier
+              , "$datasetTitle" -> dataset.dctTitle
+              , "$datasetKeywords" -> dataset.dctKeyword
               , "$publisherId" -> publisherId
               , "$datasetLanguage" -> datasetLanguage
-              , "$distributionID" -> dataset.identifier
+              , "$distributionID" -> dataset.dctIdentifier
               , "$distributionAccessURL" -> distributionAccessURL
               , "$distributionDownloadURL" -> distributionDownloadURL
               , "$distributionMediaType" -> distributionMediaType
             );
 
             val filename = "metadata-dataset.ttl";
-            MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.identifier);
+            MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
           } catch {
             case e:Exception => {
               e.printStackTrace()
@@ -87,7 +87,7 @@ object DatasetController {
       val optionDatasetFile:Option[File] = if(datasetFileRef == null) {
         None
       }  else {
-        Some(MappingPediaUtility.multipartFileToFile(datasetFileRef, dataset.identifier))
+        Some(MappingPediaUtility.multipartFileToFile(datasetFileRef, dataset.dctIdentifier))
       }
 
 
@@ -99,7 +99,7 @@ object DatasetController {
         val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
         val addNewDatasetResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
           , MappingPediaEngine.mappingpediaProperties.githubAccessToken, publisherId
-          , dataset.identifier, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
+          , dataset.dctIdentifier, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
         val addNewDatasetResponseStatus = addNewDatasetResponse.getStatus
 
         if (HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus) {
@@ -118,7 +118,7 @@ object DatasetController {
         val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
         val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
           , MappingPediaEngine.mappingpediaProperties.githubAccessToken, publisherId
-          , dataset.identifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+          , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = addNewManifestResponse.getStatus
         logger.info("addNewManifestResponseStatus = " + addNewManifestResponseStatus)
 
@@ -132,8 +132,8 @@ object DatasetController {
       //STORING DATASET & RESOURCE ON CKAN
       val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse = CKANUtility.addNewPackage(dataset.identifier, publisherId, dataset.title, dataset.description)
-        val addNewResourceResponse = CKANUtility.addNewResource(dataset.identifier, dataset.title, distributionMediaType
+        val addNewPackageResponse = CKANUtility.addNewPackage(dataset.dctIdentifier, publisherId, dataset.dctTitle, dataset.dctDescription)
+        val addNewResourceResponse = CKANUtility.addNewResource(dataset.dctIdentifier, dataset.dctTitle, distributionMediaType
           , datasetFileRef, pDistributionDownloadURL)
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)

@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.annotation.MultipartConfig;
 
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
-import es.upm.fi.dia.oeg.mappingpedia.model.Dataset;
+import es.upm.fi.dia.oeg.mappingpedia.model.DCATDataset;
 import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult;
 import org.apache.log4j.LogManager;
@@ -206,9 +206,9 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}");
-        Dataset dataset = new Dataset();
-        dataset.title_$eq(datasetTitle);
-        dataset.description_$eq(datasetDescription);
+        DCATDataset dataset = new DCATDataset();
+        dataset.dctTitle_$eq(datasetTitle);
+        dataset.dctDescription_$eq(datasetDescription);
 
         return DatasetController.addDataset(dataset, datasetFileRef, manifestFileRef, generateManifestFile
                 , publisherId, datasetLanguage
@@ -234,10 +234,10 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
-        Dataset dataset = new Dataset(datasetID);
-        dataset.title_$eq(datasetTitle);
-        dataset.description_$eq(datasetDescription);
-        dataset.keywords_$eq(datasetKeywords);
+        DCATDataset dataset = new DCATDataset(datasetID);
+        dataset.dctTitle_$eq(datasetTitle);
+        dataset.dctDescription_$eq(datasetDescription);
+        dataset.dctKeyword_$eq(datasetKeywords);
 
         return DatasetController.addDataset(dataset, datasetFileRef, manifestFileRef, generateManifestFile
                 , datasetPublisher, datasetLanguage
