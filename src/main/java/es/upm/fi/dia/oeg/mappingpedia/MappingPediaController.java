@@ -5,10 +5,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
 
+import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
+import es.upm.fi.dia.oeg.mappingpedia.model.Dataset;
 import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
-import es.upm.fi.dia.oeg.mappingpedia.model.MapResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult;
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.web.bind.annotation.*;
@@ -206,12 +206,13 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}");
-        logger.debug("mappingpediaUsername = " + mappingpediaUsername);
+        Dataset dataset = new Dataset();
+        dataset.title_$eq(datasetTitle);
+        dataset.description_$eq(datasetDescription);
 
-        return Dataset.addDatasetFile(datasetFileRef, manifestFileRef, generateManifestFile, mappingpediaUsername
-                , datasetTitle, datasetKeywords, publisherId, datasetLanguage
+        return DatasetController.addDataset(dataset, datasetFileRef, manifestFileRef, generateManifestFile
+                , publisherId, datasetLanguage
                 , distributionAccessURL, distributionDownloadURL, distributionMediaType
-                , datasetDescription
         );
     }
 
@@ -233,10 +234,14 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
-        return Dataset.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile
-                , datasetID, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
+        Dataset dataset = new Dataset(datasetID);
+        dataset.title_$eq(datasetTitle);
+        dataset.description_$eq(datasetDescription);
+        dataset.keywords_$eq(datasetKeywords);
+
+        return DatasetController.addDataset(dataset, datasetFileRef, manifestFileRef, generateManifestFile
+                , datasetPublisher, datasetLanguage
                 , distributionAccessURL, distributionDownloadURL, distributionMediaType
-                , datasetDescription
         );
     }
 

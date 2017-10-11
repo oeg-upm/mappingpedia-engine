@@ -1,34 +1,22 @@
-package es.upm.fi.dia.oeg.mappingpedia
+package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.io.File
 import java.net.HttpURLConnection
-import java.util.{Date, UUID}
+import java.util.Date
 
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
-import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, MappingPediaExecutionResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
 
-object Dataset {
-  def addDatasetFile(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
-                     , mappingpediaUsername:String, datasetTitle:String, datasetKeywords:String, publisherId:String, datasetLanguage:String
-                     , distributionAccessURL:String, distributionDownloadURL:String, distributionMediaType:String, datasetDescription:String
-                    ) : MappingPediaExecutionResult = {
+object DatasetController {
 
-    val datasetID = UUID.randomUUID.toString;
-    this.addDatasetFileWithID(datasetFileRef, manifestFileRef, generateManifestFile
-      , datasetID, datasetTitle, datasetKeywords, publisherId, datasetLanguage
-      , distributionAccessURL, distributionDownloadURL, distributionMediaType
-      , datasetDescription
-    );
-  }
-
-  def addDatasetFileWithID(datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
-                           , datasetID:String, datasetTitle:String, datasetKeywords:String, publisherId:String, datasetLanguage:String
-                           , pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String, datasetDescription:String
+  def addDataset(dataset:Dataset, datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
+                           , publisherId:String, datasetLanguage:String
+                           , pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String
                           ) : MappingPediaExecutionResult = {
-    logger.debug("datasetID = " + datasetID)
 
     var distributionAccessURL = pDistributionAccessURL;
     if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
@@ -47,7 +35,7 @@ object Dataset {
 
     try {
       val manifestFile:File = if (manifestFileRef != null) {
-        MappingPediaUtility.multipartFileToFile(manifestFileRef, datasetID)
+        MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.identifier)
       } else {
         //GENERATE MANIFEST FILE IF NOT PROVIDED
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
@@ -62,19 +50,19 @@ object Dataset {
             val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
 
             val mapValues:Map[String,String] = Map(
-              "$datasetID" -> datasetID
-              , "$datasetTitle" -> datasetTitle
-              , "$datasetKeywords" -> datasetKeywords
+              "$datasetID" -> dataset.identifier
+              , "$datasetTitle" -> dataset.title
+              , "$datasetKeywords" -> dataset.keywords
               , "$publisherId" -> publisherId
               , "$datasetLanguage" -> datasetLanguage
-              , "$distributionID" -> datasetID
+              , "$distributionID" -> dataset.identifier
               , "$distributionAccessURL" -> distributionAccessURL
               , "$distributionDownloadURL" -> distributionDownloadURL
               , "$distributionMediaType" -> distributionMediaType
             );
 
             val filename = "metadata-dataset.ttl";
-            MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, datasetID);
+            MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.identifier);
           } catch {
             case e:Exception => {
               e.printStackTrace()
@@ -99,7 +87,7 @@ object Dataset {
       val optionDatasetFile:Option[File] = if(datasetFileRef == null) {
         None
       }  else {
-        Some(MappingPediaUtility.multipartFileToFile(datasetFileRef, datasetID))
+        Some(MappingPediaUtility.multipartFileToFile(datasetFileRef, dataset.identifier))
       }
 
 
@@ -111,7 +99,7 @@ object Dataset {
         val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
         val addNewDatasetResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
           , MappingPediaEngine.mappingpediaProperties.githubAccessToken, publisherId
-          , datasetID, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
+          , dataset.identifier, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
         val addNewDatasetResponseStatus = addNewDatasetResponse.getStatus
 
         if (HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus) {
@@ -130,7 +118,7 @@ object Dataset {
         val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
         val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
           , MappingPediaEngine.mappingpediaProperties.githubAccessToken, publisherId
-          , datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+          , dataset.identifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = addNewManifestResponse.getStatus
         logger.info("addNewManifestResponseStatus = " + addNewManifestResponseStatus)
 
@@ -144,8 +132,8 @@ object Dataset {
       //STORING DATASET & RESOURCE ON CKAN
       val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse = CKANUtility.addNewPackage(datasetID, publisherId, datasetTitle, datasetDescription)
-        val addNewResourceResponse = CKANUtility.addNewResource(datasetID, datasetTitle, distributionMediaType
+        val addNewPackageResponse = CKANUtility.addNewPackage(dataset.identifier, publisherId, dataset.title, dataset.description)
+        val addNewResourceResponse = CKANUtility.addNewResource(dataset.identifier, dataset.title, distributionMediaType
           , datasetFileRef, pDistributionDownloadURL)
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
