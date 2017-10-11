@@ -7,6 +7,7 @@ import javax.servlet.annotation.MultipartConfig;
 
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController;
+import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController;
 import es.upm.fi.dia.oeg.mappingpedia.model.Dataset;
 import es.upm.fi.dia.oeg.mappingpedia.model.Distribution;
 import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
@@ -87,12 +88,17 @@ public class MappingPediaController {
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
+            , @RequestParam(value="organizationId", required = false) String organizationId
+            , @RequestParam(value="datasetId", required = false) String datasetId
     )
     {
         logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
         try {
-            return MappingPediaEngine.executeMapping2(mappingURL, mappingLanguage, datasetDistributionURL, fieldSeparator
-                    , queryFile, outputFilename);
+            return MappingExecutionController.executeMapping2(
+                    mappingURL, mappingLanguage, datasetDistributionURL, fieldSeparator
+                    , queryFile, outputFilename
+                    , organizationId, datasetId, "true"
+            );
         } catch (Exception e) {
             e.printStackTrace();
             String errorMessage = "Error occured: " + e.getMessage();
@@ -114,7 +120,7 @@ public class MappingPediaController {
     )
     {
         logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
-        return MappingPediaEngine.executeMapping(mappingpediaUsername, mappingDirectory, mappingFilename
+        return MappingExecutionController.executeMapping1(mappingpediaUsername, mappingDirectory, mappingFilename
                 , datasetFile, queryFile, outputFilename);
     }
 
