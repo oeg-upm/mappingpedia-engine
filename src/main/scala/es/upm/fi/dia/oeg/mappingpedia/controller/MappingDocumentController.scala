@@ -1,9 +1,13 @@
 package es.upm.fi.dia.oeg.mappingpedia.controller
 
-import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
-import es.upm.fi.dia.oeg.mappingpedia.model.{ListResult, MappingDocument}
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility
+import java.net.HttpURLConnection
+import java.util.{Date, UUID}
+
+import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, MappingPediaEngine, MappingPediaRunner}
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
+import es.upm.fi.dia.oeg.mappingpedia.model.{ListResult, MappingDocument, MappingPediaExecutionResult}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
+import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
 
 object MappingDocumentController {
@@ -131,4 +135,152 @@ object MappingDocumentController {
     result;
   }
 
+  def uploadNewMapping(mappingpediaUsername: String, pDatasetID: String, manifestFileRef: MultipartFile
+                       , mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
+                       , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
+                       //, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
+                       , pMappingLanguage:String
+
+                      ) : MappingPediaExecutionResult = {
+    val datasetID = if(pDatasetID == null) UUID.randomUUID.toString else pDatasetID;
+    val mappingLanguage = if(pMappingLanguage == null) {
+      MappingPediaConstant.MAPPING_LANGUAGE_R2RML
+    } else {
+      pMappingLanguage
+    }
+
+    logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+    logger.debug("datasetID = " + datasetID)
+
+    val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + datasetID + "/"
+    val mappingDocumentID = UUID.randomUUID.toString
+
+    try {
+
+      //STORING MAPPING FILE ON GITHUB
+      val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, datasetID)
+      val mappingFilePath = mappingFile.getPath
+      val commitMessage = "add a new mapping file by mappingpedia-engine"
+      val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
+      val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
+      logger.info("Storing mapping file on GitHub ...")
+      val response = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
+        , MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername, datasetID, mappingFile.getName
+        , commitMessage, base64EncodedContent)
+      //logger.debug("response.getHeaders = " + response.getHeaders)
+      //logger.debug("response.getBody = " + response.getBody)
+      val responseStatus = response.getStatus
+      logger.debug("responseStatus = " + responseStatus)
+      val responseStatusText = response.getStatusText
+      logger.debug("responseStatusText = " + responseStatusText)
+
+      val mappingDocumentGitHubURL = if (HttpURLConnection.HTTP_OK == responseStatus
+        || HttpURLConnection.HTTP_CREATED == responseStatus) {
+        val url = response.getBody.getObject.getJSONObject("content").getString("url")
+        logger.info("Mapping stored on GitHub")
+        url;
+      } else {
+        logger.error("Error when storing mapping on GitHub: " + responseStatusText)
+        null
+      }
+
+      logger.info("storing/creating manifest file ...")
+      val manifestFile = if (manifestFileRef != null) {
+        logger.info("Manifest file is provided")
+        MappingPediaUtility.multipartFileToFile(manifestFileRef, datasetID)
+      } else {
+        logger.info("Manifest file is not provided")
+        logger.debug("generateManifestFile = " + generateManifestFile)
+        if(generateManifestFile != null && ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile))) {
+          try {
+            //GENERATE MANIFEST FILE IF NOT PROVIDED
+            logger.info("GENERATING MANIFEST FILE ...")
+            val templateFiles = List(
+              MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
+              , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
+
+            val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
+
+            val mapValues:Map[String,String] = Map(
+              "$mappingDocumentID" -> mappingDocumentID
+              , "$mappingDocumentTitle" -> mappingDocumentTitle
+              , "$mappingDocumentDateTimeSubmitted" -> mappingDocumentDateTimeSubmitted
+              , "$mappingDocumentCreator" -> mappingDocumentCreator
+              , "$mappingDocumentSubjects" -> mappingDocumentSubjects
+              , "$mappingDocumentFilePath" -> mappingDocumentGitHubURL
+              , "$datasetID" -> datasetID
+              , "$mappingLanguage" -> mappingLanguage
+
+              //, "$datasetTitle" -> datasetTitle
+              //, "$datasetKeywords" -> datasetKeywords
+              //, "$datasetPublisher" -> datasetPublisher
+              //, "$datasetLanguage" -> datasetLanguage
+            );
+
+            val filename = "metadata-mappingdocument.ttl";
+            MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, datasetID);
+
+
+          } catch {
+            case e:Exception => {
+              e.printStackTrace();
+              val errorMessage = "Error occured when generating manifest file: " + e.getMessage;
+              logger.error(errorMessage)
+              null
+            }
+          }
+
+        } else {
+          null
+        }
+      }
+
+      val manifestFilePath:String = if(manifestFile == null) { null }  else { manifestFile.getPath; }
+      logger.debug("manifestFilePath = " + manifestFilePath)
+
+      //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
+      logger.info("STORING MAPPING AND MANIFEST FILES ON VIRTUOSO ...")
+      MappingPediaEngine.storeManifestAndMapping(manifestFilePath,mappingFilePath, "false"
+        //, Application.mappingpediaEngine
+        , replaceMappingBaseURI, newMappingBaseURI)
+      logger.info("Mapping and manifest file stored on Virtuoso")
+
+
+      //STORING MANIFEST FILE ON GITHUB
+      val manifestGitHubURL = if(manifestFile != null) {
+        logger.info("STORING MANIFEST FILE ON GITHUB ...")
+        val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+        val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
+          , MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername
+          , datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+        val addNewManifestResponseStatus = addNewManifestResponse.getStatus
+        val addNewManifestResponseStatusText = addNewManifestResponse.getStatusText
+
+        if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
+          || HttpURLConnection.HTTP_OK == addNewManifestResponseStatus) {
+          logger.info("Manifest file stored on GitHub")
+          addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
+        } else {
+          logger.info("Error occured when storing manifest file on GitHub: " + addNewManifestResponseStatusText)
+          null
+        }
+      } else {
+        null
+      }
+
+
+      new MappingPediaExecutionResult(manifestGitHubURL, null, mappingDocumentGitHubURL
+        , null, null, "OK", HttpURLConnection.HTTP_OK, null)
+
+    } catch {
+      case e: Exception =>
+        val errorMessage = e.getMessage
+        logger.error("error uploading a new mapping file: " + errorMessage)
+        val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
+        val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode, null)
+        executionResult
+    }
+
+
+  }
 }

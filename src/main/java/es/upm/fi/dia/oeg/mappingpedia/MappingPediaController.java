@@ -135,7 +135,7 @@ public class MappingPediaController {
         logger.info("[POST] /mappings/{mappingpediaUsername}");
         String datasetID = null;
 
-        return MappingPediaEngine.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
+        return MappingDocumentController.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
                 , replaceMappingBaseURI, generateManifestFile
                 , mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
                 //, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage
@@ -159,7 +159,7 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
-        return MappingPediaEngine.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
+        return MappingDocumentController.uploadNewMapping(mappingpediaUsername, datasetID, manifestFileRef, mappingFileRef
                 , replaceMappingBaseURI, generateManifestFile
                 , mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
                 //, datasetTitle, datasetKeywords, datasetPublisher, datasetLanguage

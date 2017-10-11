@@ -10,6 +10,8 @@ import be.ugent.mmlab.rml.config.RMLConfiguration
 import be.ugent.mmlab.rml.core.{StdMetadataRMLEngine, StdRMLEngine}
 import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory
 import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaRunner.logger
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController
 import es.upm.fi.dia.oeg.mappingpedia.model._
@@ -54,40 +56,6 @@ class MappingPediaEngine() {
 */
 
 
-	def generateAdditionalTriples() : List[Triple] = {
-		var newTriples:List[Triple] = List.empty;
-
-		val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
-			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
-		logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
-
-		if(r2rmlMappingDocumentResources != null) {
-			while(r2rmlMappingDocumentResources.hasNext()) {
-				val r2rmlMappingDocumentResource = r2rmlMappingDocumentResources.nextResource();
-				logger.info("r2rmlMappingDocumentResource = " + r2rmlMappingDocumentResource);
-
-				//improve this code using, get all x from ?x rr:LogicalTable ?lt
-				//mapping documents do not always explicitly have a TriplesMap
-				//val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
-				//  				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
-				val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
-					MappingPediaConstant.R2RML_LOGICALTABLE_PROPERTY);
-				logger.info("triplesMapResources = " + triplesMapResources);
-				if(triplesMapResources != null) {
-					while(triplesMapResources.hasNext()) {
-						val triplesMapResource = triplesMapResources.nextResource();
-						val newStatement = new StatementImpl(r2rmlMappingDocumentResource
-							, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
-						logger.info("adding new hasTriplesMap statement: " + newStatement);
-						val newTriple = newStatement.asTriple();
-						newTriples = newTriples ::: List(newTriple);
-					}
-				}
-			}
-		}
-
-		newTriples;
-	}
 
 
 
@@ -101,6 +69,8 @@ object MappingPediaEngine {
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
 	var mappingpediaProperties:MappingPediaProperties = null;
+
+
 
 	def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
@@ -154,153 +124,7 @@ object MappingPediaEngine {
       );
     }*/
 
-	def uploadNewMapping(mappingpediaUsername: String, pDatasetID: String, manifestFileRef: MultipartFile
-											 , mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
-											 , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
-											 //, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
-											 , pMappingLanguage:String
 
-											) : MappingPediaExecutionResult = {
-		val datasetID = if(pDatasetID == null) UUID.randomUUID.toString else pDatasetID;
-		val mappingLanguage = if(pMappingLanguage == null) {
-			MappingPediaConstant.MAPPING_LANGUAGE_R2RML
-		} else {
-			pMappingLanguage
-		}
-
-		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
-		logger.debug("datasetID = " + datasetID)
-
-		val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + datasetID + "/"
-		val mappingDocumentID = UUID.randomUUID.toString
-
-		try {
-
-			//STORING MAPPING FILE ON GITHUB
-			val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, datasetID)
-			val mappingFilePath = mappingFile.getPath
-			val commitMessage = "add a new mapping file by mappingpedia-engine"
-			val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
-			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
-			logger.info("Storing mapping file on GitHub ...")
-			val response = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
-				, MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername, datasetID, mappingFile.getName
-				, commitMessage, base64EncodedContent)
-			//logger.debug("response.getHeaders = " + response.getHeaders)
-			//logger.debug("response.getBody = " + response.getBody)
-			val responseStatus = response.getStatus
-			logger.debug("responseStatus = " + responseStatus)
-			val responseStatusText = response.getStatusText
-			logger.debug("responseStatusText = " + responseStatusText)
-
-			val mappingDocumentGitHubURL = if (HttpURLConnection.HTTP_OK == responseStatus
-				|| HttpURLConnection.HTTP_CREATED == responseStatus) {
-				val url = response.getBody.getObject.getJSONObject("content").getString("url")
-				logger.info("Mapping stored on GitHub")
-				url;
-			} else {
-				logger.error("Error when storing mapping on GitHub: " + responseStatusText)
-				null
-			}
-
-			logger.info("storing/creating manifest file ...")
-			val manifestFile = if (manifestFileRef != null) {
-				logger.info("Manifest file is provided")
-				MappingPediaUtility.multipartFileToFile(manifestFileRef, datasetID)
-			} else {
-				logger.info("Manifest file is not provided")
-				logger.debug("generateManifestFile = " + generateManifestFile)
-				if(generateManifestFile != null && ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile))) {
-					try {
-						//GENERATE MANIFEST FILE IF NOT PROVIDED
-						logger.info("GENERATING MANIFEST FILE ...")
-						val templateFiles = List(
-							MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
-							, MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
-
-						val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
-
-						val mapValues:Map[String,String] = Map(
-							"$mappingDocumentID" -> mappingDocumentID
-							, "$mappingDocumentTitle" -> mappingDocumentTitle
-							, "$mappingDocumentDateTimeSubmitted" -> mappingDocumentDateTimeSubmitted
-							, "$mappingDocumentCreator" -> mappingDocumentCreator
-							, "$mappingDocumentSubjects" -> mappingDocumentSubjects
-							, "$mappingDocumentFilePath" -> mappingDocumentGitHubURL
-							, "$datasetID" -> datasetID
-							, "$mappingLanguage" -> mappingLanguage
-
-							//, "$datasetTitle" -> datasetTitle
-							//, "$datasetKeywords" -> datasetKeywords
-							//, "$datasetPublisher" -> datasetPublisher
-							//, "$datasetLanguage" -> datasetLanguage
-						);
-
-						val filename = "metadata-mappingdocument.ttl";
-						MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, datasetID);
-
-
-					} catch {
-						case e:Exception => {
-							e.printStackTrace();
-							val errorMessage = "Error occured when generating manifest file: " + e.getMessage;
-							logger.error(errorMessage)
-							null
-						}
-					}
-
-				} else {
-					null
-				}
-			}
-
-			val manifestFilePath:String = if(manifestFile == null) { null }  else { manifestFile.getPath; }
-			logger.debug("manifestFilePath = " + manifestFilePath)
-
-			//STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
-			logger.info("STORING MAPPING AND MANIFEST FILES ON VIRTUOSO ...")
-			MappingPediaRunner.run(manifestFilePath,mappingFilePath, "false", Application.mappingpediaEngine
-				, replaceMappingBaseURI, newMappingBaseURI)
-			logger.info("Mapping and manifest file stored on Virtuoso")
-
-
-			//STORING MANIFEST FILE ON GITHUB
-			val manifestGitHubURL = if(manifestFile != null) {
-				logger.info("STORING MANIFEST FILE ON GITHUB ...")
-				val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-				val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
-					, MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername
-					, datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
-				val addNewManifestResponseStatus = addNewManifestResponse.getStatus
-				val addNewManifestResponseStatusText = addNewManifestResponse.getStatusText
-
-				if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
-					|| HttpURLConnection.HTTP_OK == addNewManifestResponseStatus) {
-					logger.info("Manifest file stored on GitHub")
-					addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
-				} else {
-					logger.info("Error occured when storing manifest file on GitHub: " + addNewManifestResponseStatusText)
-					null
-				}
-			} else {
-				null
-			}
-
-
-			new MappingPediaExecutionResult(manifestGitHubURL, null, mappingDocumentGitHubURL
-				, null, null, "OK", HttpURLConnection.HTTP_OK, null)
-
-		} catch {
-			case e: Exception =>
-				val errorMessage = e.getMessage
-				logger.error("error uploading a new mapping file: " + errorMessage)
-				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
-				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode, null)
-				executionResult
-		}
-
-
-	}
 
 
 	def addQueryFile(queryFileRef: MultipartFile, mappingpediaUsername:String, datasetID:String) : MappingPediaExecutionResult = {
@@ -844,5 +668,113 @@ object MappingPediaEngine {
 			parameters.put(key, value)
 		}
 		parameters
+	}
+
+	def generateAdditionalTriples(manifestModel:Model, mappingDocumentModel:Model) : List[Triple] = {
+		var newTriples:List[Triple] = List.empty;
+
+		val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
+			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
+		logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
+
+		if(r2rmlMappingDocumentResources != null) {
+			while(r2rmlMappingDocumentResources.hasNext()) {
+				val r2rmlMappingDocumentResource = r2rmlMappingDocumentResources.nextResource();
+				logger.info("r2rmlMappingDocumentResource = " + r2rmlMappingDocumentResource);
+
+				//improve this code using, get all x from ?x rr:LogicalTable ?lt
+				//mapping documents do not always explicitly have a TriplesMap
+				//val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
+				//  				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
+				val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
+					MappingPediaConstant.R2RML_LOGICALTABLE_PROPERTY);
+				logger.info("triplesMapResources = " + triplesMapResources);
+				if(triplesMapResources != null) {
+					while(triplesMapResources.hasNext()) {
+						val triplesMapResource = triplesMapResources.nextResource();
+						val newStatement = new StatementImpl(r2rmlMappingDocumentResource
+							, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
+						logger.info("adding new hasTriplesMap statement: " + newStatement);
+						val newTriple = newStatement.asTriple();
+						newTriples = newTriples ::: List(newTriple);
+					}
+				}
+			}
+		}
+
+		newTriples;
+	}
+
+	def storeManifestAndMapping(manifestFilePath:String, pMappingFilePath:String, clearGraphString:String
+															//, mappingpediaEngine:MappingPediaEngine
+															, pReplaceMappingBaseURI:String, newMappingBaseURI:String
+														 ): Unit = {
+
+		val clearGraphBoolean = MappingPediaUtility.stringToBoolean(clearGraphString);
+		logger.info("clearGraphBoolean = " + clearGraphBoolean);
+
+		val replaceMappingBaseURI = MappingPediaUtility.stringToBoolean(pReplaceMappingBaseURI);
+
+		val manifestText = if(manifestFilePath != null ) {
+			MappingPediaEngine.getManifestContent(manifestFilePath);
+		} else {
+			null;
+		}
+
+		val manifestModel = if(manifestText != null) {
+			MappingPediaUtility.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
+		} else {
+			null;
+		}
+
+		//mappingpediaEngine.manifestModel = manifestModel;
+
+		val oldMappingText:String = MappingPediaEngine.getMappingContent(manifestFilePath, pMappingFilePath);
+
+
+		val mappingText = if(replaceMappingBaseURI) {
+			MappingPediaUtility.replaceBaseURI(oldMappingText.split("\n").toIterator
+				, newMappingBaseURI).mkString("\n");
+		} else {
+			oldMappingText;
+		}
+		val mappingDocumentModel = MappingPediaUtility.readModelFromString(mappingText
+			, MappingPediaConstant.R2RML_FILE_LANGUAGE);
+		//mappingpediaEngine.mappingDocumentModel = mappingDocumentModel;
+
+		//val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
+		val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+			, MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd, MappingPediaEngine.mappingpediaProperties.graphName);
+		if(clearGraphBoolean) {
+			try {
+				virtuosoGraph.clear();
+			} catch {
+				case e:Exception => {
+					logger.error("unable to clear the graph: " + e.getMessage);
+				}
+			}
+		}
+
+		if(manifestModel != null) {
+			logger.info("Storing manifest triples.");
+			val manifestTriples = MappingPediaUtility.toTriples(manifestModel);
+			//logger.info("manifestTriples = " + manifestTriples.mkString("\n"));
+			MappingPediaUtility.store(manifestTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+
+			logger.info("Storing generated triples.");
+			val additionalTriples = MappingPediaEngine.generateAdditionalTriples(manifestModel, mappingDocumentModel);
+			logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
+
+			MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+		}
+
+		logger.info("Storing R2RML triples in Virtuoso.");
+		val r2rmlTriples = MappingPediaUtility.toTriples(mappingDocumentModel);
+		//logger.info("r2rmlTriples = " + r2rmlTriples.mkString("\n"));
+
+		MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+
+		logger.info("Bye!");
+
 	}
 }
