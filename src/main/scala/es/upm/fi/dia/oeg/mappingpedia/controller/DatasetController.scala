@@ -6,26 +6,30 @@ import java.util.Date
 
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
-import es.upm.fi.dia.oeg.mappingpedia.model.{DCATDataset, MappingPediaExecutionResult}
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, MappingPediaExecutionResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
 
 object DatasetController {
 
-  def addDataset(dataset:DCATDataset, datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
-                 , publisherId:String, datasetLanguage:String
-                 , pDistributionAccessURL:String, pDistributionDownloadURL:String, distributionMediaType:String
+  def addDataset(dataset:Dataset, datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
+                 , publisherId:String
+                 //, datasetLanguage:String
+                 //, pDistributionAccessURL:String, pDistributionDownloadURL:String
+                 //, distributionMediaType:String
                           ) : MappingPediaExecutionResult = {
 
-    var distributionAccessURL = pDistributionAccessURL;
+    val distribution = dataset.getDistribution();
+
+    var distributionAccessURL = distribution.dcatAccessURL
     if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
       distributionAccessURL = "<" + distributionAccessURL;
     }
     if(distributionAccessURL != null && !distributionAccessURL.endsWith(">")) {
       distributionAccessURL = distributionAccessURL + ">";
     }
-    var distributionDownloadURL = pDistributionDownloadURL;
+    var distributionDownloadURL = distribution.dcatDownloadURL
     if(distributionDownloadURL != null && !distributionDownloadURL.startsWith("<")) {
       distributionDownloadURL = "<" + distributionDownloadURL;
     }
@@ -52,13 +56,13 @@ object DatasetController {
             val mapValues:Map[String,String] = Map(
               "$datasetID" -> dataset.dctIdentifier
               , "$datasetTitle" -> dataset.dctTitle
-              , "$datasetKeywords" -> dataset.dctKeyword
+              , "$datasetKeywords" -> dataset.dcatKeyword
               , "$publisherId" -> publisherId
-              , "$datasetLanguage" -> datasetLanguage
+              , "$datasetLanguage" -> dataset.dctLanguage
               , "$distributionID" -> dataset.dctIdentifier
               , "$distributionAccessURL" -> distributionAccessURL
               , "$distributionDownloadURL" -> distributionDownloadURL
-              , "$distributionMediaType" -> distributionMediaType
+              , "$distributionMediaType" -> distribution.dcatMediaType
             );
 
             val filename = "metadata-dataset.ttl";
@@ -133,8 +137,8 @@ object DatasetController {
       val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
         val addNewPackageResponse = CKANUtility.addNewPackage(dataset.dctIdentifier, publisherId, dataset.dctTitle, dataset.dctDescription)
-        val addNewResourceResponse = CKANUtility.addNewResource(dataset.dctIdentifier, dataset.dctTitle, distributionMediaType
-          , datasetFileRef, pDistributionDownloadURL)
+        val addNewResourceResponse = CKANUtility.addNewResource(dataset.dctIdentifier, dataset.dctTitle, distribution.dcatMediaType
+          , datasetFileRef, distributionDownloadURL)
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
       } else {

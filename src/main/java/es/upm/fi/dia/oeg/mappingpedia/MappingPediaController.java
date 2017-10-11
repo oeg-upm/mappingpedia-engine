@@ -6,7 +6,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.annotation.MultipartConfig;
 
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
-import es.upm.fi.dia.oeg.mappingpedia.model.DCATDataset;
+import es.upm.fi.dia.oeg.mappingpedia.model.Dataset;
+import es.upm.fi.dia.oeg.mappingpedia.model.Distribution;
 import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult;
 import org.apache.log4j.LogManager;
@@ -206,13 +207,22 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}");
-        DCATDataset dataset = new DCATDataset();
+        Dataset dataset = new Dataset();
         dataset.dctTitle_$eq(datasetTitle);
         dataset.dctDescription_$eq(datasetDescription);
 
+        Distribution distribution = new Distribution();
+        distribution.dcatAccessURL_$eq(distributionAccessURL);
+        distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+        distribution.dcatMediaType_$eq(distributionMediaType);
+        dataset.addDistribution(distribution);
+
+
         return DatasetController.addDataset(dataset, datasetFileRef, manifestFileRef, generateManifestFile
-                , publisherId, datasetLanguage
-                , distributionAccessURL, distributionDownloadURL, distributionMediaType
+                , publisherId
+                //, datasetLanguage
+                //, distributionAccessURL, distributionDownloadURL
+                //, distributionMediaType
         );
     }
 
@@ -234,14 +244,22 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
-        DCATDataset dataset = new DCATDataset(datasetID);
+        Dataset dataset = new Dataset(datasetID);
         dataset.dctTitle_$eq(datasetTitle);
         dataset.dctDescription_$eq(datasetDescription);
-        dataset.dctKeyword_$eq(datasetKeywords);
+        dataset.dcatKeyword_$eq(datasetKeywords);
+
+        Distribution distribution = new Distribution();
+        distribution.dcatAccessURL_$eq(distributionAccessURL);
+        distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+        distribution.dcatMediaType_$eq(distributionMediaType);
+        dataset.addDistribution(distribution);
 
         return DatasetController.addDataset(dataset, datasetFileRef, manifestFileRef, generateManifestFile
-                , datasetPublisher, datasetLanguage
-                , distributionAccessURL, distributionDownloadURL, distributionMediaType
+                , datasetPublisher
+                //, datasetLanguage
+                //, distributionAccessURL, distributionDownloadURL
+                //, distributionMediaType
         );
     }
 
