@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.annotation.MultipartConfig;
 
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
+import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController;
 import es.upm.fi.dia.oeg.mappingpedia.model.Dataset;
 import es.upm.fi.dia.oeg.mappingpedia.model.Distribution;
 import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
@@ -66,7 +67,7 @@ public class MappingPediaController {
         logger.info("/ogd/annotations(GET) ...");
         logger.info("searchType = " + searchType);
         logger.info("searchTerm = " + searchTerm);
-        ListResult listResult = MappingPediaEngine.findMappingDocuments(searchType, searchTerm);
+        ListResult listResult = MappingDocumentController.findMappingDocuments(searchType, searchTerm);
         logger.info("listResult = " + listResult);
         return listResult;
     }

@@ -13,18 +13,22 @@ class MappingDocument(val id:String, val title:String, val dataset:String
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   var distributionFieldSeparator:Option[String] = None;
 
-  val mappingDocumentURL = if(pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
+  logger.info(s"pMappingDocumentURL = $pMappingDocumentURL")
+  val mappingDocumentURL = if(pMappingDocumentURL != null && pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
     pMappingDocumentURL.substring(1, pMappingDocumentURL.length-1)
   } else {
     pMappingDocumentURL
   }
 
-  val mappingDocumentDownloadURL = try {
-    val response = Unirest.get(mappingDocumentURL).asJson();
-    response.getBody.getObject.getString("download_url");
-  } catch {
-    case e:Exception => mappingDocumentURL
+  val mappingDocumentDownloadURL = if (mappingDocumentURL == null) { null } else {
+    try {
+      val response = Unirest.get(mappingDocumentURL).asJson();
+      response.getBody.getObject.getString("download_url");
+    } catch {
+      case e:Exception => mappingDocumentURL
+    }
   }
+
   //
   //logger.info("response = " + response);
   //logger.info("response.getBody= " + response.getBody);

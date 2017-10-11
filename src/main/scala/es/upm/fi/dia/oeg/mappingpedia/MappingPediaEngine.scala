@@ -11,6 +11,7 @@ import be.ugent.mmlab.rml.core.{StdMetadataRMLEngine, StdRMLEngine}
 import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory
 import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
+import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
@@ -745,158 +746,12 @@ object MappingPediaEngine {
 		listResult
 	}
 
-	def findAllMappingDocuments() : ListResult = {
-
-		//val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
-		val mapValues:Map[String,String] = Map(
-			"$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-		);
-
-		val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
-			mapValues, "templates/findAllMappingDocuments.rq")
-
-		this.findMappingDocuments(queryString);
-
-		/*		val m = VirtModel.openDatabaseModel(MappingPediaProperties.graphName, MappingPediaProperties.virtuosoJDBC
-          , MappingPediaProperties.virtuosoUser, MappingPediaProperties.virtuosoPwd);
-
-        logger.debug("Executing query=\n" + queryString)
-
-        val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
-        var results:List[MappingDocument] = List.empty;
-        try {
-          val rs = qexec.execSelect
-          while (rs.hasNext) {
-            val qs = rs.nextSolution
-            val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
-            val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
-            val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
-            val filePath = MappingPediaUtility.getStringOrElse(qs, "filePath", null);
-            val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
-            val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
-            val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
-            val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
-            val mappingLanguage = MappingPediaUtility.getOptionString(qs, "mappingLanguage");
-
-            val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
-              , distributionAccessURL, mappingDocumentURL, mappingLanguage);
-            results = md :: results;
-          }
-        } finally qexec.close
-
-        val listResult = new ListResult(results.length, results);
-        listResult*/
-	}
-
-	def findMappingDocumentsByMappedClass(mappedClass:String) : ListResult = {
-		logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
-		val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
-
-		val mapValues:Map[String,String] = Map(
-			"$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-			, "$mappedClass" -> mappedClass
-			//, "$mappedProperty" -> mappedProperty
-		);
-
-		val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-		this.findMappingDocuments(queryString);
-	}
-
-	def findMappingDocumentsByMappedProperty(mappedProperty:String) : ListResult = {
-		val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
-
-		val mapValues:Map[String,String] = Map(
-			"$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-			, "$mappedProperty" -> mappedProperty
-		);
-
-		val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-		this.findMappingDocuments(queryString);
-	}
-
-	def findMappingDocumentsByMappedColumn(mappedColumn:String) : ListResult = {
-		val queryTemplateFile = "templates/findTriplesMapsByMappedColumn.rq";
-
-		val mapValues:Map[String,String] = Map(
-			"$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-			, "$mappedColumn" -> mappedColumn
-		);
-
-		val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-		this.findMappingDocuments(queryString);
-	}
-
-	def findMappingDocumentsByMappedTable(mappedTable:String) : ListResult = {
-		val queryTemplateFile = "templates/findTriplesMapsByMappedTable.rq";
-
-		val mapValues:Map[String,String] = Map(
-			"$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-			, "$mappedTable" -> mappedTable
-		);
-
-		val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-		this.findMappingDocuments(queryString);
-	}
-
-	def findMappingDocuments(searchType:String, searchTerm:String) : ListResult = {
-		val result:ListResult = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
-
-			val listResult = MappingPediaEngine.findMappingDocumentsByMappedClass(searchTerm)
-			listResult
-		} else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_PROPERTY.equals(searchType) && searchTerm != null) {
-			logger.info("findMappingDocumentsByMappedProperty:" + searchTerm)
-			val listResult = MappingPediaEngine.findMappingDocumentsByMappedProperty(searchTerm)
-			listResult
-		} else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_TABLE.equals(searchType) && searchTerm != null) {
-			logger.info("findMappingDocumentsByMappedTable:" + searchTerm)
-			val listResult = MappingPediaEngine.findMappingDocumentsByMappedTable(searchTerm)
-			listResult
-		} else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_COLUMN.equals(searchType) && searchTerm != null) {
-			logger.info("findMappingDocumentsByMappedColumn:" + searchTerm)
-			val listResult = MappingPediaEngine.findMappingDocumentsByMappedColumn(searchTerm)
-			listResult
-		} else {
-			logger.info("findAllMappingDocuments")
-			val listResult = MappingPediaEngine.findAllMappingDocuments
-			listResult
-		}
-		logger.info("result = " + result)
-
-		result;
-	}
-
-	def findMappingDocuments(queryString:String) : ListResult = {
-		val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
-			, MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
-
-		logger.debug("Executing query=\n" + queryString)
-
-		val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
-		var results:List[MappingDocument] = List.empty;
-		try {
-			val rs = qexec.execSelect
-			while (rs.hasNext) {
-				val qs = rs.nextSolution
-				val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
-				val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
-				val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
-				val filePath = MappingPediaUtility.getStringOrElse(qs, "filePath", null);
-				val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
-				val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
-				val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
-				val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
-				val mappingLanguage = MappingPediaUtility.getOptionString(qs, "mappingLanguage");
 
 
-				val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
-					, distributionAccessURL, mappingDocumentURL, mappingLanguage);
-				results = md :: results;
-			}
-		} finally qexec.close
 
-		val listResult = new ListResult(results.length, results);
-		listResult
-	}
+
+
+
 
 	def getSubclassesLocalNames(aClass:String, outputType:String, inputType:String) : ListResult = {
       MappingPediaUtility.getSubclassesLocalNames(aClass, this.schemaOrgModel, outputType, inputType);
@@ -925,7 +780,7 @@ object MappingPediaEngine {
 		val queryFile:String = null;
 
 		val mappingDocuments:Iterable[MappingDocument] = subclassesURIs.flatMap(subclassURI =>
-			MappingPediaEngine.findMappingDocumentsByMappedClass(subclassURI).getResults())
+			MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults())
       .asInstanceOf[Iterable[MappingDocument]];
 
     var executedMappings:List[(String, String)]= Nil;
