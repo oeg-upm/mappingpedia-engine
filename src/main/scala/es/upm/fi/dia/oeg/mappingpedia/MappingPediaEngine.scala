@@ -518,8 +518,8 @@ object MappingPediaEngine {
 			val mappingDocumentLines = map.foldLeft(templateLines)( (acc, kv) => {
 				val mapValue:String = map.get(kv._1).getOrElse("");
 
-				logger.debug("replacing " + kv._1 + " with " + mapValue);
-				acc.replaceAllLiterally(kv._1, mapValue)
+					logger.info("replacing " + kv._1 + " with " + mapValue);
+					acc.replaceAllLiterally(kv._1, mapValue)
 			});
 
 
@@ -534,7 +534,7 @@ object MappingPediaEngine {
 			mappingDocumentLines;
 		} catch {
 			case e:Exception => {
-				logger.error("error generating manifest lines: " + e.getMessage);
+				logger.error("error generating manifest string: " + e.getMessage);
 				e.printStackTrace();
 				val templateLines="";
 				templateLines;

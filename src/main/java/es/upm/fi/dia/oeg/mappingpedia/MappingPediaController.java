@@ -210,6 +210,8 @@ public class MappingPediaController {
         Dataset dataset = new Dataset();
         dataset.dctTitle_$eq(datasetTitle);
         dataset.dctDescription_$eq(datasetDescription);
+        dataset.dcatKeyword_$eq(datasetKeywords);
+        dataset.dctLanguage_$eq(datasetLanguage);
 
         Distribution distribution = new Distribution();
         distribution.dcatAccessURL_$eq(distributionAccessURL);
@@ -233,7 +235,7 @@ public class MappingPediaController {
             , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
             , @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
             , @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
-            , @RequestParam(value="datasetKeywords", defaultValue="Dataset Keywords") String datasetKeywords
+            , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
             , @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
             , @RequestParam(value="datasetLanguage", defaultValue="Dataset Language") String datasetLanguage
             , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
@@ -248,6 +250,7 @@ public class MappingPediaController {
         dataset.dctTitle_$eq(datasetTitle);
         dataset.dctDescription_$eq(datasetDescription);
         dataset.dcatKeyword_$eq(datasetKeywords);
+        dataset.dctLanguage_$eq(datasetLanguage);
 
         Distribution distribution = new Distribution();
         distribution.dcatAccessURL_$eq(distributionAccessURL);
