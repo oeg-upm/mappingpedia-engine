@@ -136,9 +136,10 @@ object DatasetController {
       //STORING DATASET & RESOURCE ON CKAN
       val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse = CKANUtility.addNewPackage(dataset.dctIdentifier, publisherId, dataset.dctTitle, dataset.dctDescription)
-        val addNewResourceResponse = CKANUtility.addNewResource(dataset.dctIdentifier, dataset.dctTitle, distribution.dcatMediaType
-          , datasetFileRef, distributionDownloadURL)
+        val addNewPackageResponse = CKANUtility.addNewPackage(dataset.dctIdentifier, publisherId, dataset.dctTitle
+          , dataset.dctDescription)
+        val addNewResourceResponse = CKANUtility.addNewResource(dataset.dctIdentifier, dataset.dctTitle
+          , distribution.dcatMediaType, datasetFileRef, distribution.dcatDownloadURL)
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
       } else {
