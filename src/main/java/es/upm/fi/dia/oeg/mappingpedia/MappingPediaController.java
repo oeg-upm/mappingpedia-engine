@@ -92,7 +92,7 @@ public class MappingPediaController {
             , @RequestParam(value="datasetId", required = false) String datasetId
     )
     {
-        logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
+        logger.info("POST /executions2");
         try {
             return MappingExecutionController.executeMapping2(
                     mappingURL, mappingLanguage, datasetDistributionURL, fieldSeparator

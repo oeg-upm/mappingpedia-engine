@@ -6,19 +6,19 @@ import java.util.Date
 
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, MappingPediaExecutionResult}
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, MappingPediaExecutionResult, Organization}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
 
 object DatasetController {
 
-  def addDataset(dataset:Dataset, datasetFileRef: MultipartFile, manifestFileRef:MultipartFile, generateManifestFile:String
-                 , publisherId:String
+  def addDataset(dataset:Dataset, datasetFileRef: MultipartFile, manifestFileRef:MultipartFile
+                 , generateManifestFile:String, publisherId:String
                  //, datasetLanguage:String
                  //, pDistributionAccessURL:String, pDistributionDownloadURL:String
                  //, distributionMediaType:String
-                          ) : MappingPediaExecutionResult = {
+                ) : MappingPediaExecutionResult = {
 
     val distribution = dataset.getDistribution();
 
@@ -136,24 +136,25 @@ object DatasetController {
       //STORING DATASET & RESOURCE ON CKAN
       val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse = CKANUtility.addNewPackage(dataset.dctIdentifier, publisherId, dataset.dctTitle
-          , dataset.dctDescription)
-        val addNewResourceResponse = CKANUtility.addNewResource(dataset.dctIdentifier, dataset.dctTitle
-          , distribution.dcatMediaType, datasetFileRef, distribution.dcatDownloadURL)
+        val organization = new Organization(publisherId);
+        val addNewPackageResponse = CKANUtility.addNewPackage(organization, dataset);
+        //val addNewResourceResponse = CKANUtility.addNewResource(dataset.dctIdentifier, dataset.dctTitle
+        //          , distribution.dcatMediaType, datasetFileRef, distribution.dcatDownloadURL)
+        val addNewResourceResponse = CKANUtility.addNewResource(dataset, distribution);
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
       } else {
         null
       }
-
+      val ckanResponseStatusText = ckanResponse._1.getStatusText + "," + ckanResponse._2.getStatusText;
 
       if(HttpURLConnection.HTTP_CREATED == addNewDatasetResponseStatus || HttpURLConnection.HTTP_OK == addNewDatasetResponseStatus) {
         val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
-          , null, null, "OK", HttpURLConnection.HTTP_OK, ckanResponse._1.getStatusText + "," + ckanResponse._2.getStatusText)
+          , null, null, "OK", HttpURLConnection.HTTP_OK, ckanResponseStatusText)
         return executionResult;
       } else {
         val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
-          , null, null, "Internal Error", HttpURLConnection.HTTP_INTERNAL_ERROR, ckanResponse._1.getStatusText + "," + ckanResponse._2.getStatusText)
+          , null, null, "Internal Error", HttpURLConnection.HTTP_INTERNAL_ERROR, ckanResponseStatusText)
         return executionResult;
       }
     } catch {

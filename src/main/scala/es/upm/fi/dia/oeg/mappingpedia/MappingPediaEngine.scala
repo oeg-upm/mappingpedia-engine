@@ -182,7 +182,7 @@ object MappingPediaEngine {
 			val mappingDocumentLines = map.foldLeft(templateLines)( (acc, kv) => {
 				val mapValue:String = map.get(kv._1).getOrElse("");
 
-					logger.info("replacing " + kv._1 + " with " + mapValue);
+					logger.debug("replacing " + kv._1 + " with " + mapValue);
 					acc.replaceAllLiterally(kv._1, mapValue)
 			});
 

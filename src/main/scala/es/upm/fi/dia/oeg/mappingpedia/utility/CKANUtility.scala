@@ -1,6 +1,7 @@
 package es.upm.fi.dia.oeg.mappingpedia.utility
 
 import com.mashape.unirest.http.Unirest
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaEngine, MappingPediaProperties}
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
@@ -13,9 +14,9 @@ class CKANUtility {
 object CKANUtility {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  def addNewOrganization(organizationName:String) = {
+  def addNewOrganization(organization:Organization) = {
     val jsonObj = new JSONObject();
-    jsonObj.put("name", organizationName);
+    jsonObj.put("name", organization.foafName);
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionOrganizationCreate
     val response = Unirest.post(uri)
@@ -25,15 +26,15 @@ object CKANUtility {
     response;
   }
 
-  def addNewPackage(packageId:String, organizationId:String, datasetTitle:String, datasetDescription:String) = {
+  def addNewPackage(organization:Organization, dataset:Dataset) = {
     val jsonObj = new JSONObject();
-    jsonObj.put("name", packageId);
-    jsonObj.put("owner_org", organizationId);
-    if(datasetTitle != null) {
-      jsonObj.put("title", datasetTitle);
+    jsonObj.put("name", dataset.dctIdentifier);
+    jsonObj.put("owner_org", organization.dctIdentifier);
+    if(dataset.dctTitle != null) {
+      jsonObj.put("title", dataset.dctTitle);
     }
-    if(datasetDescription != null) {
-      jsonObj.put("notes", datasetDescription);
+    if(dataset.dctDescription != null) {
+      jsonObj.put("notes", dataset.dctDescription);
     }
 
 
@@ -52,18 +53,18 @@ object CKANUtility {
     response;
   }
 
-  def addNewResource(packageId:String, description:String, mimetype:String, datasetFileRef: MultipartFile, url:String) = {
+  def addNewResource(dataset:Dataset, distribution:Distribution) = {
     val jsonObj = new JSONObject();
-    jsonObj.put("package_id", packageId);
-    jsonObj.put("url", url);
-    if(description != null) {
-      jsonObj.put("description", description);
+    jsonObj.put("package_id", dataset.dctIdentifier);
+    jsonObj.put("url", distribution.dcatDownloadURL);
+    if(distribution.ckanDescription != null) {
+      jsonObj.put("description", distribution.ckanDescription);
     }
-    if(mimetype!= null ) {
-      jsonObj.put("mimetype", mimetype);
+    if(distribution.dcatMediaType != null ) {
+      jsonObj.put("mimetype", distribution.dcatMediaType);
     }
-    if(mimetype!= null ) {
-      jsonObj.put("upload", datasetFileRef);
+    if(distribution.ckanFileRef != null ) {
+      jsonObj.put("upload", distribution.ckanFileRef);
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionResourceCreate

@@ -4,11 +4,12 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.util.UUID
 
+import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
-import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult
-import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, MappingPediaExecutionResult}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
 import org.apache.commons.lang.text.StrSubstitutor
@@ -102,21 +103,23 @@ object MappingExecutionController {
     }
 
     //val mappingpediaUsername = "executions"
-    val mappingDirectory = UUID.randomUUID.toString
+    val mappingExecutionDirectory = if(organizationId != null && datasetId != null) {
+      organizationId + File.separator + datasetId
+    } else { UUID.randomUUID.toString }
+    logger.info(s"mappingExecutionDirectory = $mappingExecutionDirectory")
+
     val outputFileName = if (pOutputFilename == null) {
-      //"output.nt";
-      //MappingPediaConstant.DEFAULT_OUTPUT_FILENAME;
-      UUID.randomUUID.toString
+      UUID.randomUUID.toString + ".txt"
     } else {
       pOutputFilename;
     }
-    val outputFilepath = "executions/" + mappingDirectory + "/" + outputFileName
+    val outputFilepath = "executions/" + mappingExecutionDirectory + "/" + outputFileName
 
     try {
       if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
 
         val properties: MorphCSVProperties = new MorphCSVProperties
-        properties.setDatabaseName("executions/" + mappingDirectory)
+        properties.setDatabaseName("executions/" + mappingExecutionDirectory)
         properties.setMappingDocumentFilePath(mappingURL)
         properties.setOutputFilePath(outputFilepath);
         properties.setCSVFile(datasetDistributionURL);
@@ -143,23 +146,61 @@ object MappingExecutionController {
       val outputFile: File = new File(outputFilepath)
       val response = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
         , MappingPediaEngine.mappingpediaProperties.githubAccessToken
-        , "executions", mappingDirectory, outputFileName
+        , "executions", mappingExecutionDirectory, outputFileName
         , "add mapping execution result by mappingpedia engine", outputFile);
 
       val responseStatus: Int = response.getStatus
       logger.info("responseStatus = " + responseStatus)
       val responseStatusText: String = response.getStatusText
       logger.info("responseStatusText = " + responseStatusText)
-      if (HttpURLConnection.HTTP_CREATED == responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
-        val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, datasetDistributionURL, mappingURL
-          , queryFile, outputGitHubURL, responseStatusText, responseStatus, null)
 
+
+      val manifestURL = null;
+      if (HttpURLConnection.HTTP_CREATED == responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
+        val mappingExecutionResultURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
+
+        val mappingExecutionResultDownloadURL = try {
+          val response = Unirest.get(mappingExecutionResultURL).asJson();
+          response.getBody.getObject.getString("download_url");
+        } catch {
+          case e:Exception => mappingExecutionResultURL
+        }
+        logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL");
+
+
+        //STORING DATASET & RESOURCE ON CKAN
+        val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable
+          && organizationId != null && datasetId != null) {
+          logger.info("storing dataset on CKAN ...")
+          val dataset = new Dataset(datasetId)
+
+          val distribution = new Distribution()
+          distribution.dcatAccessURL = mappingExecutionResultURL;
+          distribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
+          distribution.dcatMediaType = null //TODO FIXME
+          distribution.ckanFileRef = null;
+          distribution.ckanDescription = "Mapping Execution Result";
+
+
+          //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
+//            , resourceMediaType, resourceFileRef, resourceDownloadURL)
+          val addNewResourceResponse = CKANUtility.addNewResource(dataset, distribution);
+
+            logger.info("dataset stored on CKAN.")
+          addNewResourceResponse
+        } else {
+          null
+        }
+        val ckanResponseText = if(ckanResponse == null) { null}
+        else { ckanResponse.getStatusText}
+
+        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL, datasetDistributionURL
+          , mappingURL, queryFile, mappingExecutionResultURL, responseStatusText, responseStatus, ckanResponseText)
 
         return executionResult
       }
       else {
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, datasetDistributionURL, mappingURL
+        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL, datasetDistributionURL, mappingURL
           , queryFile, null, responseStatusText, responseStatus, null)
         return executionResult
       }

@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia.model
 import java.util.UUID
 
 //based on dcat:Dataset
+//see also ckan:Package
 class Dataset(val dctIdentifier:String){
   def this() {
     this(UUID.randomUUID.toString)
