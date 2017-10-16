@@ -69,6 +69,7 @@ object DatasetController {
 
   def addDataset(dataset:Dataset, manifestFileRef:MultipartFile, generateManifestFile:String
                 ) : MappingPediaExecutionResult = {
+
     val organization: Organization = dataset.dctPublisher;
     val distribution = dataset.getDistribution();
     var errorOccured = false;

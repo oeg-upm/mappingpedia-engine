@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia.controller
 import java.net.HttpURLConnection
 import java.util.{Date, UUID}
 
+import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, MappingPediaEngine, MappingPediaRunner}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
 import es.upm.fi.dia.oeg.mappingpedia.model._
@@ -11,14 +12,14 @@ import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
 
 object MappingDocumentController {
-  def findMappingDocuments(queryString:String) : ListResult = {
+  def findMappingDocuments(queryString: String): ListResult = {
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
 
     logger.info("Executing query=\n" + queryString)
 
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
-    var results:List[MappingDocument] = List.empty;
+    var results: List[MappingDocument] = List.empty;
     try {
       val rs = qexec.execSelect
       while (rs.hasNext) {
@@ -52,10 +53,10 @@ object MappingDocumentController {
     listResult
   }
 
-  def findAllMappingDocuments() : ListResult = {
+  def findAllMappingDocuments(): ListResult = {
 
     //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
-    val mapValues:Map[String,String] = Map(
+    val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
     );
 
@@ -66,58 +67,58 @@ object MappingDocumentController {
 
   }
 
-  def findMappingDocumentsByMappedClass(mappedClass:String) : ListResult = {
+  def findMappingDocumentsByMappedClass(mappedClass: String): ListResult = {
     logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
     val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
 
-    val mapValues:Map[String,String] = Map(
+    val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
       , "$mappedClass" -> mappedClass
       //, "$mappedProperty" -> mappedProperty
     );
 
-    val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
     MappingDocumentController.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedProperty(mappedProperty:String) : ListResult = {
+  def findMappingDocumentsByMappedProperty(mappedProperty: String): ListResult = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
 
-    val mapValues:Map[String,String] = Map(
+    val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
       , "$mappedProperty" -> mappedProperty
     );
 
-    val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
     MappingDocumentController.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedColumn(mappedColumn:String) : ListResult = {
+  def findMappingDocumentsByMappedColumn(mappedColumn: String): ListResult = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedColumn.rq";
 
-    val mapValues:Map[String,String] = Map(
+    val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
       , "$mappedColumn" -> mappedColumn
     );
 
-    val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
     MappingDocumentController.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedTable(mappedTable:String) : ListResult = {
+  def findMappingDocumentsByMappedTable(mappedTable: String): ListResult = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedTable.rq";
 
-    val mapValues:Map[String,String] = Map(
+    val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
       , "$mappedTable" -> mappedTable
     );
 
-    val queryString:String =	MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
     MappingDocumentController.findMappingDocuments(queryString);
   }
 
-  def findMappingDocuments(searchType:String, searchTerm:String) : ListResult = {
-    val result:ListResult = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
+  def findMappingDocuments(searchType: String, searchTerm: String): ListResult = {
+    val result: ListResult = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
 
       val listResult = MappingDocumentController.findMappingDocumentsByMappedClass(searchTerm)
       listResult
@@ -143,23 +144,23 @@ object MappingDocumentController {
     result;
   }
 
-  def uploadNewMapping(organization: Organization, dataset: Dataset, manifestFileRef: MultipartFile
-                       , mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
+  def uploadNewMapping(dataset: Dataset, manifestFileRef: MultipartFile
+                       , replaceMappingBaseURI: String, generateManifestFile: String
                        , mappingDocument: MappingDocument
-                      ) : MappingPediaExecutionResult = {
-   //val datasetID = if(pDatasetID == null) UUID.randomUUID.toString else pDatasetID;
+                      ): MappingPediaExecutionResult = {
+    var errorOccured = false;
+    var collectiveErrorMessage: List[String] = Nil;
+
+    val organization = dataset.dctPublisher;
 
     logger.debug("organization.dctIdentifier = " + organization.dctIdentifier)
     logger.debug("dataset.dctIdentifier = " + dataset.dctIdentifier)
 
-    val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
-    val mappingDocumentID = UUID.randomUUID.toString
+    val mappingFile = MappingPediaUtility.multipartFileToFile(mappingDocument.multipartFile, dataset.dctIdentifier)
+    val mappingFilePath = mappingFile.getPath
 
-    try {
-
-      //STORING MAPPING FILE ON GITHUB
-      val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, dataset.dctIdentifier)
-      val mappingFilePath = mappingFile.getPath
+    //STORING MAPPING FILE ON GITHUB
+    val mappingFileGitHubResponse: HttpResponse[JsonNode] = try {
       val commitMessage = "add a new mapping file by mappingpedia-engine"
       val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
       val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
@@ -167,119 +168,162 @@ object MappingDocumentController {
       val response = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
         , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier, dataset.dctIdentifier, mappingFile.getName
         , commitMessage, base64EncodedContent)
-      //logger.debug("response.getHeaders = " + response.getHeaders)
-      //logger.debug("response.getBody = " + response.getBody)
       val responseStatus = response.getStatus
-      logger.debug("responseStatus = " + responseStatus)
-      val responseStatusText = response.getStatusText
-      logger.debug("responseStatusText = " + responseStatusText)
-
-      val mappingDocumentGitHubURL = if (HttpURLConnection.HTTP_OK == responseStatus
+      if (HttpURLConnection.HTTP_OK == responseStatus
         || HttpURLConnection.HTTP_CREATED == responseStatus) {
-        val url = response.getBody.getObject.getJSONObject("content").getString("url")
+        //val url = response.getBody.getObject.getJSONObject("content").getString("url")
         logger.info("Mapping stored on GitHub")
-        url;
       } else {
-        logger.error("Error when storing mapping on GitHub: " + responseStatusText)
-        null
+        errorOccured = true;
+        val errorMessage = "Error when storing mapping on GitHub: " + responseStatus
+        logger.error("Error when storing mapping on GitHub: " + responseStatus)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
       }
+      response
+    } catch {
+      case e: Exception =>
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error generating manifest file: " + e.getMessage
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+    }
+    val mappingDocumentGitHubURL = if (mappingFileGitHubResponse == null) {
+      ""
+    } else {
+      mappingFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
+    }
 
-      logger.info("storing/creating manifest file ...")
-      val manifestFile = if (manifestFileRef != null) {
+
+    //GENERATING MANIFEST FILE
+    val manifestFile = try {
+      logger.info("generating manifest file ...")
+      if (manifestFileRef != null) {
         logger.info("Manifest file is provided")
         MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
       } else {
         logger.info("Manifest file is not provided")
         logger.debug("generateManifestFile = " + generateManifestFile)
-        if(generateManifestFile != null && ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile))) {
-          try {
-            //GENERATE MANIFEST FILE IF NOT PROVIDED
-            logger.info("GENERATING MANIFEST FILE ...")
-            val templateFiles = List(
-              MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
-              , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
+        if (generateManifestFile != null && ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile))) {
+          //GENERATE MANIFEST FILE IF NOT PROVIDED
+          logger.info("GENERATING MANIFEST FILE ...")
+          val templateFiles = List(
+            MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
+            , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
 
-            val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
+          val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
 
-            val mapValues:Map[String,String] = Map(
-              "$mappingDocumentID" -> mappingDocumentID
-              , "$mappingDocumentTitle" -> mappingDocument.title
-              , "$mappingDocumentDateTimeSubmitted" -> mappingDocumentDateTimeSubmitted
-              , "$mappingDocumentCreator" -> mappingDocument.creator
-              , "$mappingDocumentSubjects" -> mappingDocument.subject
-              , "$mappingDocumentFilePath" -> mappingDocumentGitHubURL
-              , "$datasetID" -> dataset.dctIdentifier
-              , "$mappingLanguage" -> mappingDocument.mappingLanguage
+          val mapValues: Map[String, String] = Map(
+            "$mappingDocumentID" -> mappingDocument.dctIdentifier
+            , "$mappingDocumentTitle" -> mappingDocument.title
+            , "$mappingDocumentDateTimeSubmitted" -> mappingDocumentDateTimeSubmitted
+            , "$mappingDocumentCreator" -> mappingDocument.creator
+            , "$mappingDocumentSubjects" -> mappingDocument.subject
+            , "$mappingDocumentFilePath" -> mappingDocumentGitHubURL
+            , "$datasetID" -> dataset.dctIdentifier
+            , "$mappingLanguage" -> mappingDocument.mappingLanguage
 
-              //, "$datasetTitle" -> datasetTitle
-              //, "$datasetKeywords" -> datasetKeywords
-              //, "$datasetPublisher" -> datasetPublisher
-              //, "$datasetLanguage" -> datasetLanguage
-            );
+            //, "$datasetTitle" -> datasetTitle
+            //, "$datasetKeywords" -> datasetKeywords
+            //, "$datasetPublisher" -> datasetPublisher
+            //, "$datasetLanguage" -> datasetLanguage
+          );
 
-            val filename = "metadata-mappingdocument.ttl";
-            MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
+          val filename = "metadata-mappingdocument.ttl";
+          MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
 
-
-          } catch {
-            case e:Exception => {
-              e.printStackTrace();
-              val errorMessage = "Error occured when generating manifest file: " + e.getMessage;
-              logger.error(errorMessage)
-              null
-            }
-          }
 
         } else {
           null
         }
       }
+    }
+    catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace();
+        val errorMessage = "Error occured when generating manifest file: " + e.getMessage;
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
 
-      val manifestFilePath:String = if(manifestFile == null) { null }  else { manifestFile.getPath; }
-      logger.debug("manifestFilePath = " + manifestFilePath)
-
-      //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
+    //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
+    try {
       logger.info("STORING MAPPING AND MANIFEST FILES ON VIRTUOSO ...")
-      MappingPediaEngine.storeManifestAndMapping(manifestFilePath,mappingFilePath, "false"
+      val manifestFilePath: String = if (manifestFile == null) {
+        null
+      } else {
+        manifestFile.getPath;
+      }
+      logger.debug("manifestFilePath = " + manifestFilePath)
+      val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
+      MappingPediaEngine.storeManifestAndMapping(manifestFilePath, mappingFilePath, "false"
         //, Application.mappingpediaEngine
         , replaceMappingBaseURI, newMappingBaseURI)
       logger.info("Mapping and manifest file stored on Virtuoso")
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace();
+        val errorMessage = "Error occurred when storing mapping and manifest files on virtuoso: " + e.getMessage;
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+      }
+    }
 
 
-      //STORING MANIFEST FILE ON GITHUB
-      val manifestGitHubURL = if(manifestFile != null) {
+    //STORING MANIFEST FILE ON GITHUB
+    val addNewManifestResponse = try {
+      if (manifestFile != null) {
         logger.info("STORING MANIFEST FILE ON GITHUB ...")
         val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-        val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
+        val githubResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
           , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
           , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
-        val addNewManifestResponseStatus = addNewManifestResponse.getStatus
-        val addNewManifestResponseStatusText = addNewManifestResponse.getStatusText
+        val addNewManifestResponseStatus = githubResponse.getStatus
+        val addNewManifestResponseStatusText = githubResponse.getStatusText
 
         if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
           || HttpURLConnection.HTTP_OK == addNewManifestResponseStatus) {
           logger.info("Manifest file stored on GitHub")
-          addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
         } else {
-          logger.info("Error occured when storing manifest file on GitHub: " + addNewManifestResponseStatusText)
-          null
+          errorOccured = true;
+          val errorMessage = "Error occured when storing manifest file on GitHub: " + addNewManifestResponseStatusText;
+          logger.error(errorMessage)
+          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         }
+        githubResponse
       } else {
         null
       }
-
-
-      new MappingPediaExecutionResult(manifestGitHubURL, null, mappingDocumentGitHubURL
-        , null, null, "OK", HttpURLConnection.HTTP_OK, null)
-
     } catch {
-      case e: Exception =>
-        val errorMessage = e.getMessage
-        logger.error("error uploading a new mapping file: " + errorMessage)
-        val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
-        val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode, null)
-        executionResult
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace();
+        val errorMessage = "Error occurred when storing manifest files on github: " + e.getMessage;
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
     }
+    val manifestGitHubURL = if (addNewManifestResponse == null) {
+      null
+    } else {
+      addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
+    }
+
+    val (responseStatus, responseStatusText) = if (errorOccured) {
+      (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
+    } else {
+      (HttpURLConnection.HTTP_OK, "OK")
+    }
+
+
+    new MappingPediaExecutionResult(manifestGitHubURL, null, mappingDocumentGitHubURL
+      , null, null, responseStatusText, responseStatus, null)
 
 
   }

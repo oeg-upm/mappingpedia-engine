@@ -163,8 +163,9 @@ public class MappingPediaController {
         } else {
             mappingDocument.mappingLanguage_$eq(mappingLanguage);
         }
+        mappingDocument.multipartFile_$eq(mappingFileRef);
 
-        return MappingDocumentController.uploadNewMapping(organization, dataset, manifestFileRef, mappingFileRef
+        return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }
@@ -196,8 +197,9 @@ public class MappingPediaController {
         } else {
             mappingDocument.mappingLanguage_$eq(mappingLanguage);
         }
+        mappingDocument.multipartFile_$eq(mappingFileRef);
 
-        return MappingDocumentController.uploadNewMapping(organization, dataset, manifestFileRef, mappingFileRef
+        return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }
