@@ -72,7 +72,7 @@ object DatasetController {
     val organization: Organization = dataset.dctPublisher;
     val distribution = dataset.getDistribution();
     var errorOccured = false;
-    var collectiveErrorMessage = "";
+    var collectiveErrorMessage:List[String] = Nil;
 
 
     //MANIFEST FILE GENERATION
@@ -98,7 +98,7 @@ object DatasetController {
         e.printStackTrace()
         val errorMessage = "error generating manifest file: " + e.getMessage
         logger.error(errorMessage)
-        collectiveErrorMessage += errorMessage + "\n"
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
       }
     }
@@ -118,7 +118,7 @@ object DatasetController {
         e.printStackTrace()
         val errorMessage = "error storing manifest file on Virtuoso: " + e.getMessage
         logger.error(errorMessage);
-        collectiveErrorMessage += errorMessage + "\n"
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
       }
     }
 
@@ -144,7 +144,7 @@ object DatasetController {
         e.printStackTrace()
         val errorMessage = "error storing dataset file on GitHub: " + e.getMessage
         logger.error(errorMessage)
-        collectiveErrorMessage += errorMessage + "\n"
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
       }
     }
@@ -169,7 +169,7 @@ object DatasetController {
         e.printStackTrace()
         val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
         logger.error(errorMessage)
-        collectiveErrorMessage += errorMessage + "\n"
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
       }
     }
@@ -185,8 +185,6 @@ object DatasetController {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
         val addNewPackageResponse = CKANUtility.addNewPackage(organization, dataset);
-        //val addNewResourceResponse = CKANUtility.addNewResource(dataset.dctIdentifier, dataset.dctTitle
-        //          , distribution.dcatMediaType, datasetFileRef, distribution.dcatDownloadURL)
         val addNewResourceResponse = CKANUtility.addNewResource(dataset, distribution);
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
@@ -199,7 +197,7 @@ object DatasetController {
         e.printStackTrace()
         val errorMessage = "error storing dataset file on CKAN: " + e.getMessage
         logger.error(errorMessage)
-        collectiveErrorMessage += errorMessage + "\n"
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
       }
     }
@@ -211,7 +209,7 @@ object DatasetController {
 
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
-      (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage)
+      (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
     } else {
       (HttpURLConnection.HTTP_OK, "OK")
     }

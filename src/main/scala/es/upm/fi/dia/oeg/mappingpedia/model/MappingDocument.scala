@@ -1,33 +1,59 @@
 package es.upm.fi.dia.oeg.mappingpedia.model
 
+import java.util.UUID
+
 import com.mashape.unirest.http.Unirest
 import org.slf4j.{Logger, LoggerFactory}
 
 /**
   * Created by fpriyatna on 07/04/2017.
   */
-class MappingDocument(val id:String, val title:String, val dataset:String
-  , val filePath:String, val creator:String
-  , val distribution:String, val distributionAccessURL:String
-  , val pMappingDocumentURL:String, val mappingLanguage:Option[String]) {
-  val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  var distributionFieldSeparator:Option[String] = None;
-
-  logger.info(s"pMappingDocumentURL = $pMappingDocumentURL")
-  val mappingDocumentURL = if(pMappingDocumentURL != null && pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
-    pMappingDocumentURL.substring(1, pMappingDocumentURL.length-1)
-  } else {
-    pMappingDocumentURL
+class MappingDocument(val id:String) {
+  def this() = {
+    this(UUID.randomUUID.toString)
   }
 
-  val mappingDocumentDownloadURL = if (mappingDocumentURL == null) { null } else {
-    try {
-      val response = Unirest.get(mappingDocumentURL).asJson();
-      response.getBody.getObject.getString("download_url");
-    } catch {
-      case e:Exception => mappingDocumentURL
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
+  var title:String = null;
+  var dataset:String = null;
+  var filePath:String = null;
+  var creator:String = null;
+  var distribution:String = null;
+  var subject:String = null;
+  var distributionAccessURL:String = null;
+  var mappingLanguage:String = null;
+  var distributionFieldSeparator:Option[String] = None;
+  private var mappingDocumentAccessURL:String = null;
+  private var mappingDocumentDownloadURL:String = null;
+
+  def setMappingdocumentURL(pMappingDocumentURL:String) = {
+    if(pMappingDocumentURL != null && pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
+      pMappingDocumentURL.substring(1, pMappingDocumentURL.length-1)
+    } else {
+      pMappingDocumentURL
     }
   }
+
+  def getMappingDocumentDownloadURL() = {
+    if (mappingDocumentDownloadURL != null) {
+      mappingDocumentDownloadURL
+    } else {
+      if(mappingDocumentAccessURL == null) {
+        null
+      } else {
+        try {
+          val response = Unirest.get(mappingDocumentAccessURL).asJson();
+          mappingDocumentDownloadURL = response.getBody.getObject.getString("download_url");
+          mappingDocumentDownloadURL;
+        } catch {
+          case e: Exception => mappingDocumentAccessURL
+        }
+      }
+    }
+  }
+
+
 
   //
   //logger.info("response = " + response);
@@ -44,6 +70,5 @@ class MappingDocument(val id:String, val title:String, val dataset:String
   def getCreator = this.creator;
   //def getDistribution = this.distribution;
   def getDistributionAccessURL = this.distributionAccessURL;
-  def getMappingDocumentURL = this.mappingDocumentURL;
-  def getMappingDocumentDownloadURL = this.mappingDocumentDownloadURL;
+  //def getMappingDocumentDownloadURL = this.mappingDocumentDownloadURL;
 }

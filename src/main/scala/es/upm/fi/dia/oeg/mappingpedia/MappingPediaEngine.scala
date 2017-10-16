@@ -182,7 +182,7 @@ object MappingPediaEngine {
 			val mappingDocumentLines = map.foldLeft(templateLines)( (acc, kv) => {
 				val mapValue:String = map.get(kv._1).getOrElse("");
 
-					logger.debug("replacing " + kv._1 + " with " + mapValue);
+					logger.info("replacing " + kv._1 + " with " + mapValue);
 					acc.replaceAllLiterally(kv._1, mapValue)
 			});
 
@@ -450,14 +450,14 @@ object MappingPediaEngine {
 
 		val executionResults:Iterable[Execution] = mappingDocuments.flatMap(mappingDocument => {
 			val md = mappingDocument.asInstanceOf[MappingDocument];
-			val mappingLanguage = md.mappingLanguage.getOrElse(null);
+			val mappingLanguage = md.mappingLanguage;
 			val distributionFieldSeparator = if(md.distributionFieldSeparator != null && md.distributionFieldSeparator.isDefined) {
 				md.distributionFieldSeparator.get
 			} else {
 				null
 			}
 			val outputFilename = UUID.randomUUID.toString + ".nt"
-			val mappingDocumentDownloadURL = md.mappingDocumentDownloadURL;
+			val mappingDocumentDownloadURL = md.getMappingDocumentDownloadURL();
 			logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
 			val mdDistributionAccessURL = md.distributionAccessURL;
 			logger.info("mdDistributionAccessURL = " + mdDistributionAccessURL);

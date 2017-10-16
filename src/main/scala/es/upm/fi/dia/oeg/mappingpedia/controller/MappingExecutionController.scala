@@ -94,7 +94,7 @@ object MappingExecutionController {
   def executeMapping2(mappingURL: String, pMappingLanguage:String
                       , datasetDistributionURL: String, fieldSeparator:String
                       , queryFile:String, pOutputFilename: String
-                      , organization: Organization, datasetId:String, storeToCKAN:String
+                      , organization: Organization, dataset:Dataset, storeToCKAN:String
                      ) : MappingPediaExecutionResult = {
     val mappingLanguage = if (pMappingLanguage == null) {
       MappingPediaConstant.MAPPING_LANGUAGE_R2RML
@@ -103,8 +103,8 @@ object MappingExecutionController {
     }
 
     //val mappingpediaUsername = "executions"
-    val mappingExecutionDirectory = if(organization != null && datasetId != null) {
-      organization.dctIdentifier + File.separator + datasetId
+    val mappingExecutionDirectory = if(organization != null && dataset != null) {
+      organization.dctIdentifier + File.separator + dataset.dctIdentifier
     } else { UUID.randomUUID.toString }
     logger.info(s"mappingExecutionDirectory = $mappingExecutionDirectory")
 
@@ -169,10 +169,8 @@ object MappingExecutionController {
 
 
         //STORING DATASET & RESOURCE ON CKAN
-        val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable
-          && organization != null && datasetId != null) {
+        val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
           logger.info("storing dataset on CKAN ...")
-          val dataset = new Dataset(organization, datasetId)
 
           val distribution = new Distribution(dataset)
           distribution.dcatAccessURL = mappingExecutionResultURL;

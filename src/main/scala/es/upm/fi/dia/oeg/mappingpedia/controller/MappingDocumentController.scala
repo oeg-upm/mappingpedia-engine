@@ -5,7 +5,7 @@ import java.util.{Date, UUID}
 
 import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, MappingPediaEngine, MappingPediaRunner}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
-import es.upm.fi.dia.oeg.mappingpedia.model.{ListResult, MappingDocument, MappingPediaExecutionResult}
+import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
@@ -31,11 +31,19 @@ object MappingDocumentController {
         val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
         val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
         val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
-        val mappingLanguage = MappingPediaUtility.getOptionString(qs, "mappingLanguage");
+        val mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
 
 
-        val md = new MappingDocument(id, title, dataset, filePath, creator, distribution
-          , distributionAccessURL, mappingDocumentURL, mappingLanguage);
+        val md = new MappingDocument(id);
+        md.title = title;
+        md.dataset = dataset;
+        md.filePath = filePath;
+        md.creator = creator;
+        md.distribution = distribution
+        md.distributionAccessURL = distributionAccessURL;
+        md.setMappingdocumentURL(mappingDocumentURL);
+        md.mappingLanguage = mappingLanguage;
+
         results = md :: results;
       }
     } finally qexec.close
@@ -135,37 +143,29 @@ object MappingDocumentController {
     result;
   }
 
-  def uploadNewMapping(mappingpediaUsername: String, pDatasetID: String, manifestFileRef: MultipartFile
+  def uploadNewMapping(organization: Organization, dataset: Dataset, manifestFileRef: MultipartFile
                        , mappingFileRef: MultipartFile , replaceMappingBaseURI: String, generateManifestFile:String
-                       , mappingDocumentTitle: String, mappingDocumentCreator:String, mappingDocumentSubjects:String
-                       //, datasetTitle:String, datasetKeywords:String, datasetPublisher:String, datasetLanguage:String
-                       , pMappingLanguage:String
-
+                       , mappingDocument: MappingDocument
                       ) : MappingPediaExecutionResult = {
-    val datasetID = if(pDatasetID == null) UUID.randomUUID.toString else pDatasetID;
-    val mappingLanguage = if(pMappingLanguage == null) {
-      MappingPediaConstant.MAPPING_LANGUAGE_R2RML
-    } else {
-      pMappingLanguage
-    }
+   //val datasetID = if(pDatasetID == null) UUID.randomUUID.toString else pDatasetID;
 
-    logger.debug("mappingpediaUsername = " + mappingpediaUsername)
-    logger.debug("datasetID = " + datasetID)
+    logger.debug("organization.dctIdentifier = " + organization.dctIdentifier)
+    logger.debug("dataset.dctIdentifier = " + dataset.dctIdentifier)
 
-    val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + datasetID + "/"
+    val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
     val mappingDocumentID = UUID.randomUUID.toString
 
     try {
 
       //STORING MAPPING FILE ON GITHUB
-      val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, datasetID)
+      val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, dataset.dctIdentifier)
       val mappingFilePath = mappingFile.getPath
       val commitMessage = "add a new mapping file by mappingpedia-engine"
       val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
       val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
       logger.info("Storing mapping file on GitHub ...")
       val response = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
-        , MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername, datasetID, mappingFile.getName
+        , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier, dataset.dctIdentifier, mappingFile.getName
         , commitMessage, base64EncodedContent)
       //logger.debug("response.getHeaders = " + response.getHeaders)
       //logger.debug("response.getBody = " + response.getBody)
@@ -187,7 +187,7 @@ object MappingDocumentController {
       logger.info("storing/creating manifest file ...")
       val manifestFile = if (manifestFileRef != null) {
         logger.info("Manifest file is provided")
-        MappingPediaUtility.multipartFileToFile(manifestFileRef, datasetID)
+        MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
       } else {
         logger.info("Manifest file is not provided")
         logger.debug("generateManifestFile = " + generateManifestFile)
@@ -203,13 +203,13 @@ object MappingDocumentController {
 
             val mapValues:Map[String,String] = Map(
               "$mappingDocumentID" -> mappingDocumentID
-              , "$mappingDocumentTitle" -> mappingDocumentTitle
+              , "$mappingDocumentTitle" -> mappingDocument.title
               , "$mappingDocumentDateTimeSubmitted" -> mappingDocumentDateTimeSubmitted
-              , "$mappingDocumentCreator" -> mappingDocumentCreator
-              , "$mappingDocumentSubjects" -> mappingDocumentSubjects
+              , "$mappingDocumentCreator" -> mappingDocument.creator
+              , "$mappingDocumentSubjects" -> mappingDocument.subject
               , "$mappingDocumentFilePath" -> mappingDocumentGitHubURL
-              , "$datasetID" -> datasetID
-              , "$mappingLanguage" -> mappingLanguage
+              , "$datasetID" -> dataset.dctIdentifier
+              , "$mappingLanguage" -> mappingDocument.mappingLanguage
 
               //, "$datasetTitle" -> datasetTitle
               //, "$datasetKeywords" -> datasetKeywords
@@ -218,7 +218,7 @@ object MappingDocumentController {
             );
 
             val filename = "metadata-mappingdocument.ttl";
-            MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, datasetID);
+            MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
 
 
           } catch {
@@ -251,8 +251,8 @@ object MappingDocumentController {
         logger.info("STORING MANIFEST FILE ON GITHUB ...")
         val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
         val addNewManifestResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
-          , MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername
-          , datasetID, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+          , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
+          , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = addNewManifestResponse.getStatus
         val addNewManifestResponseStatusText = addNewManifestResponse.getStatusText
 
