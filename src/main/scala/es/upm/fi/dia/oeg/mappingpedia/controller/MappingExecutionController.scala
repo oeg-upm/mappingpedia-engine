@@ -8,7 +8,7 @@ import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, MappingPediaExecutionResult}
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, MappingPediaExecutionResult, Organization}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
@@ -94,7 +94,7 @@ object MappingExecutionController {
   def executeMapping2(mappingURL: String, pMappingLanguage:String
                       , datasetDistributionURL: String, fieldSeparator:String
                       , queryFile:String, pOutputFilename: String
-                      , organizationId:String, datasetId:String, storeToCKAN:String
+                      , organization: Organization, datasetId:String, storeToCKAN:String
                      ) : MappingPediaExecutionResult = {
     val mappingLanguage = if (pMappingLanguage == null) {
       MappingPediaConstant.MAPPING_LANGUAGE_R2RML
@@ -103,8 +103,8 @@ object MappingExecutionController {
     }
 
     //val mappingpediaUsername = "executions"
-    val mappingExecutionDirectory = if(organizationId != null && datasetId != null) {
-      organizationId + File.separator + datasetId
+    val mappingExecutionDirectory = if(organization != null && datasetId != null) {
+      organization.dctIdentifier + File.separator + datasetId
     } else { UUID.randomUUID.toString }
     logger.info(s"mappingExecutionDirectory = $mappingExecutionDirectory")
 
@@ -170,11 +170,11 @@ object MappingExecutionController {
 
         //STORING DATASET & RESOURCE ON CKAN
         val ckanResponse = if(MappingPediaEngine.mappingpediaProperties.ckanEnable
-          && organizationId != null && datasetId != null) {
+          && organization != null && datasetId != null) {
           logger.info("storing dataset on CKAN ...")
-          val dataset = new Dataset(datasetId)
+          val dataset = new Dataset(organization, datasetId)
 
-          val distribution = new Distribution()
+          val distribution = new Distribution(dataset)
           distribution.dcatAccessURL = mappingExecutionResultURL;
           distribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
           distribution.dcatMediaType = null //TODO FIXME

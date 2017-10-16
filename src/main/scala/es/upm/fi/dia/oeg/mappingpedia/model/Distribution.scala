@@ -4,7 +4,7 @@ import org.springframework.web.multipart.MultipartFile
 
 //based on dcat:Disctribution
 //see also ckan:Resource
-class Distribution {
+class Distribution (val dataset: Dataset){
   var dcatAccessURL:String = null;
   var dcatDownloadURL:String = null;
   var dcatMediaType:String = null;

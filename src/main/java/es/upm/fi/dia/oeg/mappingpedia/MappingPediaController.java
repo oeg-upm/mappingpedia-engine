@@ -8,10 +8,7 @@ import javax.servlet.annotation.MultipartConfig;
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController;
-import es.upm.fi.dia.oeg.mappingpedia.model.Dataset;
-import es.upm.fi.dia.oeg.mappingpedia.model.Distribution;
-import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
-import es.upm.fi.dia.oeg.mappingpedia.model.MappingPediaExecutionResult;
+import es.upm.fi.dia.oeg.mappingpedia.model.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.web.bind.annotation.*;
@@ -93,11 +90,13 @@ public class MappingPediaController {
     )
     {
         logger.info("POST /executions2");
+        Organization organization = new Organization(organizationId);
+
         try {
             return MappingExecutionController.executeMapping2(
                     mappingURL, mappingLanguage, datasetDistributionURL, fieldSeparator
                     , queryFile, outputFilename
-                    , organizationId, datasetId, "true"
+                    , organization, datasetId, "true"
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -214,25 +213,23 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}");
-        Dataset dataset = new Dataset();
+        Organization organization = new Organization(publisherId);
+
+        Dataset dataset = new Dataset(organization);
         dataset.dctTitle_$eq(datasetTitle);
         dataset.dctDescription_$eq(datasetDescription);
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
-        Distribution distribution = new Distribution();
+        Distribution distribution = new Distribution(dataset);
         distribution.dcatAccessURL_$eq(distributionAccessURL);
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
+        distribution.ckanFileRef_$eq(datasetFileRef);
         dataset.addDistribution(distribution);
 
 
-        return DatasetController.addDataset(dataset, datasetFileRef, manifestFileRef, generateManifestFile
-                , publisherId
-                //, datasetLanguage
-                //, distributionAccessURL, distributionDownloadURL
-                //, distributionMediaType
-        );
+        return DatasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
     @RequestMapping(value = "/datasets/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -253,24 +250,22 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}/{datasetID}");
-        Dataset dataset = new Dataset(datasetID);
+        Organization organization = new Organization(datasetPublisher);
+
+        Dataset dataset = new Dataset(organization, datasetID);
         dataset.dctTitle_$eq(datasetTitle);
         dataset.dctDescription_$eq(datasetDescription);
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
-        Distribution distribution = new Distribution();
+        Distribution distribution = new Distribution(dataset);
         distribution.dcatAccessURL_$eq(distributionAccessURL);
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
+        distribution.ckanFileRef_$eq(datasetFileRef);
         dataset.addDistribution(distribution);
 
-        return DatasetController.addDataset(dataset, datasetFileRef, manifestFileRef, generateManifestFile
-                , datasetPublisher
-                //, datasetLanguage
-                //, distributionAccessURL, distributionDownloadURL
-                //, distributionMediaType
-        );
+        return DatasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
     @RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)

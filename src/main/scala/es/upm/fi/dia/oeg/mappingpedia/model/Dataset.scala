@@ -4,9 +4,9 @@ import java.util.UUID
 
 //based on dcat:Dataset
 //see also ckan:Package
-class Dataset(val dctIdentifier:String){
-  def this() {
-    this(UUID.randomUUID.toString)
+class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
+  def this(dctPublisher:Organization) {
+    this(dctPublisher, UUID.randomUUID.toString)
   }
 
   var dctTitle:String = null;
