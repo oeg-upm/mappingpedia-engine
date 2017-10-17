@@ -78,14 +78,14 @@ object DatasetController {
 
     //MANIFEST FILE GENERATION
     val manifestFile:File = try {
-      if (manifestFileRef != null) {
-        logger.info("Generating manifest file ...")
+      if (manifestFileRef != null) {//if the user provides a manifest file
+        logger.info("Generating manifest file ... (manifestFileRef is not null)")
         val generatedFile = MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
-        logger.info("Manifest file generated.")
+        logger.info("Manifest file generated. (manifestFileRef is not null)")
         generatedFile
-      } else {
+      } else { // if the user does not provide any manifest file
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
-          logger.info("Manifest file generated.")
+          logger.info("Generating manifest file ...")
           val generatedFile = this.generateManifestFile(distribution);
           logger.info("Manifest file generated.")
           generatedFile
@@ -93,6 +93,7 @@ object DatasetController {
           null
         }
       }
+
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -103,7 +104,7 @@ object DatasetController {
         null
       }
     }
-
+    //val manifest_in_str = scala.io.Source.fromFile(manifestFile).getLines.reduceLeft(_+_)
 
     //STORING MANIFEST ON VIRTUOSO
     try {
@@ -122,7 +123,6 @@ object DatasetController {
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
       }
     }
-
 
 
     //STORING DATASET FILE ON GITHUB
@@ -155,8 +155,9 @@ object DatasetController {
       addNewDatasetResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
 
+
+    //STORING MANIFEST ON GITHUB
     val addManifestFileGitHubResponse:HttpResponse[JsonNode] = try {
-      //STORING MANIFEST ON GITHUB
       logger.info("storing manifest file on github ...")
       val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
       val githubResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
@@ -181,8 +182,8 @@ object DatasetController {
     }
 
 
+    //STORING DATASET & RESOURCE ON CKAN
     val ckanResponse = try {
-      //STORING DATASET & RESOURCE ON CKAN
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
         val addNewPackageResponse = CKANUtility.addNewPackage(organization, dataset);

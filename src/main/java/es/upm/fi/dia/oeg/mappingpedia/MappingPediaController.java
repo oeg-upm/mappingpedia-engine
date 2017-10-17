@@ -248,8 +248,8 @@ public class MappingPediaController {
             , @RequestParam(value="datasetLanguage", defaultValue="en") String datasetLanguage
             , @RequestParam(value="datasetDescription", required = false) String datasetDescription
             , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
-            , @RequestParam(value="distributionDownloadURL", required = false) String distributionDownloadURL
-            , @RequestParam(value="distributionMediaType", required = false) String distributionMediaType
+            , @RequestParam(value="distributionDownloadURL", required = true) String distributionDownloadURL
+            , @RequestParam(value="distributionMediaType", required = true) String distributionMediaType
             , @RequestParam(value="distributionDescription", required = false) String distributionDescription
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile

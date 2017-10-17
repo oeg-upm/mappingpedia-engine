@@ -8,7 +8,7 @@ class Distribution (val dataset: Dataset){
   var dcatAccessURL:String = null;
   var dcatDownloadURL:String = null;
   var dcatMediaType:String = null;
-  var ckanFileRef:MultipartFile = null;
+  var ckanFileRef:MultipartFile = null; // This is not used at the moment because ckan always do to the download url
   var ckanDescription:String = null;
 
   var cvsFieldSeparator:String=",";

@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile
 
 /**
   * Created by fpriyatna on 07/04/2017.
+  * based on Dublin core Bibliographic Reource
   */
 class MappingDocument(val dctIdentifier:String) {
   def this() = {
@@ -17,7 +18,7 @@ class MappingDocument(val dctIdentifier:String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   var title:String = null;
-  var dataset:String = null;
+  var dataset:String = null; // it is a hack by Dr. Freddy
   var filePath:String = null;
   var creator:String = null;
   //var distribution:String = null;
