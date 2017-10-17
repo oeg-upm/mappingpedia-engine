@@ -33,3 +33,6 @@ project/plugins/project/
 upload-dir/
 
 *.iml
+
+executions/
+log/
