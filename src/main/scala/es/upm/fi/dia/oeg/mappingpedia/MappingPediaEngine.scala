@@ -35,6 +35,11 @@ import scala.collection.JavaConversions._
 import scala.io.Source.fromFile
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 
+
+
+
+
+
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 class MappingPediaEngine() {
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
@@ -181,8 +186,12 @@ object MappingPediaEngine {
 
 			val mappingDocumentLines = map.foldLeft(templateLines)( (acc, kv) => {
 				val mapValue:String = map.get(kv._1).getOrElse("");
-
-					logger.info("replacing " + kv._1 + " with " + mapValue);
+				if(mapValue ==null){
+					logger.warn("replacing " + kv._1 + "with null");
+					System.out.println("sys: "+"replacing " + kv._1 + "with null");
+				}
+				System.out.println("replacing " + kv._1 + " with " + mapValue);
+				logger.info("replacing " + kv._1 + " with " + mapValue);
 					acc.replaceAllLiterally(kv._1, mapValue)
 			});
 

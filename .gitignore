@@ -1,6 +1,11 @@
+
+
+
 *.class
 *.log
-mappingpedia-r2rml/src/main/resources/config.properties
+*.log.*
+
+src/main/resources/config.properties
 
 # sbt specific
 .cache
@@ -21,10 +26,9 @@ project/plugins/project/
 .cache-tests
 .classpath
 .project
-mappingpedia-r2rml/.settings
-mappingpedia-r2rml/.idea/
+.settings
 .idea/
-mappingpedia-r2rml/upload-dir/
+.idea/
+upload-dir/
 
-mappingpedia-r2rml/src/main/resources/config.properties
 *.iml
