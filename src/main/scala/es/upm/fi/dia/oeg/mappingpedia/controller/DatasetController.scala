@@ -104,8 +104,7 @@ object DatasetController {
         null
       }
     }
-    val manifest_in_str = scala.io.Source.fromFile(manifestFile).getLines.reduceLeft(_+_)
-    System.out.println(s"manifestFile = " + manifest_in_str);
+    //val manifest_in_str = scala.io.Source.fromFile(manifestFile).getLines.reduceLeft(_+_)
 
     //STORING MANIFEST ON VIRTUOSO
     try {
@@ -124,7 +123,6 @@ object DatasetController {
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
       }
     }
-
 
 
     //STORING DATASET FILE ON GITHUB

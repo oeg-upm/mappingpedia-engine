@@ -188,9 +188,7 @@ object MappingPediaEngine {
 				val mapValue:String = map.get(kv._1).getOrElse("");
 				if(mapValue ==null){
 					logger.warn("replacing " + kv._1 + "with null");
-					System.out.println("sys: "+"replacing " + kv._1 + "with null");
 				}
-				System.out.println("replacing " + kv._1 + " with " + mapValue);
 				logger.info("replacing " + kv._1 + " with " + mapValue);
 					acc.replaceAllLiterally(kv._1, mapValue)
 			});
