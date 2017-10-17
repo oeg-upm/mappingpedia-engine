@@ -40,9 +40,9 @@ object MappingDocumentController {
         md.dataset = dataset;
         md.filePath = filePath;
         md.creator = creator;
-        md.distribution = distribution
+        //md.distribution = distribution
         md.distributionAccessURL = distributionAccessURL;
-        md.setMappingdocumentURL(mappingDocumentURL);
+        md.setDownloadURL(mappingDocumentURL);
         md.mappingLanguage = mappingLanguage;
 
         results = md :: results;

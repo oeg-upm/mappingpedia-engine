@@ -8,7 +8,7 @@ import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, MappingPediaExecutionResult, Organization}
+import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
@@ -91,15 +91,27 @@ object MappingExecutionController {
   }
 
   @throws(classOf[Exception])
-  def executeMapping2(mappingURL: String, pMappingLanguage:String
-                      , datasetDistributionURL: String, fieldSeparator:String
-                      , queryFile:String, pOutputFilename: String
-                      , organization: Organization, dataset:Dataset, storeToCKAN:String
+  def executeMapping2(
+                     mappingExecution: MappingExecution
+                       //, md:MappingDocument
+                      //, datasetDistributionURL: String
+                      //, fieldSeparator:String
+                      //, queryFile:String, pOutputFilename: String
+                      //, organization: Organization
+                      //, dataset:Dataset, storeToCKAN:String
                      ) : MappingPediaExecutionResult = {
-    val mappingLanguage = if (pMappingLanguage == null) {
+    val dataset = mappingExecution.dataset;
+    val organization = dataset.dctPublisher;
+
+    val distribution = dataset.getDistribution();
+    val distributionDownloadURL = distribution.dcatDownloadURL;
+
+    val md=mappingExecution.mappingDocument
+    val mdDownloadURL = md.getDownloadURL();
+    val mappingLanguage = if (md.mappingLanguage == null) {
       MappingPediaConstant.MAPPING_LANGUAGE_R2RML
     } else {
-      pMappingLanguage
+      md.mappingLanguage
     }
 
     //val mappingpediaUsername = "executions"
@@ -108,24 +120,27 @@ object MappingExecutionController {
     } else { UUID.randomUUID.toString }
     logger.info(s"mappingExecutionDirectory = $mappingExecutionDirectory")
 
-    val outputFileName = if (pOutputFilename == null) {
+    val outputFileName = if (mappingExecution.outputFileName == null) {
       UUID.randomUUID.toString + ".txt"
     } else {
-      pOutputFilename;
+      mappingExecution.outputFileName;
     }
     val outputFilepath = "executions/" + mappingExecutionDirectory + "/" + outputFileName
 
     try {
+      val queryFile = mappingExecution.queryFilePath;
+
       if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
+
 
         val properties: MorphCSVProperties = new MorphCSVProperties
         properties.setDatabaseName("executions/" + mappingExecutionDirectory)
-        properties.setMappingDocumentFilePath(mappingURL)
+        properties.setMappingDocumentFilePath(mdDownloadURL)
         properties.setOutputFilePath(outputFilepath);
-        properties.setCSVFile(datasetDistributionURL);
+        properties.setCSVFile(distributionDownloadURL);
         properties.setQueryFilePath(queryFile);
-        if (fieldSeparator != null) {
-          properties.fieldSeparator = Some(fieldSeparator);
+        if (distribution.cvsFieldSeparator != null) {
+          properties.fieldSeparator = Some(distribution.cvsFieldSeparator);
         }
 
         val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
@@ -134,7 +149,7 @@ object MappingExecutionController {
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
         val rmlConnector = new RMLMapperConnector();
         //rmlConnector.execute(mappingURL, outputFilepath);
-        rmlConnector.executeWithMain(datasetDistributionURL, mappingURL, outputFilepath);
+        rmlConnector.executeWithMain(distributionDownloadURL, mdDownloadURL, outputFilepath);
 
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
         throw new Exception(mappingLanguage + " Language is not supported yet");
@@ -192,13 +207,15 @@ object MappingExecutionController {
         val ckanResponseText = if(ckanResponse == null) { null}
         else { ckanResponse.getStatusText}
 
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL, datasetDistributionURL
-          , mappingURL, queryFile, mappingExecutionResultURL, responseStatusText, responseStatus, ckanResponseText)
+        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL
+          , distributionDownloadURL, mdDownloadURL, queryFile
+          , mappingExecutionResultURL, responseStatusText, responseStatus, ckanResponseText)
 
         return executionResult
       }
       else {
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL, datasetDistributionURL, mappingURL
+        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL
+          , distributionDownloadURL, mdDownloadURL
           , queryFile, null, responseStatusText, responseStatus, null)
         return executionResult
       }

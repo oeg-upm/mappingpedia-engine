@@ -11,4 +11,5 @@ class Distribution (val dataset: Dataset){
   var ckanFileRef:MultipartFile = null;
   var ckanDescription:String = null;
 
+  var cvsFieldSeparator:String=",";
 }

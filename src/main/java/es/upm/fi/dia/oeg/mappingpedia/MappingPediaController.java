@@ -104,14 +104,25 @@ public class MappingPediaController {
         } else {
             dataset = new Dataset(organization, datasetId);
         }
+        Distribution distribution = new Distribution(dataset);
+        distribution.dcatDownloadURL_$eq(datasetDistributionURL);
+        if(fieldSeparator != null) {
+            distribution.cvsFieldSeparator_$eq(fieldSeparator);
+        }
+        dataset.addDistribution(distribution);
 
 
+        MappingDocument md = new MappingDocument();
+        md.mappingLanguage_$eq(mappingLanguage);
+        md.setDownloadURL(mappingURL);
+
+        MappingExecution mappingExecution = new MappingExecution(md, dataset);
+        mappingExecution.setStoreToCKAN("true");
+        mappingExecution.outputFileName_$eq(outputFilename);
+        mappingExecution.queryFilePath_$eq(queryFile);
         try {
-            return MappingExecutionController.executeMapping2(
-                    mappingURL, mappingLanguage, datasetDistributionURL, fieldSeparator
-                    , queryFile, outputFilename
-                    , organization, dataset, "true"
-            );
+            //return MappingExecutionController.executeMapping2(md, queryFile, outputFilename, dataset, "true");
+            return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
             String errorMessage = "Error occured: " + e.getMessage();

@@ -20,37 +20,37 @@ class MappingDocument(val dctIdentifier:String) {
   var dataset:String = null;
   var filePath:String = null;
   var creator:String = null;
-  var distribution:String = null;
+  //var distribution:String = null;
   var subject:String = null;
   var distributionAccessURL:String = null;
   var mappingLanguage:String = null;
   var distributionFieldSeparator:Option[String] = None;
-  private var mappingDocumentAccessURL:String = null;
-  private var mappingDocumentDownloadURL:String = null;
+  private var accessURL:String = null;
+  private var downloadURL:String = null;
   var multipartFile: MultipartFile = null;
 
 
-  def setMappingdocumentURL(pMappingDocumentURL:String) = {
-    if(pMappingDocumentURL != null && pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
+  def setDownloadURL(pMappingDocumentURL:String) = {
+    downloadURL = if(pMappingDocumentURL != null && pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
       pMappingDocumentURL.substring(1, pMappingDocumentURL.length-1)
     } else {
       pMappingDocumentURL
     }
   }
 
-  def getMappingDocumentDownloadURL() = {
-    if (mappingDocumentDownloadURL != null) {
-      mappingDocumentDownloadURL
+  def getDownloadURL() = {
+    if (downloadURL != null) {
+      downloadURL
     } else {
-      if(mappingDocumentAccessURL == null) {
+      if(accessURL == null) {
         null
       } else {
         try {
-          val response = Unirest.get(mappingDocumentAccessURL).asJson();
-          mappingDocumentDownloadURL = response.getBody.getObject.getString("download_url");
-          mappingDocumentDownloadURL;
+          val response = Unirest.get(accessURL).asJson();
+          downloadURL = response.getBody.getObject.getString("download_url");
+          downloadURL;
         } catch {
-          case e: Exception => mappingDocumentAccessURL
+          case e: Exception => accessURL
         }
       }
     }
@@ -72,6 +72,6 @@ class MappingDocument(val dctIdentifier:String) {
   def getDataset = this.dataset;
   def getCreator = this.creator;
   //def getDistribution = this.distribution;
-  def getDistributionAccessURL = this.distributionAccessURL;
+  //def getDistributionAccessURL = this.distributionAccessURL;
   //def getMappingDocumentDownloadURL = this.mappingDocumentDownloadURL;
 }

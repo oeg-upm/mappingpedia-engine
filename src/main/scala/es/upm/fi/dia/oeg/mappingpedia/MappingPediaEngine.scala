@@ -457,7 +457,7 @@ object MappingPediaEngine {
 				null
 			}
 			val outputFilename = UUID.randomUUID.toString + ".nt"
-			val mappingDocumentDownloadURL = md.getMappingDocumentDownloadURL();
+			val mappingDocumentDownloadURL = md.getDownloadURL();
 			logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
 			val mdDistributionAccessURL = md.distributionAccessURL;
 			logger.info("mdDistributionAccessURL = " + mdDistributionAccessURL);
@@ -466,12 +466,18 @@ object MappingPediaEngine {
         if(executedMappings.contains((mappingDocumentDownloadURL,mdDistributionAccessURL))) {
           None
         } else {
-          val executionResult = MappingExecutionController.executeMapping2(
-            mappingDocumentDownloadURL, mappingLanguage
-            , mdDistributionAccessURL, distributionFieldSeparator
-            , queryFile, outputFilename
-						, null, null, "false"
-					);
+					val dataset = new Dataset(new Organization());
+					val distribution = new Distribution(dataset);
+					dataset.addDistribution(distribution);
+					distribution.dcatDownloadURL = mdDistributionAccessURL;
+
+					val mappingExecution = new MappingExecution(md, dataset);
+					mappingExecution.setStoreToCKAN("false")
+					mappingExecution.queryFilePath = queryFile;
+					mappingExecution.outputFileName = outputFilename;
+
+          //val executionResult = MappingExecutionController.executeMapping2(md, queryFile, outputFilename, null, "false"
+					val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
           executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
 
