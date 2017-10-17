@@ -5,7 +5,7 @@ import java.nio.channels.FileChannel
 import java.util.UUID
 
 import es.upm.fi.dia.oeg.mappingpedia.model.{ListResult, MapResult, OntologyClass}
-import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaProperties}
+import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine, MappingPediaProperties}
 import org.apache.jena.graph.{Node, NodeFactory, Triple}
 import org.apache.jena.ontology.{OntClass, OntModel, OntModelSpec}
 import org.apache.jena.query.QuerySolution
@@ -39,6 +39,8 @@ object MappingPediaUtility {
   def getVirtuosoGraph(virtuosoJDBC : String, virtuosoUser : String, virtuosoPwd : String
 		, virtuosoGraphName : String) : VirtGraph = {
 				logger.info("Connecting to Virtuoso Graph...");
+     logger.info(s"virtuosoGraphName = $virtuosoGraphName");
+
 				val virtGraph : VirtGraph = new VirtGraph (
 						virtuosoGraphName, virtuosoJDBC, virtuosoUser, virtuosoPwd);
         logger.info("Connected to Virtuoso Graph...");
@@ -55,8 +57,8 @@ object MappingPediaUtility {
     val triples = this.toTriples(model);
 
     //val prop = Application.prop;
-    val virtuosoGraph = this.getVirtuosoGraph(MappingPediaProperties.virtuosoJDBC, MappingPediaProperties.virtuosoUser
-      , MappingPediaProperties.virtuosoPwd, graphURI);
+    val virtuosoGraph = this.getVirtuosoGraph(MappingPediaEngine.mappingpediaProperties.virtuosoJDBC, MappingPediaEngine.mappingpediaProperties.virtuosoUser
+      , MappingPediaEngine.mappingpediaProperties.virtuosoPwd, graphURI);
 
     this.store(triples, virtuosoGraph);
   }
