@@ -15,6 +15,7 @@ class MappingPediaProperties(is:InputStream) extends Properties {
 	super.load(is);
 
 	//VIRTUOSO
+	val virtuosoEnabled:Boolean = this.getPropertyAsBoolean("virtuoso.enabled", false)
 	val virtuosoJDBC:String = this.getProperty("vjdbc")
 	val virtuosoUser:String = this.getProperty("usr")
 	val virtuosoPwd:String = this.getProperty("pwd")

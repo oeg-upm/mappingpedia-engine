@@ -108,7 +108,7 @@ object DatasetController {
 
     //STORING MANIFEST ON VIRTUOSO
     try {
-      if(manifestFile != null) {
+      if(manifestFile != null && MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         logger.info("storing the manifest triples on virtuoso ...")
         logger.debug("manifestFile = " + manifestFile);
         MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
