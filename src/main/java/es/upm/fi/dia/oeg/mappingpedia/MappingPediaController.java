@@ -12,6 +12,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult;
+import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -154,16 +155,16 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult uploadNewMapping(
+    public AddMappingResult uploadNewMapping(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
             , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-            , @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
-            , @RequestParam(value="mappingDocumentCreator", defaultValue="Mapping Document Creator") String mappingDocumentCreator
-            , @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
-            , @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
+            , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
+            , @RequestParam(value="mappingDocumentCreator", defaultValue="") String mappingDocumentCreator
+            , @RequestParam(value="mappingDocumentSubjects", defaultValue="") String mappingDocumentSubjects
+            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
 
     )
     {
@@ -173,7 +174,11 @@ public class MappingPediaController {
         MappingDocument mappingDocument = new MappingDocument();
         mappingDocument.subject_$eq(mappingDocumentSubjects);
         mappingDocument.creator_$eq(mappingDocumentCreator);
-        mappingDocument.title_$eq(mappingDocumentTitle);
+        if(mappingDocumentTitle == null) {
+            mappingDocument.title_$eq(dataset.dctIdentifier());
+        } else {
+            mappingDocument.title_$eq(mappingDocumentTitle);
+        }
         if(mappingLanguage == null) {
             mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
         } else {
@@ -187,17 +192,17 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult uploadNewMapping(
+    public AddMappingResult uploadNewMapping(
             @PathVariable("organizationID") String organizationID
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
-            , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-            , @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
-            , @RequestParam(value="mappingDocumentCreator", defaultValue="Mapping Document Creator") String mappingDocumentCreator
-            , @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
-            , @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
+            , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
+            , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
+            , @RequestParam(value="mappingDocumentCreator", defaultValue="") String mappingDocumentCreator
+            , @RequestParam(value="mappingDocumentSubjects", defaultValue="") String mappingDocumentSubjects
+            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
 
     )
     {
@@ -207,13 +212,18 @@ public class MappingPediaController {
         MappingDocument mappingDocument = new MappingDocument();
         mappingDocument.subject_$eq(mappingDocumentSubjects);
         mappingDocument.creator_$eq(mappingDocumentCreator);
-        mappingDocument.title_$eq(mappingDocumentTitle);
+        if(mappingDocumentTitle == null) {
+            mappingDocument.title_$eq(dataset.dctIdentifier());
+        } else {
+            mappingDocument.title_$eq(mappingDocumentTitle);
+        }
         if(mappingLanguage == null) {
             mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
         } else {
             mappingDocument.mappingLanguage_$eq(mappingLanguage);
         }
         mappingDocument.multipartFile_$eq(mappingFileRef);
+
 
         return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument

@@ -6,8 +6,9 @@ import java.util.{Date, UUID}
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, MappingPediaEngine, MappingPediaRunner}
 import org.slf4j.{Logger, LoggerFactory}
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{sdf}
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.model._
+import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingResult
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
@@ -150,7 +151,7 @@ object MappingDocumentController {
   def uploadNewMapping(dataset: Dataset, manifestFileRef: MultipartFile
                        , replaceMappingBaseURI: String, generateManifestFile: String
                        , mappingDocument: MappingDocument
-                      ): MappingPediaExecutionResult = {
+                      ): AddMappingResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
 
@@ -216,6 +217,7 @@ object MappingDocumentController {
             , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
 
           val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
+          logger.info("mappingDocument.mappingLanguage() = " + mappingDocument.mappingLanguage)
 
           val mapValues: Map[String, String] = Map(
             "$mappingDocumentID" -> mappingDocument.dctIdentifier
@@ -254,7 +256,7 @@ object MappingDocumentController {
     }
 
     //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
-    try {
+    val virtuosoStoreMappingStatus = try {
       logger.info("STORING MAPPING AND MANIFEST FILES ON VIRTUOSO ...")
       val manifestFilePath: String = if (manifestFile == null) {
         null
@@ -267,6 +269,7 @@ object MappingDocumentController {
         //, Application.mappingpediaEngine
         , replaceMappingBaseURI, newMappingBaseURI)
       logger.info("Mapping and manifest file stored on Virtuoso")
+      "OK"
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -274,6 +277,7 @@ object MappingDocumentController {
         val errorMessage = "Error occurred when storing mapping and manifest files on virtuoso: " + e.getMessage;
         logger.error(errorMessage)
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        e.getMessage
       }
     }
 
@@ -325,8 +329,19 @@ object MappingDocumentController {
     }
 
 
+    val addMappingResult:AddMappingResult = new AddMappingResult(
+      responseStatus, responseStatusText
+      , mappingDocumentGitHubURL
+      , manifestGitHubURL
+
+      , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
+    )
+    addMappingResult
+
+    /*
     new MappingPediaExecutionResult(manifestGitHubURL, null, mappingDocumentGitHubURL
       , null, null, responseStatusText, responseStatus, null)
+      */
 
 
   }
