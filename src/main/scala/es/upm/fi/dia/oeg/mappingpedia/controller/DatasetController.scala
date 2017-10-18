@@ -6,18 +6,20 @@ import java.util.Date
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, MappingPediaExecutionResult, Organization}
+import org.slf4j.{Logger, LoggerFactory}
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
+import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
 
 object DatasetController {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
   def generateManifestFile(distribution: Distribution) = {
     val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
-    //GENERATE MANIFEST FILE IF NOT PROVIDED
     var distributionAccessURL = distribution.dcatAccessURL
     if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
       distributionAccessURL = "<" + distributionAccessURL;
@@ -33,7 +35,7 @@ object DatasetController {
       distributionDownloadURL = distributionDownloadURL + ">";
     }
 
-    logger.info("generating manifest file ...")
+    logger.info("Generating manifest file ...")
     try {
       val templateFiles = List(
         "templates/metadata-namespaces-template.ttl"
@@ -56,7 +58,9 @@ object DatasetController {
       );
 
       val filename = "metadata-dataset.ttl";
-      MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
+      val manifestFile = MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
+      logger.info("Manifest file generated.")
+      manifestFile;
     } catch {
       case e:Exception => {
         e.printStackTrace()
@@ -68,7 +72,7 @@ object DatasetController {
   }
 
   def addDataset(dataset:Dataset, manifestFileRef:MultipartFile, generateManifestFile:String
-                ) : MappingPediaExecutionResult = {
+                ) : AddDatasetResult = {
 
     val organization: Organization = dataset.dctPublisher;
     val distribution = dataset.getDistribution();
@@ -85,9 +89,7 @@ object DatasetController {
         generatedFile
       } else { // if the user does not provide any manifest file
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
-          logger.info("Generating manifest file ...")
           val generatedFile = this.generateManifestFile(distribution);
-          logger.info("Manifest file generated.")
           generatedFile
         } else {
           null
@@ -107,12 +109,19 @@ object DatasetController {
     //val manifest_in_str = scala.io.Source.fromFile(manifestFile).getLines.reduceLeft(_+_)
 
     //STORING MANIFEST ON VIRTUOSO
-    try {
+    val addManifestVirtuosoResponse:String = try {
       if(manifestFile != null && MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         logger.info("storing the manifest triples on virtuoso ...")
         logger.debug("manifestFile = " + manifestFile);
         MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
         logger.info("manifest triples stored on virtuoso.")
+        "OK";
+      } else if(manifestFile == null) {
+        "No manifest file specified/generated!";
+      } else if(!MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
+        "Storing to Virtuoso is not enabled!";
+      } else {
+        "Not storing manifest on virtuoso.";
       }
     } catch {
       case e: Exception => {
@@ -121,12 +130,13 @@ object DatasetController {
         val errorMessage = "error storing manifest file on Virtuoso: " + e.getMessage
         logger.error(errorMessage);
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        e.getMessage
       }
     }
 
 
     //STORING DATASET FILE ON GITHUB
-    val addNewDatasetResponse:HttpResponse[JsonNode] = try {
+    val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
       if(distribution.ckanFileRef != null) {
         logger.info("storing a new dataset file on github ...")
         val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
@@ -149,10 +159,10 @@ object DatasetController {
         null
       }
     }
-    val datasetURL = if(addNewDatasetResponse == null) {
+    val datasetURL = if(addDatasetFileGitHubResponse == null) {
       null
     } else {
-      addNewDatasetResponse.getBody.getObject.getJSONObject("content").getString("url")
+      addDatasetFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
 
 
@@ -183,7 +193,7 @@ object DatasetController {
 
 
     //STORING DATASET & RESOURCE ON CKAN
-    val ckanResponse = try {
+    val (ckanAddPackageResponse, ckanAddResourceResponse) = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
         val addNewPackageResponse = CKANUtility.addNewPackage(organization, dataset);
@@ -203,11 +213,7 @@ object DatasetController {
         null
       }
     }
-    val ckanResponseStatusText = if(ckanResponse == null) {
-      null
-    }  else {
-      ckanResponse._1.getStatusText + "," + ckanResponse._2.getStatusText;
-    }
+    val ckanResponseStatusText = ckanAddPackageResponse.getStatusText + "," + ckanAddResourceResponse.getStatusText;
 
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
@@ -216,9 +222,30 @@ object DatasetController {
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
+    val addDatasetResult:AddDatasetResult = new AddDatasetResult(
+      responseStatus, responseStatusText
+
+    , manifestURL
+    , addManifestFileGitHubResponse.getStatus
+    , addManifestFileGitHubResponse.getStatusText
+
+    , datasetURL:String
+    , addDatasetFileGitHubResponse.getStatus
+    , addDatasetFileGitHubResponse.getStatusText
+
+    , addManifestVirtuosoResponse
+
+    , ckanAddPackageResponse.getStatusText
+    , ckanAddResourceResponse.getStatusText
+
+    )
+    addDatasetResult
+
+    /*
     val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
       , null, null, responseStatusText, responseStatus, ckanResponseStatusText)
     executionResult;
+    */
 
   }
 

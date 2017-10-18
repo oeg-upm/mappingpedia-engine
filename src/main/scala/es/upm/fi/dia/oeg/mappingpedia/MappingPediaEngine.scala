@@ -178,6 +178,7 @@ object MappingPediaEngine {
 
 
 	def generateStringFromTemplateFile(map: Map[String, String], templateFilePath:String) : String = {
+		logger.info(s"Generating string from template file: $templateFilePath ...")
 		try {
 
 			//var lines: String = Source.fromResource(templateFilePath).getLines.mkString("\n");
@@ -205,6 +206,7 @@ object MappingPediaEngine {
 			logger.info("lines3 = " + lines3)
 			*/
 
+			logger.info(s"String from template file $templateFilePath generated.")
 			generatedLines;
 		} catch {
 			case e:Exception => {
@@ -218,7 +220,7 @@ object MappingPediaEngine {
 	def generateManifestFile(map: Map[String, String], templateFiles:List[String], filename:String, datasetID:String) : File = {
 		try {
 			val manifestTriples = templateFiles.foldLeft("") { (z, i) => {
-				logger.debug("generating manifest triples from:" + i)
+				//logger.info("templateFiles.foldLeft" + (z, i))
 				z + this.generateStringFromTemplateFile(map, i) + "\n\n" ;
 			} }
 			logger.debug("manifestTriples = " + manifestTriples)
@@ -485,8 +487,9 @@ object MappingPediaEngine {
 					mappingExecution.queryFilePath = queryFile;
 					mappingExecution.outputFileName = outputFilename;
 
-					//val executionResult = MappingExecutionController.executeMapping2(md, queryFile, outputFilename, null, "false"
-					val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
+					//THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
+					val executionResult = MappingExecutionController.executeMapping2(md, queryFile, outputFilename, null, "false");
+					//val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
 					executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
 
@@ -506,25 +509,7 @@ object MappingPediaEngine {
 
 	}
 
-	/**
-		*
-		* @param commandLine
-		* @return
-		*         code taken from https://github.com/RMLio/RML-Processor/blob/ab26dac414692b3235164b271b376304869225ca/src/main/java/be/ugent/mmlab/rml/main/Main.java
-		*/
-	def retrieveParameters(commandLine:CommandLine): Map[String, String] = {
-		val parameters:Map[String, String] = Map.empty;
-		var parameterKeyValue:Array[String] = null
-		val parameter:String = commandLine.getOptionValue("p", null)
-		val subParameters:Array[String] = parameter.split(",")
-		for (subParameter <- subParameters) {
-			parameterKeyValue = subParameter.split("=")
-			val key = parameterKeyValue(0)
-			val value = parameterKeyValue(1)
-			parameters.put(key, value)
-		}
-		parameters
-	}
+
 
 	def generateAdditionalTriples(manifestModel:Model, mappingDocumentModel:Model) : List[Triple] = {
 		var newTriples:List[Triple] = List.empty;

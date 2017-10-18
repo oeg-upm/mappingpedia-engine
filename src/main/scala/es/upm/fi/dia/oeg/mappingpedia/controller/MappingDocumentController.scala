@@ -5,13 +5,16 @@ import java.util.{Date, UUID}
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, MappingPediaEngine, MappingPediaRunner}
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
+import org.slf4j.{Logger, LoggerFactory}
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{sdf}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
 
 object MappingDocumentController {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
   def findMappingDocuments(queryString: String): ListResult = {
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
