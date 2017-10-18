@@ -1,7 +1,7 @@
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#> 
 prefix dcat: <http://www.w3.org/ns/dcat#>
 
-SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?distributionAccessURL ?mappingDocumentFile
+SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?distributionAccessURL ?mappingDocumentFile ?dateSubmitted
 FROM <$graphURL>
 WHERE {
    ?md a mpv:R2RMLMappingDocument .
@@ -14,4 +14,6 @@ WHERE {
    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
    OPTIONAL { ?md mpv:hasTriplesMaps ?tm . }
    OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
+   OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
 }
+ORDER BY ASC(?dateSubmitted)

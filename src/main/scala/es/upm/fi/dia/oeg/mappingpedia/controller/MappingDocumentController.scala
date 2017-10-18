@@ -29,25 +29,16 @@ object MappingDocumentController {
       while (rs.hasNext) {
         val qs = rs.nextSolution
         val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
-        val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
-        val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
-        val mappingDocumentFile = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
-        val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
-        val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
-        val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
-        val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
-        val mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
-
-
         val md = new MappingDocument(id);
-        md.title = title;
-        md.dataset = dataset;
-        md.filePath = mappingDocumentFile;
-        md.creator = creator;
-        //md.distribution = distribution
-        md.distributionAccessURL = distributionAccessURL;
+        md.title = MappingPediaUtility.getStringOrElse(qs, "title", null);
+        md.dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
+        md.filePath = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
+        md.creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
+        md.distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
+        md.mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
+        md.dateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
+        val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
         md.setDownloadURL(mappingDocumentURL);
-        md.mappingLanguage = mappingLanguage;
 
         results = md :: results;
       }
