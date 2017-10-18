@@ -202,22 +202,19 @@ object MappingDocumentController {
 
     //GENERATING MANIFEST FILE
     val manifestFile = try {
-      logger.info("generating manifest file ...")
       if (manifestFileRef != null) {
         logger.info("Manifest file is provided")
         MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
       } else {
         logger.info("Manifest file is not provided")
-        logger.debug("generateManifestFile = " + generateManifestFile)
         if (generateManifestFile != null && ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile))) {
           //GENERATE MANIFEST FILE IF NOT PROVIDED
-          logger.info("GENERATING MANIFEST FILE ...")
+          logger.info("Generating manifest file ...")
           val templateFiles = List(
             MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
             , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
 
           val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
-          logger.info("mappingDocument.mappingLanguage() = " + mappingDocument.mappingLanguage)
 
           val mapValues: Map[String, String] = Map(
             "$mappingDocumentID" -> mappingDocument.dctIdentifier
@@ -236,9 +233,9 @@ object MappingDocumentController {
           );
 
           val filename = "metadata-mappingdocument.ttl";
-          MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
-
-
+          val generatedManifestFile = MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
+          logger.info("Manifest file generated.")
+          generatedManifestFile
         } else {
           null
         }
@@ -257,13 +254,12 @@ object MappingDocumentController {
 
     //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
     val virtuosoStoreMappingStatus = try {
-      logger.info("STORING MAPPING AND MANIFEST FILES ON VIRTUOSO ...")
+      logger.info("Storing mapping and manifest file on Virtuoso ...")
       val manifestFilePath: String = if (manifestFile == null) {
         null
       } else {
         manifestFile.getPath;
       }
-      logger.debug("manifestFilePath = " + manifestFilePath)
       val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
       MappingPediaEngine.storeManifestAndMapping(manifestFilePath, mappingFilePath, "false"
         //, Application.mappingpediaEngine
@@ -285,7 +281,7 @@ object MappingDocumentController {
     //STORING MANIFEST FILE ON GITHUB
     val addNewManifestResponse = try {
       if (manifestFile != null) {
-        logger.info("STORING MANIFEST FILE ON GITHUB ...")
+        logger.info("Storing manifest file on GitHub ...")
         val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
         val githubResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
           , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier

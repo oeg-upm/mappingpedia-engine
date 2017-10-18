@@ -517,12 +517,12 @@ object MappingPediaEngine {
 
 		val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
 			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
-		logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
+		//logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
 
 		if(r2rmlMappingDocumentResources != null) {
 			while(r2rmlMappingDocumentResources.hasNext()) {
 				val r2rmlMappingDocumentResource = r2rmlMappingDocumentResources.nextResource();
-				logger.info("r2rmlMappingDocumentResource = " + r2rmlMappingDocumentResource);
+				//logger.info("r2rmlMappingDocumentResource = " + r2rmlMappingDocumentResource);
 
 				//improve this code using, get all x from ?x rr:LogicalTable ?lt
 				//mapping documents do not always explicitly have a TriplesMap
@@ -530,13 +530,13 @@ object MappingPediaEngine {
 				//  				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
 				val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
 					MappingPediaConstant.R2RML_LOGICALTABLE_PROPERTY);
-				logger.info("triplesMapResources = " + triplesMapResources);
+				//logger.info("triplesMapResources = " + triplesMapResources);
 				if(triplesMapResources != null) {
 					while(triplesMapResources.hasNext()) {
 						val triplesMapResource = triplesMapResources.nextResource();
 						val newStatement = new StatementImpl(r2rmlMappingDocumentResource
 							, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
-						logger.info("adding new hasTriplesMap statement: " + newStatement);
+						//logger.info("adding new hasTriplesMap statement: " + newStatement);
 						val newTriple = newStatement.asTriple();
 						newTriples = newTriples ::: List(newTriple);
 					}
@@ -553,7 +553,7 @@ object MappingPediaEngine {
 														 ): Unit = {
 
 		val clearGraphBoolean = MappingPediaUtility.stringToBoolean(clearGraphString);
-		logger.info("clearGraphBoolean = " + clearGraphBoolean);
+		//logger.info("clearGraphBoolean = " + clearGraphBoolean);
 
 		val replaceMappingBaseURI = MappingPediaUtility.stringToBoolean(pReplaceMappingBaseURI);
 
@@ -605,7 +605,7 @@ object MappingPediaEngine {
 
 			logger.info("Storing generated triples.");
 			val additionalTriples = MappingPediaEngine.generateAdditionalTriples(manifestModel, mappingDocumentModel);
-			logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
+			//logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
 
 			MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 		}
@@ -616,7 +616,6 @@ object MappingPediaEngine {
 
 		MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
-		logger.info("Bye!");
-
+		
 	}
 }
