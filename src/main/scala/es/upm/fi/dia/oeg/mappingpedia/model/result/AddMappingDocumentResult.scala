@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.mappingpedia.model.result
 
-class AddMappingResult (
+class AddMappingDocumentResult(
                          val errorCode:Integer, val status:String
                          , val mappingURL:String
                          , val manifestURL:String

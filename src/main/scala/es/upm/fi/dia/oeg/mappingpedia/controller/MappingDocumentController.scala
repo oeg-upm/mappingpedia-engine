@@ -8,7 +8,7 @@ import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, Mappin
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.model._
-import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingResult
+import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingDocumentResult
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
@@ -151,7 +151,7 @@ object MappingDocumentController {
   def uploadNewMapping(dataset: Dataset, manifestFileRef: MultipartFile
                        , replaceMappingBaseURI: String, generateManifestFile: String
                        , mappingDocument: MappingDocument
-                      ): AddMappingResult = {
+                      ): AddMappingDocumentResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
 
@@ -325,7 +325,7 @@ object MappingDocumentController {
     }
 
 
-    val addMappingResult:AddMappingResult = new AddMappingResult(
+    val addMappingResult:AddMappingDocumentResult = new AddMappingDocumentResult(
       responseStatus, responseStatusText
       , mappingDocumentGitHubURL
       , manifestGitHubURL

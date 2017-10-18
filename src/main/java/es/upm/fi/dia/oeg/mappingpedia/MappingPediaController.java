@@ -12,7 +12,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult;
-import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingResult;
+import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingDocumentResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.GeneralResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -156,7 +156,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}", method= RequestMethod.POST)
-    public AddMappingResult uploadNewMapping(
+    public AddMappingDocumentResult uploadNewMapping(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
@@ -193,7 +193,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddMappingResult uploadNewMapping(
+    public AddMappingDocumentResult uploadNewMapping(
             @PathVariable("organizationID") String organizationID
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
