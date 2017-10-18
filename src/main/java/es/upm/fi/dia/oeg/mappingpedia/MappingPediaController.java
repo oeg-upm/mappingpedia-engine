@@ -11,6 +11,7 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController;
 import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
+import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;

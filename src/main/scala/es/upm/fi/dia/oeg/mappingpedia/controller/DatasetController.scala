@@ -9,6 +9,7 @@ import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.model._
+import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
@@ -225,19 +226,20 @@ object DatasetController {
     val addDatasetResult:AddDatasetResult = new AddDatasetResult(
       responseStatus, responseStatusText
 
-    , manifestURL
-    , addManifestFileGitHubResponse.getStatus
-    , addManifestFileGitHubResponse.getStatusText
+      , manifestURL
+      , addManifestFileGitHubResponse.getStatus
+      , addManifestFileGitHubResponse.getStatusText
 
-    , datasetURL:String
-    , addDatasetFileGitHubResponse.getStatus
-    , addDatasetFileGitHubResponse.getStatusText
+      , datasetURL:String
+      , addDatasetFileGitHubResponse.getStatus
+      , addDatasetFileGitHubResponse.getStatusText
 
-    , addManifestVirtuosoResponse
+      , addManifestVirtuosoResponse
 
-    , ckanAddPackageResponse.getStatusText
-    , ckanAddResourceResponse.getStatusText
+      , ckanAddPackageResponse.getStatusText
+      , ckanAddResourceResponse.getStatusText
 
+      , dataset.dctIdentifier
     )
     addDatasetResult
 
