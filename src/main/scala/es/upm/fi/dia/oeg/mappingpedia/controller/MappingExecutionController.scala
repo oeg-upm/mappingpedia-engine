@@ -6,7 +6,8 @@ import java.util.UUID
 
 import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
+import org.slf4j.{Logger, LoggerFactory}
+//import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility}
@@ -15,6 +16,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRun
 import org.apache.commons.lang.text.StrSubstitutor
 
 object MappingExecutionController {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
   def executeMapping1(mappingpediaUsername:String, mappingDirectory: String
                      , mappingFilename: String, datasetFile: String
                      , queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
@@ -92,21 +95,23 @@ object MappingExecutionController {
 
   @throws(classOf[Exception])
   def executeMapping2(
-                     mappingExecution: MappingExecution
-                       //, md:MappingDocument
+                     //mappingExecution: MappingExecution
+                     md:MappingDocument
                       //, datasetDistributionURL: String
                       //, fieldSeparator:String
-                      //, queryFile:String, pOutputFilename: String
+                     , queryFileName:String
+                     , pOutputFilename: String
                       //, organization: Organization
-                      //, dataset:Dataset, storeToCKAN:String
+                      , dataset:Dataset
+                     , storeToCKAN:String
                      ) : MappingPediaExecutionResult = {
-    val dataset = mappingExecution.dataset;
+    //val dataset = mappingExecution.dataset;
     val organization = dataset.dctPublisher;
 
     val distribution = dataset.getDistribution();
     val distributionDownloadURL = distribution.dcatDownloadURL;
 
-    val md=mappingExecution.mappingDocument
+    //val md=mappingExecution.mappingDocument
     val mdDownloadURL = md.getDownloadURL();
     val mappingLanguage = if (md.mappingLanguage == null) {
       MappingPediaConstant.MAPPING_LANGUAGE_R2RML
@@ -120,15 +125,15 @@ object MappingExecutionController {
     } else { UUID.randomUUID.toString }
     logger.info(s"mappingExecutionDirectory = $mappingExecutionDirectory")
 
-    val outputFileName = if (mappingExecution.outputFileName == null) {
+    val outputFileName = if (pOutputFilename == null) {
       UUID.randomUUID.toString + ".txt"
     } else {
-      mappingExecution.outputFileName;
+      pOutputFilename;
     }
     val outputFilepath = "executions/" + mappingExecutionDirectory + "/" + outputFileName
 
     try {
-      val queryFile = mappingExecution.queryFilePath;
+      //val queryFile = queryFileName;
 
       if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
 
@@ -138,7 +143,7 @@ object MappingExecutionController {
         properties.setMappingDocumentFilePath(mdDownloadURL)
         properties.setOutputFilePath(outputFilepath);
         properties.setCSVFile(distributionDownloadURL);
-        properties.setQueryFilePath(queryFile);
+        properties.setQueryFilePath(queryFileName);
         if (distribution.cvsFieldSeparator != null) {
           properties.fieldSeparator = Some(distribution.cvsFieldSeparator);
         }
@@ -208,7 +213,7 @@ object MappingExecutionController {
         else { ckanResponse.getStatusText}
 
         val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL
-          , distributionDownloadURL, mdDownloadURL, queryFile
+          , distributionDownloadURL, mdDownloadURL, queryFileName
           , mappingExecutionResultURL, responseStatusText, responseStatus, ckanResponseText)
 
         return executionResult
@@ -216,7 +221,7 @@ object MappingExecutionController {
       else {
         val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL
           , distributionDownloadURL, mdDownloadURL
-          , queryFile, null, responseStatusText, responseStatus, null)
+          , queryFileName, null, responseStatusText, responseStatus, null)
         return executionResult
       }
 

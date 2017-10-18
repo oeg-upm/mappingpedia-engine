@@ -9,16 +9,19 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController;
 import es.upm.fi.dia.oeg.mappingpedia.model.*;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+//import org.apache.log4j.LogManager;
+//import org.apache.log4j.Logger;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 //@RequestMapping(value = "/mappingpedia")
 @MultipartConfig(fileSizeThreshold = 20971520)
 public class MappingPediaController {
-    static Logger logger = LogManager.getLogger("MappingPediaController");
+    //static Logger logger = LogManager.getLogger("MappingPediaController");
+    static Logger logger = LoggerFactory.getLogger("MappingPediaController");
 
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
@@ -121,8 +124,9 @@ public class MappingPediaController {
         mappingExecution.outputFileName_$eq(outputFilename);
         mappingExecution.queryFilePath_$eq(queryFile);
         try {
-            //return MappingExecutionController.executeMapping2(md, queryFile, outputFilename, dataset, "true");
-            return MappingExecutionController.executeMapping2(mappingExecution);
+            //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
+            return MappingExecutionController.executeMapping2(md, queryFile, outputFilename, dataset, "true");
+            //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
             String errorMessage = "Error occured: " + e.getMessage();
@@ -240,32 +244,40 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets/{organizationID}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult uploadNewDataset(
+    public AddDatasetResult uploadNewDataset(
             @PathVariable("organizationID") String organizationID
-            , @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
-            , @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
+            , @RequestParam(value="datasetFile", required = true) MultipartFile datasetFileRef
+            , @RequestParam(value="datasetTitle", required = false) String datasetTitle
             , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
-            , @RequestParam(value="datasetLanguage", defaultValue="en") String datasetLanguage
+            , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
             , @RequestParam(value="datasetDescription", required = false) String datasetDescription
             , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
             , @RequestParam(value="distributionDownloadURL", required = true) String distributionDownloadURL
-            , @RequestParam(value="distributionMediaType", required = true) String distributionMediaType
+            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
             , @RequestParam(value="distributionDescription", required = false) String distributionDescription
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}");
         Organization organization = new Organization(organizationID);
 
         Dataset dataset = new Dataset(organization);
-        dataset.dctTitle_$eq(datasetTitle);
+        if(datasetTitle == null) {
+            dataset.dctTitle_$eq(dataset.dctIdentifier());
+        } else {
+            dataset.dctTitle_$eq(datasetTitle);
+        }
         dataset.dctDescription_$eq(datasetDescription);
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
         Distribution distribution = new Distribution(dataset);
-        distribution.dcatAccessURL_$eq(distributionAccessURL);
+        if(distributionAccessURL == null) {
+            distribution.dcatAccessURL_$eq(distributionDownloadURL);
+        } else {
+            distribution.dcatAccessURL_$eq(distributionAccessURL);
+        }
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
         distribution.ckanFileRef_$eq(datasetFileRef);
@@ -281,18 +293,18 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult addNewDataset(
+    public AddDatasetResult addNewDataset(
             @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
             , @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
-            , @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
+            , @RequestParam(value="datasetTitle") String datasetTitle
             , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
-            , @RequestParam(value="datasetPublisher", defaultValue="Dataset Publisher") String datasetPublisher
-            , @RequestParam(value="datasetLanguage", defaultValue="Dataset Language") String datasetLanguage
+            , @RequestParam(value="datasetPublisher") String datasetPublisher
+            , @RequestParam(value="datasetLanguage") String datasetLanguage
             , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
             , @RequestParam(value="distributionDownloadURL", required = false) String distributionDownloadURL
-            , @RequestParam(value="distributionMediaType", required = false) String distributionMediaType
+            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="datasetDescription", required = false) String datasetDescription
     )
@@ -301,13 +313,21 @@ public class MappingPediaController {
         Organization organization = new Organization(datasetPublisher);
 
         Dataset dataset = new Dataset(organization, datasetID);
-        dataset.dctTitle_$eq(datasetTitle);
+        if(datasetTitle == null) {
+            dataset.dctTitle_$eq(datasetID);
+        } else {
+            dataset.dctTitle_$eq(datasetTitle);
+        }
         dataset.dctDescription_$eq(datasetDescription);
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
         Distribution distribution = new Distribution(dataset);
-        distribution.dcatAccessURL_$eq(distributionAccessURL);
+        if(distributionAccessURL == null) {
+            distribution.dcatAccessURL_$eq(distributionDownloadURL);
+        } else {
+            distribution.dcatAccessURL_$eq(distributionAccessURL);
+        }
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
         distribution.ckanFileRef_$eq(datasetFileRef);

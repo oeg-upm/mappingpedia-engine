@@ -8,11 +8,12 @@ import be.ugent.mmlab.rml.config.RMLConfiguration
 import be.ugent.mmlab.rml.core.{StdMetadataRMLEngine, StdRMLEngine}
 import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory
 import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, retrieveParameters}
+//import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{retrieveParameters}
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.log4j.BasicConfigurator
 import org.openrdf.rio.RDFFormat
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConversions._
 
@@ -31,11 +32,31 @@ object RMLMapperConnector {
 
   }*/
 
+  /**
+    *
+    * @param commandLine
+    * @return
+    *         code taken from https://github.com/RMLio/RML-Processor/blob/ab26dac414692b3235164b271b376304869225ca/src/main/java/be/ugent/mmlab/rml/main/Main.java
+    */
+  def retrieveParameters(commandLine:CommandLine): Map[String, String] = {
+    val parameters:Map[String, String] = Map.empty;
+    var parameterKeyValue:Array[String] = null
+    val parameter:String = commandLine.getOptionValue("p", null)
+    val subParameters:Array[String] = parameter.split(",")
+    for (subParameter <- subParameters) {
+      parameterKeyValue = subParameter.split("=")
+      val key = parameterKeyValue(0)
+      val value = parameterKeyValue(1)
+      parameters.put(key, value)
+    }
+    parameters
+  }
 
 }
 
 
 class RMLMapperConnector() {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def executeWithMain(datasetDistributionURL: String, mappingURL:String, outputFilepath:String) = {
     val url = new URL(datasetDistributionURL);
@@ -100,7 +121,7 @@ class RMLMapperConnector() {
           if (commandLine.hasOption("h")) RMLConfiguration.displayHelp()
           if (commandLine.hasOption("o")) outputFile = commandLine.getOptionValue("o", null)
           if (commandLine.hasOption("g")) graphName = commandLine.getOptionValue("g", "")
-          if (commandLine.hasOption("p")) parameters = retrieveParameters(commandLine)
+          if (commandLine.hasOption("p")) parameters = RMLMapperConnector.retrieveParameters(commandLine)
           if (commandLine.hasOption("f")) outputFormat = commandLine.getOptionValue("f", null)
           if (commandLine.hasOption("b")) baseIRI = commandLine.getOptionValue("b", null)
           if (commandLine.hasOption("m")) map_doc = commandLine.getOptionValue("m", null)
