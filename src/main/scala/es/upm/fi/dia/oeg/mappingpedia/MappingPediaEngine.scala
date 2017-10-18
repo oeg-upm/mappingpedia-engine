@@ -49,16 +49,16 @@ class MappingPediaEngine() {
 
 
 
-/*
-	def getMappingpediaGraph : VirtGraph = {
-		if(mappingpediaGraph != null) {
-			mappingpediaGraph
-		}	else {
-			MappingPediaUtility.getVirtuosoGraph(MappingPediaProperties.virtuosoJDBC, MappingPediaProperties.virtuosoUser
-				, MappingPediaProperties.virtuosoPwd, MappingPediaProperties.graphName)
-		}
-	}
-*/
+	/*
+    def getMappingpediaGraph : VirtGraph = {
+      if(mappingpediaGraph != null) {
+        mappingpediaGraph
+      }	else {
+        MappingPediaUtility.getVirtuosoGraph(MappingPediaProperties.virtuosoJDBC, MappingPediaProperties.virtuosoUser
+          , MappingPediaProperties.virtuosoPwd, MappingPediaProperties.graphName)
+      }
+    }
+  */
 
 
 
@@ -184,13 +184,16 @@ object MappingPediaEngine {
 			val templateStream: InputStream = getClass.getResourceAsStream("/" + templateFilePath)
 			val templateLines = scala.io.Source.fromInputStream(templateStream).getLines.mkString("\n");
 
-			val mappingDocumentLines = map.foldLeft(templateLines)( (acc, kv) => {
+			val generatedLines = map.foldLeft(templateLines)( (acc, kv) => {
 				val mapValue:String = map.get(kv._1).getOrElse("");
 				if(mapValue ==null){
-					logger.warn("replacing " + kv._1 + "with null");
-				}
-				logger.info("replacing " + kv._1 + " with " + mapValue);
+					logger.warn("the input value for " + kv._1 + " is null");
+					acc.replaceAllLiterally(kv._1, "")
+				} else {
 					acc.replaceAllLiterally(kv._1, mapValue)
+				}
+				//logger.info("replacing " + kv._1 + " with " + mapValue);
+
 			});
 
 
@@ -202,13 +205,12 @@ object MappingPediaEngine {
 			logger.info("lines3 = " + lines3)
 			*/
 
-			mappingDocumentLines;
+			generatedLines;
 		} catch {
 			case e:Exception => {
-				logger.error("error generating manifest string: " + e.getMessage);
+				logger.error("error generating file from template: " + e.getMessage);
 				e.printStackTrace();
-				val templateLines="";
-				templateLines;
+				throw e
 			}
 		}
 	}
@@ -217,7 +219,7 @@ object MappingPediaEngine {
 		try {
 			val manifestTriples = templateFiles.foldLeft("") { (z, i) => {
 				logger.debug("generating manifest triples from:" + i)
-				z + "\n" + this.generateStringFromTemplateFile(map, i);
+				z + this.generateStringFromTemplateFile(map, i) + "\n\n" ;
 			} }
 			logger.debug("manifestTriples = " + manifestTriples)
 
@@ -424,26 +426,26 @@ object MappingPediaEngine {
 
 
 	def getSubclassesLocalNames(aClass:String, outputType:String, inputType:String) : ListResult = {
-      MappingPediaUtility.getSubclassesLocalNames(aClass, this.schemaOrgModel, outputType, inputType);
+		MappingPediaUtility.getSubclassesLocalNames(aClass, this.schemaOrgModel, outputType, inputType);
 	}
 
-  def getSchemaOrgSubclassesDetail(aClass:String, outputType:String, inputType:String) : ListResult = {
-    MappingPediaUtility.getSubclassesDetail(aClass, this.schemaOrgModel, outputType, inputType);
-  }
+	def getSchemaOrgSubclassesDetail(aClass:String, outputType:String, inputType:String) : ListResult = {
+		MappingPediaUtility.getSubclassesDetail(aClass, this.schemaOrgModel, outputType, inputType);
+	}
 
-  def getInstances(aClass:String) : ListResult = {
-    this.getInstances(aClass, "0", "0")
-  }
+	def getInstances(aClass:String) : ListResult = {
+		this.getInstances(aClass, "0", "0")
+	}
 
-  def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
+	def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
 		val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
-      aClass, this.schemaOrgModel, outputType, inputType);
+			aClass, this.schemaOrgModel, outputType, inputType);
 		logger.info(s"subclassesListResult = subclassesListResult")
 
 		val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
-      result => result.asInstanceOf[OntologyClass].getURI).toList.distinct
-//		val subclassesInList:Iterable[String] = subclassesListResult.results.values.map(
-//      result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
+			result => result.asInstanceOf[OntologyClass].getURI).toList.distinct
+		//		val subclassesInList:Iterable[String] = subclassesListResult.results.values.map(
+		//      result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
 
 		logger.debug("subclassesInList" + subclassesURIs)
 		//new ListResult(subclassesInList.size, subclassesInList);
@@ -451,9 +453,9 @@ object MappingPediaEngine {
 
 		val mappingDocuments:Iterable[MappingDocument] = subclassesURIs.flatMap(subclassURI =>
 			MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults())
-      .asInstanceOf[Iterable[MappingDocument]];
+			.asInstanceOf[Iterable[MappingDocument]];
 
-    var executedMappings:List[(String, String)]= Nil;
+		var executedMappings:List[(String, String)]= Nil;
 
 		val executionResults:Iterable[Execution] = mappingDocuments.flatMap(mappingDocument => {
 			val md = mappingDocument.asInstanceOf[MappingDocument];
@@ -469,10 +471,10 @@ object MappingPediaEngine {
 			val mdDistributionAccessURL = md.distributionAccessURL;
 			logger.info("mdDistributionAccessURL = " + mdDistributionAccessURL);
 
-      if(mappingDocumentDownloadURL != null && mdDistributionAccessURL != null) {
-        if(executedMappings.contains((mappingDocumentDownloadURL,mdDistributionAccessURL))) {
-          None
-        } else {
+			if(mappingDocumentDownloadURL != null && mdDistributionAccessURL != null) {
+				if(executedMappings.contains((mappingDocumentDownloadURL,mdDistributionAccessURL))) {
+					None
+				} else {
 					val dataset = new Dataset(new Organization());
 					val distribution = new Distribution(dataset);
 					dataset.addDistribution(distribution);
@@ -483,20 +485,20 @@ object MappingPediaEngine {
 					mappingExecution.queryFilePath = queryFile;
 					mappingExecution.outputFileName = outputFilename;
 
-          //val executionResult = MappingExecutionController.executeMapping2(md, queryFile, outputFilename, null, "false"
+					//val executionResult = MappingExecutionController.executeMapping2(md, queryFile, outputFilename, null, "false"
 					val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
-          executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
+					executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
 
-          val executionResultURL = executionResult.mappingExecutionResultDownloadURL;
-          //executionResultURL;
+					val executionResultURL = executionResult.mappingExecutionResultDownloadURL;
+					//executionResultURL;
 
-          Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL))
-          //mappingDocumentURL + " -- " + datasetDistributionURL
-        }
-      } else {
-        None
-      }
+					Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL))
+					//mappingDocumentURL + " -- " + datasetDistributionURL
+				}
+			} else {
+				None
+			}
 
 
 		})

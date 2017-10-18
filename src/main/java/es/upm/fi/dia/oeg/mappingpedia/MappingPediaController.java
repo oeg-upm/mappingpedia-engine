@@ -242,17 +242,17 @@ public class MappingPediaController {
     @RequestMapping(value = "/datasets/{organizationID}", method= RequestMethod.POST)
     public MappingPediaExecutionResult uploadNewDataset(
             @PathVariable("organizationID") String organizationID
-            , @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
-            , @RequestParam(value="datasetTitle", defaultValue="Dataset Title") String datasetTitle
+            , @RequestParam(value="datasetFile", required = true) MultipartFile datasetFileRef
+            , @RequestParam(value="datasetTitle", required = false) String datasetTitle
             , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
-            , @RequestParam(value="datasetLanguage", defaultValue="en") String datasetLanguage
+            , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
             , @RequestParam(value="datasetDescription", required = false) String datasetDescription
             , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
             , @RequestParam(value="distributionDownloadURL", required = true) String distributionDownloadURL
-            , @RequestParam(value="distributionMediaType", required = true) String distributionMediaType
+            , @RequestParam(value="distributionMediaType", required = false) String distributionMediaType
             , @RequestParam(value="distributionDescription", required = false) String distributionDescription
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
     )
     {
         logger.info("[POST] /datasets/{mappingpediaUsername}");
