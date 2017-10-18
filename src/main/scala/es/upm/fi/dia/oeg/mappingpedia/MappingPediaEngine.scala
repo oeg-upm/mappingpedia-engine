@@ -497,7 +497,7 @@ object MappingPediaEngine {
 					val executionResultURL = executionResult.mappingExecutionResultDownloadURL;
 					//executionResultURL;
 
-					Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL))
+					Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL, executionResultURL))
 					//mappingDocumentURL + " -- " + datasetDistributionURL
 				}
 			} else {
@@ -616,6 +616,6 @@ object MappingPediaEngine {
 
 		MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
-		
+
 	}
 }
