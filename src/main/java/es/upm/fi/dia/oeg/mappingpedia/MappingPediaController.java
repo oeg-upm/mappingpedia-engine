@@ -13,6 +13,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingDocumentResult;
+import es.upm.fi.dia.oeg.mappingpedia.model.result.ExecuteMappingResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.GeneralResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -84,7 +85,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
-    public GeneralResult executeMapping2(
+    public ExecuteMappingResult executeMapping2(
             @RequestParam("mappingURL") String mappingURL
             , @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
             , @RequestParam("datasetDistributionURL") String datasetDistributionURL
@@ -126,6 +127,7 @@ public class MappingPediaController {
         mappingExecution.setStoreToCKAN("true");
         mappingExecution.outputFileName_$eq(outputFilename);
         mappingExecution.queryFilePath_$eq(queryFile);
+
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return MappingExecutionController.executeMapping2(md, queryFile, outputFilename, dataset, "true");
@@ -134,9 +136,14 @@ public class MappingPediaController {
             e.printStackTrace();
             String errorMessage = "Error occured: " + e.getMessage();
             logger.error("mapping execution failed: " + errorMessage);
-            GeneralResult executionResult = new GeneralResult(null, null, null
-                    , null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null);
-            return executionResult;
+            ExecuteMappingResult executeMappingResult = new ExecuteMappingResult(
+                    HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error"
+                    , null, null
+                    , null
+                    , null, null
+                    , null
+            );
+            return executeMappingResult;
         }
 
     }

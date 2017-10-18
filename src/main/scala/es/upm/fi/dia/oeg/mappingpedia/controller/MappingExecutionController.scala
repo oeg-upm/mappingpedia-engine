@@ -6,7 +6,7 @@ import java.util.UUID
 
 import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
-import es.upm.fi.dia.oeg.mappingpedia.model.result.GeneralResult
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, GeneralResult}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 //import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
@@ -102,7 +102,7 @@ object MappingExecutionController {
                        , pOutputFilename: String
                        , dataset:Dataset
                        , storeToCKAN:String
-                     ) : GeneralResult = {
+                     ) : ExecuteMappingResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
 
@@ -236,9 +236,19 @@ object MappingExecutionController {
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
+    new ExecuteMappingResult(
+      responseStatus, responseStatusText
+      , distributionDownloadURL, mdDownloadURL
+      , queryFileName
+      , mappingExecutionResultURL, mappingExecutionResultDownloadURL
+      , ckanResponseText:String
+    )
+
+    /*
     new GeneralResult(null
       , distributionDownloadURL, mdDownloadURL, queryFileName
       , mappingExecutionResultURL, responseStatusText, responseStatus, ckanResponseText)
+      */
 
   }
 
