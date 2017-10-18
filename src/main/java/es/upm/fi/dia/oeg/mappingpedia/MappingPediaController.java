@@ -11,10 +11,7 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController;
 import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
-import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult;
-import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingDocumentResult;
-import es.upm.fi.dia.oeg.mappingpedia.model.result.ExecuteMappingResult;
-import es.upm.fi.dia.oeg.mappingpedia.model.result.GeneralResult;
+import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -61,6 +58,17 @@ public class MappingPediaController {
         logger.info("/triplesMaps ...");
         ListResult listResult = MappingPediaEngine.getAllTriplesMaps();
         logger.info("listResult = " + listResult);
+
+        return listResult;
+    }
+
+    @RequestMapping(value="/mappings/findMappingDocumentsByDatasetId", method= RequestMethod.GET)
+    public ListResult findMappingDocumentsByDatasetId(
+            @RequestParam(value="datasetId", defaultValue = "") String datasetId
+    ) {
+        logger.info("/findMappingDocumentsByDatasetId...");
+        ListResult listResult = MappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
+        logger.info("findMappingDocumentsByDatasetId result = " + listResult);
 
         return listResult;
     }

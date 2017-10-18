@@ -2,13 +2,7 @@ package es.upm.fi.dia.oeg.mappingpedia;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.util.UUID;
 
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import es.upm.fi.dia.oeg.mappingpedia.model.ListResult;
-import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import org.slf4j.Logger;

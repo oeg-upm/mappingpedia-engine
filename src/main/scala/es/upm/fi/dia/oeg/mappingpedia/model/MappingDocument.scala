@@ -72,6 +72,8 @@ class MappingDocument(val dctIdentifier:String) {
   def getTitle = this.title;
   def getDataset = this.dataset;
   def getCreator = this.creator;
+
+  def getMappingDocumentFile = this.filePath
   //def getDistribution = this.distribution;
   //def getDistributionAccessURL = this.distributionAccessURL;
   //def getMappingDocumentDownloadURL = this.mappingDocumentDownloadURL;

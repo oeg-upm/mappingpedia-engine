@@ -4,7 +4,8 @@ import java.io._
 import java.nio.channels.FileChannel
 import java.util.UUID
 
-import es.upm.fi.dia.oeg.mappingpedia.model.{ListResult, MapResult, OntologyClass}
+import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
+import es.upm.fi.dia.oeg.mappingpedia.model.OntologyClass
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine, MappingPediaProperties}
 import org.apache.jena.graph.{Node, NodeFactory, Triple}
 import org.apache.jena.ontology.{OntClass, OntModel, OntModelSpec}

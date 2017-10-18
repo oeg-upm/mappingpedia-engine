@@ -8,7 +8,7 @@ import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, Mappin
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.model._
-import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingDocumentResult
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
@@ -31,10 +31,10 @@ object MappingDocumentController {
         val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
         val title = MappingPediaUtility.getStringOrElse(qs, "title", null);
         val dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
-        val filePath = MappingPediaUtility.getStringOrElse(qs, "filePath", null);
+        val mappingDocumentFile = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
         val creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
         val distribution = MappingPediaUtility.getStringOrElse(qs, "distribution", null);
-        val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
+        val distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
         val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
         val mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
 
@@ -42,7 +42,7 @@ object MappingDocumentController {
         val md = new MappingDocument(id);
         md.title = title;
         md.dataset = dataset;
-        md.filePath = filePath;
+        md.filePath = mappingDocumentFile;
         md.creator = creator;
         //md.distribution = distribution
         md.distributionAccessURL = distributionAccessURL;
@@ -79,6 +79,19 @@ object MappingDocumentController {
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
       , "$mappedClass" -> mappedClass
       //, "$mappedProperty" -> mappedProperty
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    MappingDocumentController.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByDatasetId(datasetId: String): ListResult = {
+    logger.info("findMappingDocumentsByDatasetId:" + datasetId)
+    val queryTemplateFile = "templates/findAllMappingDocumentsByDatasetId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$datasetId" -> datasetId
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
