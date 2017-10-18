@@ -5,6 +5,7 @@ import java.net.HttpURLConnection
 import java.util.UUID
 
 import com.mashape.unirest.http.Unirest
+import es.upm.fi.dia.oeg.mappingpedia.model.result.GeneralResult
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 //import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
@@ -20,7 +21,7 @@ object MappingExecutionController {
 
   def executeMapping1(mappingpediaUsername:String, mappingDirectory: String
                      , mappingFilename: String, datasetFile: String
-                     , queryFile:String, pOutputFilename: String) : MappingPediaExecutionResult = {
+                     , queryFile:String, pOutputFilename: String) : GeneralResult = {
     logger.debug("mappingpediaUsername = " + mappingpediaUsername)
     logger.debug("mappingDirectory = " + mappingDirectory)
     logger.debug("mappingFilename = " + mappingFilename)
@@ -71,12 +72,12 @@ object MappingExecutionController {
       logger.info("responseStatusText = " + responseStatusText)
       if (HttpURLConnection.HTTP_CREATED== responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
         val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+        val executionResult: GeneralResult = new GeneralResult(null, null, null
           ,null , outputGitHubURL, responseStatusText, responseStatus, null)
         return executionResult
       }
       else {
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+        val executionResult: GeneralResult = new GeneralResult(null, null, null
           , null, null, responseStatusText, responseStatus, null)
         return executionResult
       }
@@ -86,7 +87,7 @@ object MappingExecutionController {
         e.printStackTrace
         val errorMessage: String = "Error occured: " + e.getMessage
         logger.error("mapping execution failed: " + errorMessage)
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+        val executionResult: GeneralResult = new GeneralResult(null, null, null
           , null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null)
         return executionResult
       }
@@ -104,7 +105,7 @@ object MappingExecutionController {
                       //, organization: Organization
                       , dataset:Dataset
                      , storeToCKAN:String
-                     ) : MappingPediaExecutionResult = {
+                     ) : GeneralResult = {
     //val dataset = mappingExecution.dataset;
     val organization = dataset.dctPublisher;
 
@@ -212,14 +213,14 @@ object MappingExecutionController {
         val ckanResponseText = if(ckanResponse == null) { null}
         else { ckanResponse.getStatusText}
 
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL
+        val executionResult: GeneralResult = new GeneralResult(manifestURL
           , distributionDownloadURL, mdDownloadURL, queryFileName
           , mappingExecutionResultURL, responseStatusText, responseStatus, ckanResponseText)
 
         return executionResult
       }
       else {
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(manifestURL
+        val executionResult: GeneralResult = new GeneralResult(manifestURL
           , distributionDownloadURL, mdDownloadURL
           , queryFileName, null, responseStatusText, responseStatus, null)
         return executionResult
@@ -231,7 +232,7 @@ object MappingExecutionController {
         e.printStackTrace
         val errorMessage: String = "Error occured: " + e.getMessage
         logger.error("mapping execution failed: " + errorMessage)
-        val executionResult: MappingPediaExecutionResult = new MappingPediaExecutionResult(null, null, null
+        val executionResult: GeneralResult = new GeneralResult(null, null, null
           , null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null)
         return executionResult
       }

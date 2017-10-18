@@ -13,6 +13,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddMappingResult;
+import es.upm.fi.dia.oeg.mappingpedia.model.result.GeneralResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -83,7 +84,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
-    public MappingPediaExecutionResult executeMapping2(
+    public GeneralResult executeMapping2(
             @RequestParam("mappingURL") String mappingURL
             , @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
             , @RequestParam("datasetDistributionURL") String datasetDistributionURL
@@ -133,7 +134,7 @@ public class MappingPediaController {
             e.printStackTrace();
             String errorMessage = "Error occured: " + e.getMessage();
             logger.error("mapping execution failed: " + errorMessage);
-            MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
+            GeneralResult executionResult = new GeneralResult(null, null, null
                     , null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null);
             return executionResult;
         }
@@ -141,7 +142,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult executeMapping(@PathVariable("mappingpediaUsername") String mappingpediaUsername
+    public GeneralResult executeMapping(@PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("mappingDirectory") String mappingDirectory
             , @PathVariable("mappingFilename") String mappingFilename
             , @RequestParam(value="datasetFile") String datasetFile
@@ -231,7 +232,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.GET)
-    public MappingPediaExecutionResult getMapping(
+    public GeneralResult getMapping(
             @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("mappingDirectory") String mappingDirectory
             , @PathVariable("mappingFilename") String mappingFilename
@@ -242,7 +243,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.PUT)
-    public MappingPediaExecutionResult updateExistingMapping(
+    public GeneralResult updateExistingMapping(
             @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("mappingDirectory") String mappingDirectory
             , @PathVariable("mappingFilename") String mappingFilename
@@ -348,7 +349,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult addNewQuery(
+    public GeneralResult addNewQuery(
             @RequestParam("queryFile") MultipartFile queryFileRef
             , @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("datasetID") String datasetID
@@ -360,7 +361,7 @@ public class MappingPediaController {
 
 
     @RequestMapping(value = "/storeRDFFile")
-    public MappingPediaExecutionResult storeRDFFile(
+    public GeneralResult storeRDFFile(
             @RequestParam("rdfFile") MultipartFile fileRef
             , @RequestParam(value="graphURI") String graphURI)
     {
