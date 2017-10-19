@@ -18,7 +18,7 @@ class MappingDocument(val dctIdentifier:String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   var title:String = null;
-  var dataset:String = null; // it is a hack by Dr. Freddy
+  var dataset:String = null; // it is a hack by Freddy
   var filePath:String = null;
   var creator:String = null;
   //var distribution:String = null;
@@ -29,6 +29,7 @@ class MappingDocument(val dctIdentifier:String) {
   private var accessURL:String = null;
   private var downloadURL:String = null;
   var multipartFile: MultipartFile = null;
+  var dateSubmitted:String = null;
 
 
   def setDownloadURL(pMappingDocumentURL:String) = {
@@ -72,6 +73,9 @@ class MappingDocument(val dctIdentifier:String) {
   def getTitle = this.title;
   def getDataset = this.dataset;
   def getCreator = this.creator;
+
+  def getMappingDocumentFile = this.filePath
+  def getDateSubmitted = this.dateSubmitted;
   //def getDistribution = this.distribution;
   //def getDistributionAccessURL = this.distributionAccessURL;
   //def getMappingDocumentDownloadURL = this.mappingDocumentDownloadURL;

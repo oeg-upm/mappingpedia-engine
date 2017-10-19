@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.mappingpedia.model
+package es.upm.fi.dia.oeg.mappingpedia.model.result
 
 import scala.collection.JavaConverters._
 

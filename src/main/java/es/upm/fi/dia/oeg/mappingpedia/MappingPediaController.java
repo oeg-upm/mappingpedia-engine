@@ -11,6 +11,7 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController;
 import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
+import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -61,6 +62,17 @@ public class MappingPediaController {
         return listResult;
     }
 
+    @RequestMapping(value="/mappings/findMappingDocumentsByDatasetId", method= RequestMethod.GET)
+    public ListResult findMappingDocumentsByDatasetId(
+            @RequestParam(value="datasetId", defaultValue = "") String datasetId
+    ) {
+        logger.info("/findMappingDocumentsByDatasetId...");
+        ListResult listResult = MappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
+        logger.info("findMappingDocumentsByDatasetId result = " + listResult);
+
+        return listResult;
+    }
+
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
     public ListResult getMappingDocuments(@RequestParam(value="searchType", defaultValue = "0") String searchType,
                                           @RequestParam(value="searchTerm", required = false) String searchTerm
@@ -81,7 +93,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
-    public MappingPediaExecutionResult executeMapping2(
+    public ExecuteMappingResult executeMapping2(
             @RequestParam("mappingURL") String mappingURL
             , @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
             , @RequestParam("datasetDistributionURL") String datasetDistributionURL
@@ -123,6 +135,7 @@ public class MappingPediaController {
         mappingExecution.setStoreToCKAN("true");
         mappingExecution.outputFileName_$eq(outputFilename);
         mappingExecution.queryFilePath_$eq(queryFile);
+
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return MappingExecutionController.executeMapping2(md, queryFile, outputFilename, dataset, "true");
@@ -131,15 +144,20 @@ public class MappingPediaController {
             e.printStackTrace();
             String errorMessage = "Error occured: " + e.getMessage();
             logger.error("mapping execution failed: " + errorMessage);
-            MappingPediaExecutionResult executionResult = new MappingPediaExecutionResult(null, null, null
-                    , null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null);
-            return executionResult;
+            ExecuteMappingResult executeMappingResult = new ExecuteMappingResult(
+                    HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error"
+                    , null, null
+                    , null
+                    , null, null
+                    , null
+            );
+            return executeMappingResult;
         }
 
     }
 
     @RequestMapping(value="/executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult executeMapping(@PathVariable("mappingpediaUsername") String mappingpediaUsername
+    public GeneralResult executeMapping(@PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("mappingDirectory") String mappingDirectory
             , @PathVariable("mappingFilename") String mappingFilename
             , @RequestParam(value="datasetFile") String datasetFile
@@ -153,16 +171,16 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult uploadNewMapping(
+    public AddMappingDocumentResult uploadNewMapping(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
             , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-            , @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
-            , @RequestParam(value="mappingDocumentCreator", defaultValue="Mapping Document Creator") String mappingDocumentCreator
-            , @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
-            , @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
+            , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
+            , @RequestParam(value="mappingDocumentCreator", defaultValue="") String mappingDocumentCreator
+            , @RequestParam(value="mappingDocumentSubjects", defaultValue="") String mappingDocumentSubjects
+            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
 
     )
     {
@@ -172,7 +190,11 @@ public class MappingPediaController {
         MappingDocument mappingDocument = new MappingDocument();
         mappingDocument.subject_$eq(mappingDocumentSubjects);
         mappingDocument.creator_$eq(mappingDocumentCreator);
-        mappingDocument.title_$eq(mappingDocumentTitle);
+        if(mappingDocumentTitle == null) {
+            mappingDocument.title_$eq(dataset.dctIdentifier());
+        } else {
+            mappingDocument.title_$eq(mappingDocumentTitle);
+        }
         if(mappingLanguage == null) {
             mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
         } else {
@@ -186,17 +208,17 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult uploadNewMapping(
+    public AddMappingDocumentResult uploadNewMapping(
             @PathVariable("organizationID") String organizationID
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
-            , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-            , @RequestParam(value="mappingDocumentTitle", defaultValue="Mapping Document Title") String mappingDocumentTitle
-            , @RequestParam(value="mappingDocumentCreator", defaultValue="Mapping Document Creator") String mappingDocumentCreator
-            , @RequestParam(value="mappingDocumentSubjects", defaultValue="Mapping Document Subjects") String mappingDocumentSubjects
-            , @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
+            , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
+            , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
+            , @RequestParam(value="mappingDocumentCreator", defaultValue="") String mappingDocumentCreator
+            , @RequestParam(value="mappingDocumentSubjects", defaultValue="") String mappingDocumentSubjects
+            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
 
     )
     {
@@ -206,7 +228,11 @@ public class MappingPediaController {
         MappingDocument mappingDocument = new MappingDocument();
         mappingDocument.subject_$eq(mappingDocumentSubjects);
         mappingDocument.creator_$eq(mappingDocumentCreator);
-        mappingDocument.title_$eq(mappingDocumentTitle);
+        if(mappingDocumentTitle == null) {
+            mappingDocument.title_$eq(dataset.dctIdentifier());
+        } else {
+            mappingDocument.title_$eq(mappingDocumentTitle);
+        }
         if(mappingLanguage == null) {
             mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
         } else {
@@ -214,13 +240,14 @@ public class MappingPediaController {
         }
         mappingDocument.multipartFile_$eq(mappingFileRef);
 
+
         return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }
 
     @RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.GET)
-    public MappingPediaExecutionResult getMapping(
+    public GeneralResult getMapping(
             @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("mappingDirectory") String mappingDirectory
             , @PathVariable("mappingFilename") String mappingFilename
@@ -231,7 +258,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.PUT)
-    public MappingPediaExecutionResult updateExistingMapping(
+    public GeneralResult updateExistingMapping(
             @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("mappingDirectory") String mappingDirectory
             , @PathVariable("mappingFilename") String mappingFilename
@@ -337,7 +364,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
-    public MappingPediaExecutionResult addNewQuery(
+    public GeneralResult addNewQuery(
             @RequestParam("queryFile") MultipartFile queryFileRef
             , @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("datasetID") String datasetID
@@ -349,7 +376,7 @@ public class MappingPediaController {
 
 
     @RequestMapping(value = "/storeRDFFile")
-    public MappingPediaExecutionResult storeRDFFile(
+    public GeneralResult storeRDFFile(
             @RequestParam("rdfFile") MultipartFile fileRef
             , @RequestParam(value="graphURI") String graphURI)
     {

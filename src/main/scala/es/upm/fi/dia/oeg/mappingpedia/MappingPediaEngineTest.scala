@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.mappingpedia
 
-import es.upm.fi.dia.oeg.mappingpedia.model.ListResult
+import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConversions._

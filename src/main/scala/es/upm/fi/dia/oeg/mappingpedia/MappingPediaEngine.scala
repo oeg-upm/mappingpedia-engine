@@ -15,6 +15,7 @@ import es.upm.fi.dia.oeg.mappingpedia.MappingPediaRunner.logger
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.controller.{MappingDocumentController, MappingExecutionController}
 import es.upm.fi.dia.oeg.mappingpedia.model._
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{GeneralResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
@@ -132,7 +133,7 @@ object MappingPediaEngine {
 
 
 
-	def addQueryFile(queryFileRef: MultipartFile, mappingpediaUsername:String, datasetID:String) : MappingPediaExecutionResult = {
+	def addQueryFile(queryFileRef: MultipartFile, mappingpediaUsername:String, datasetID:String) : GeneralResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
 
@@ -154,12 +155,12 @@ object MappingPediaEngine {
 				val queryURL = response.getBody.getObject.getJSONObject("content").getString("url")
 				logger.debug("queryURL = " + queryURL)
 				logger.info("dataset stored.")
-				val executionResult = new MappingPediaExecutionResult(null, null, null
+				val executionResult = new GeneralResult(null, null, null
 					, queryURL, null, responseStatusText, responseStatus, null)
 				return executionResult
 			}
 			else {
-				val executionResult = new MappingPediaExecutionResult(null, null, null
+				val executionResult = new GeneralResult(null, null, null
 					, null , null, responseStatusText, responseStatus, null)
 				return executionResult
 			}
@@ -168,7 +169,7 @@ object MappingPediaEngine {
 				val errorMessage = e.getMessage
 				logger.error("error uploading a new query file: " + errorMessage)
 				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
-				val executionResult = new MappingPediaExecutionResult(null, null, null
+				val executionResult = new GeneralResult(null, null, null
 					, null, null, errorMessage, errorCode, null)
 				return executionResult
 		}
@@ -260,7 +261,7 @@ object MappingPediaEngine {
 
 
 
-	def getMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String):MappingPediaExecutionResult = {
+	def getMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String):GeneralResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("mappingDirectory = " + mappingDirectory)
 		logger.debug("mappingFilename = " + mappingFilename)
@@ -274,15 +275,15 @@ object MappingPediaEngine {
 		val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
 			val githubMappingURL = response.getBody.getObject.getString("url")
 			logger.debug("githubMappingURL = " + githubMappingURL)
-			new MappingPediaExecutionResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
+			new GeneralResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
 		} else {
-			new MappingPediaExecutionResult(null, null, null, null, null, responseStatusText, responseStatus, null)
+			new GeneralResult(null, null, null, null, null, responseStatusText, responseStatus, null)
 		}
 		executionResult;
 	}
 
 	def updateExistingMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
-														, mappingFileRef:MultipartFile): MappingPediaExecutionResult = {
+														, mappingFileRef:MultipartFile): GeneralResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("mappingDirectory = " + mappingDirectory)
 		logger.debug("mappingFilename = " + mappingFilename)
@@ -305,9 +306,9 @@ object MappingPediaEngine {
 			val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
 				val githubMappingURL = response.getBody.getObject.getJSONObject("content").getString("url")
 				logger.debug("githubMappingURL = " + githubMappingURL)
-				new MappingPediaExecutionResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
+				new GeneralResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
 			} else {
-				new MappingPediaExecutionResult(null, null, null, null, null, responseStatusText, responseStatus, null)
+				new GeneralResult(null, null, null, null, null, responseStatusText, responseStatus, null)
 			}
 			executionResult;
 		} catch {
@@ -316,12 +317,12 @@ object MappingPediaEngine {
 				val errorMessage = "error processing the uploaded mapping file: " + e.getMessage
 				logger.error(errorMessage)
 				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
-				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, errorMessage, errorCode, null)
+				val executionResult = new GeneralResult(null, null, null, null, null, errorMessage, errorCode, null)
 				executionResult
 		}
 	}
 
-	def storeRDFFile(fileRef: MultipartFile, graphURI: String): MappingPediaExecutionResult = {
+	def storeRDFFile(fileRef: MultipartFile, graphURI: String): GeneralResult = {
 		try {
 			val file = MappingPediaUtility.multipartFileToFile(fileRef)
 			val filePath = file.getPath
@@ -330,7 +331,7 @@ object MappingPediaEngine {
 			val errorCode = HttpURLConnection.HTTP_CREATED
 			val status = "success, file uploaded to: " + filePath
 			logger.info("file inserted.")
-			val executionResult = new MappingPediaExecutionResult(null, null, filePath, null, null, status, errorCode, null)
+			val executionResult = new GeneralResult(null, null, filePath, null, null, status, errorCode, null)
 			executionResult
 		} catch {
 			case e: Exception =>
@@ -338,7 +339,7 @@ object MappingPediaEngine {
 				logger.error(errorMessage)
 				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
 				val status = "failed, error message = " + e.getMessage
-				val executionResult = new MappingPediaExecutionResult(null, null, null, null, null, status, errorCode, null)
+				val executionResult = new GeneralResult(null, null, null, null, null, status, errorCode, null)
 				executionResult
 		}
 	}
@@ -496,7 +497,7 @@ object MappingPediaEngine {
 					val executionResultURL = executionResult.mappingExecutionResultDownloadURL;
 					//executionResultURL;
 
-					Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL))
+					Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL, executionResultURL))
 					//mappingDocumentURL + " -- " + datasetDistributionURL
 				}
 			} else {
@@ -516,12 +517,12 @@ object MappingPediaEngine {
 
 		val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
 			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
-		logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
+		//logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
 
 		if(r2rmlMappingDocumentResources != null) {
 			while(r2rmlMappingDocumentResources.hasNext()) {
 				val r2rmlMappingDocumentResource = r2rmlMappingDocumentResources.nextResource();
-				logger.info("r2rmlMappingDocumentResource = " + r2rmlMappingDocumentResource);
+				//logger.info("r2rmlMappingDocumentResource = " + r2rmlMappingDocumentResource);
 
 				//improve this code using, get all x from ?x rr:LogicalTable ?lt
 				//mapping documents do not always explicitly have a TriplesMap
@@ -529,13 +530,13 @@ object MappingPediaEngine {
 				//  				RDF.`type`, MappingPediaConstant.R2RML_TRIPLESMAP_CLASS);
 				val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
 					MappingPediaConstant.R2RML_LOGICALTABLE_PROPERTY);
-				logger.info("triplesMapResources = " + triplesMapResources);
+				//logger.info("triplesMapResources = " + triplesMapResources);
 				if(triplesMapResources != null) {
 					while(triplesMapResources.hasNext()) {
 						val triplesMapResource = triplesMapResources.nextResource();
 						val newStatement = new StatementImpl(r2rmlMappingDocumentResource
 							, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
-						logger.info("adding new hasTriplesMap statement: " + newStatement);
+						//logger.info("adding new hasTriplesMap statement: " + newStatement);
 						val newTriple = newStatement.asTriple();
 						newTriples = newTriples ::: List(newTriple);
 					}
@@ -552,7 +553,7 @@ object MappingPediaEngine {
 														 ): Unit = {
 
 		val clearGraphBoolean = MappingPediaUtility.stringToBoolean(clearGraphString);
-		logger.info("clearGraphBoolean = " + clearGraphBoolean);
+		//logger.info("clearGraphBoolean = " + clearGraphBoolean);
 
 		val replaceMappingBaseURI = MappingPediaUtility.stringToBoolean(pReplaceMappingBaseURI);
 
@@ -604,7 +605,7 @@ object MappingPediaEngine {
 
 			logger.info("Storing generated triples.");
 			val additionalTriples = MappingPediaEngine.generateAdditionalTriples(manifestModel, mappingDocumentModel);
-			logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
+			//logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
 
 			MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 		}
@@ -615,7 +616,6 @@ object MappingPediaEngine {
 
 		MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
-		logger.info("Bye!");
 
 	}
 }

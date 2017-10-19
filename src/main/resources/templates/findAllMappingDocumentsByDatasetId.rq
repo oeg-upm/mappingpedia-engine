@@ -14,6 +14,7 @@ WHERE {
    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
    OPTIONAL { ?md mpv:hasTriplesMaps ?tm . }
    OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
+   FILTER regex(str(?dataset), "$datasetId", "i")
    OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
 }
 ORDER BY ASC(?dateSubmitted)

@@ -3,7 +3,7 @@ prefix rr: <http://www.w3.org/ns/r2rml#>
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
 
-SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?accessURL
+SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?distributionAccessURL ?mappingDocumentFile ?dateSubmitted
 FROM <$graphURL>
 WHERE {
     ?tm rr:logicalTable ?lt .
@@ -15,8 +15,10 @@ WHERE {
     OPTIONAL {
         ?md mpv:hasDataset ?dataset .
         ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:accessURL ?accessURL .
+        ?distribution dcat:accessURL ?distributionAccessURL .
     }
-    OPTIONAL { ?md mpv:hasMappingDocumentFile ?filePath . }
+    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
     OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
+    OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
 }
+ORDER BY ASC(?dateSubmitted)

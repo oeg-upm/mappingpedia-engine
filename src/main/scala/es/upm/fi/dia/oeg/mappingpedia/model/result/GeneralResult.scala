@@ -1,12 +1,12 @@
-package es.upm.fi.dia.oeg.mappingpedia.model
+package es.upm.fi.dia.oeg.mappingpedia.model.result
 
-import com.mashape.unirest.http.{HttpResponse, JsonNode, Unirest}
+import com.mashape.unirest.http.Unirest
 
-class MappingPediaExecutionResult(val manifestURL:String, val datasetURL:String, val mappingURL:String
-                                  , val queryURL:String, val mappingExecutionResultURL:String
-                                  , val status:String, val errorCode:Integer
-                                  //, val virtuosoStatus:String, val githubStatus:String
-                                  , val ckanResponse:String
+class GeneralResult(val manifestURL:String, val datasetURL:String, val mappingURL:String
+                    , val queryURL:String, val mappingExecutionResultURL:String
+                    , val status:String, val errorCode:Integer
+                    //, val virtuosoStatus:String, val githubStatus:String
+                    , val ckanResponse:String
                                  ) {
   val mappingExecutionResultDownloadURL = try {
     val response = Unirest.get(mappingExecutionResultURL).asJson();
