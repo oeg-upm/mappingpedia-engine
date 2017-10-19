@@ -32,13 +32,12 @@ object MappingDocumentController {
         val md = new MappingDocument(id);
         md.title = MappingPediaUtility.getStringOrElse(qs, "title", null);
         md.dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
-        md.filePath = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
+        //md.filePath = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
         md.creator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
         md.distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
         md.mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
         md.dateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
-        val mappingDocumentURL = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentURL", null);
-        md.setDownloadURL(mappingDocumentURL);
+        md.accessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
 
         results = md :: results;
       }
