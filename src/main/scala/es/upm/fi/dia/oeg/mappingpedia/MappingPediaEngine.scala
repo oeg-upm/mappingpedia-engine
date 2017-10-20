@@ -489,7 +489,7 @@ object MappingPediaEngine {
 					mappingExecution.outputFileName = outputFilename;
 
 					//THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-					val executionResult = MappingExecutionController.executeMapping2(md, queryFile, outputFilename, null, "false");
+					val executionResult = MappingExecutionController.executeMapping2(md, queryFile, outputFilename, dataset, "false");
 					//val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
 					executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
