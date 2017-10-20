@@ -6,6 +6,8 @@ import org.apache.jena.rdf.model.ResourceFactory
   * Created by freddy on 10/08/2017.
   */
 object MappingPediaConstant {
+	val MAPPINGPEDIA_ENGINE_VERSION = "0.9.0";
+
   //RDB2RDF Test related constants
 	//private val RDB2RDFTEST_NS = "http://purl.org/NET/rdb2rdf-test#";
 	//private val RDB2RDFTEST_R2RML_URI = RDB2RDFTEST_NS + "R2RML";

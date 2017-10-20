@@ -34,11 +34,19 @@ class MappingPediaProperties(is:InputStream) extends Properties {
 
 
 	//CKAN
+	val ckanEnable = this.getPropertyAsBoolean("ckan.enabled", true);
 	val ckanKey:String = this.getProperty("ckan.key")
+/*
 	val ckanActionOrganizationCreate:String=this.getProperty("ckan.action.organization.create")
 	val ckanActionPackageCreate:String=this.getProperty("ckan.action.package.create")
 	val ckanActionResourceCreate:String=this.getProperty("ckan.action.resource.create")
-	val ckanEnable = this.getPropertyAsBoolean("ckan.enabled", true);
+*/
+
+	val ckanURL:String = this.getProperty("ckan.url")
+	val ckanActionOrganizationCreate:String=ckanURL + "organization_create"
+	val ckanActionPackageCreate:String=ckanURL + "package_create"
+	val ckanActionResourceCreate:String=ckanURL + "resource_create"
+
 
 	def getPropertyAsBoolean(propertyKey:String, defaultValue:Boolean) = {
 		val propertyValue = this.getProperty(propertyKey);
