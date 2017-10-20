@@ -53,6 +53,25 @@ public class MappingPediaController {
         return MappingPediaEngine.mappingpediaProperties().graphName();
     }
 
+    @RequestMapping(value="/ckanActionOrganizationCreate", method= RequestMethod.GET)
+    public String getCKANActionOrganizationCreate() {
+        logger.info("GET //ckanActionOrganizationCreate ...");
+        return MappingPediaEngine.mappingpediaProperties().ckanActionOrganizationCreate();
+    }
+
+    @RequestMapping(value="/ckanActionPackageCreate", method= RequestMethod.GET)
+    public String ckanActionPackageCreate() {
+        logger.info("GET //ckanActionPackageCreate ...");
+        return MappingPediaEngine.mappingpediaProperties().ckanActionPackageCreate();
+    }
+
+    @RequestMapping(value="/ckanActionResourceCreate", method= RequestMethod.GET)
+    public String getCKANActionResourceCreate() {
+        logger.info("GET //getCKANActionResourceCreate ...");
+        return MappingPediaEngine.mappingpediaProperties().ckanActionResourceCreate();
+    }
+
+
     @RequestMapping(value="/triplesMaps", method= RequestMethod.GET)
     public ListResult getTriplesMaps() {
         logger.info("/triplesMaps ...");
