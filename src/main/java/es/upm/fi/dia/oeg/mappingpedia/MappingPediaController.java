@@ -47,6 +47,12 @@ public class MappingPediaController {
         return MappingPediaEngine.mappingpediaProperties().githubRepo();
     }
 
+    @RequestMapping(value="/virtuosoEnabled", method= RequestMethod.GET)
+    public String getVirtuosoEnabled() {
+        logger.info("GET /virtuosoEnabled ...");
+        return MappingPediaEngine.mappingpediaProperties().virtuosoEnabled() + "";
+    }
+
     @RequestMapping(value="/mappingpediaGraph", method= RequestMethod.GET)
     public String getMappingPediaGraph() {
         logger.info("/getMappingPediaGraph(GET) ...");
