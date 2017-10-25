@@ -81,6 +81,60 @@ object DatasetController {
     var collectiveErrorMessage:List[String] = Nil;
 
 
+    //STORING DATASET FILE ON GITHUB
+    val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
+      if(distribution.ckanFileRef != null) {
+        logger.info("storing a new dataset file on github ...")
+        val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
+        val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
+        val githubResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
+          , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
+          , dataset.dctIdentifier, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
+        logger.info("New dataset file stored on github ...")
+
+        if(githubResponse != null) {
+          val responseStatus = githubResponse.getStatus;
+          if (HttpURLConnection.HTTP_OK == responseStatus || HttpURLConnection.HTTP_CREATED == responseStatus) {
+            logger.info("Dataset stored on GitHub")
+            if(distribution.dcatAccessURL == null) {
+              distribution.dcatAccessURL =
+                githubResponse.getBody.getObject.getJSONObject("content").getString("url")
+              logger.info(s"distribution.dcatAccessURL = ${distribution.dcatAccessURL}")
+            }
+            if(distribution.dcatDownloadURL == null) {
+              distribution.dcatDownloadURL =
+                githubResponse.getBody.getObject.getJSONObject("content").getString("download_url")
+              logger.info(s"distribution.dcatDownloadURL = ${distribution.dcatDownloadURL}")
+            }
+          } else {
+            errorOccured = true;
+            val errorMessage = "Error when storing dataset on GitHub: " + responseStatus
+            logger.error(errorMessage)
+            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+          }
+
+        }
+
+        githubResponse;
+      } else {
+        null
+      }
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error storing dataset file on GitHub: " + e.getMessage
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
+    val datasetURL = if(addDatasetFileGitHubResponse == null) {
+      null
+    } else {
+      addDatasetFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
+    }
+
     //MANIFEST FILE GENERATION
     val manifestFile:File = try {
       if (manifestFileRef != null) {//if the user provides a manifest file
@@ -136,35 +190,7 @@ object DatasetController {
     }
 
 
-    //STORING DATASET FILE ON GITHUB
-    val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
-      if(distribution.ckanFileRef != null) {
-        logger.info("storing a new dataset file on github ...")
-        val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
-        val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
-        val githubResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
-          , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
-          , dataset.dctIdentifier, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
-        logger.info("New dataset file stored on github ...")
-        githubResponse;
-      } else {
-        null
-      }
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "error storing dataset file on GitHub: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
-      }
-    }
-    val datasetURL = if(addDatasetFileGitHubResponse == null) {
-      null
-    } else {
-      addDatasetFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
+
 
 
     //STORING MANIFEST ON GITHUB
