@@ -44,8 +44,8 @@ object MappingPediaConstant {
 
 	val DEFAULT_UPLOAD_DIRECTORY = "upload-dir";
 
-	val DEFAULT_GITHUB_REPOSITORY="https://github.com/oeg-upm/mappingpedia-contents";
-	val DEFAULT_GITHUB_REPOSITORY_CONTENTS="https://api.github.com/repos/oeg-upm/mappingpedia-contents";
+	//val DEFAULT_GITHUB_REPOSITORY="https://github.com/oeg-upm/mappingpedia-contents";
+	//val DEFAULT_GITHUB_REPOSITORY_CONTENTS="https://api.github.com/repos/oeg-upm/mappingpedia-contents";
 
 	val SEARCH_MAPPINGDOCUMENT_BY_CLASS="1";
 	val SEARCH_MAPPINGDOCUMENT_BY_PROPERTY="2";
@@ -59,5 +59,7 @@ object MappingPediaConstant {
 	val TEMPLATE_MAPPINGDOCUMENT_METADATA = "templates/metadata-mappingdocument-template.ttl";
 	val TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE = "templates/metadata-namespaces-template.ttl";
 
+	val GITHUB_RAW_URL_PREFIX = "https://raw.githubusercontent.com/";
+	val GITHUB_ACCESS_URL_PREFIX = "https://api.github.com/repos/";
 
 }

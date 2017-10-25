@@ -20,18 +20,21 @@ import org.apache.commons.lang.text.StrSubstitutor
 object MappingExecutionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  def executeMapping1(mappingpediaUsername:String, mappingDirectory: String
-                      , mappingFilename: String, datasetFile: String
+  def executeMapping1(dataset: Dataset
+                      , mappingDocument: MappingDocument
                       , queryFile:String, pOutputFilename: String) : GeneralResult = {
-    logger.debug("mappingpediaUsername = " + mappingpediaUsername)
-    logger.debug("mappingDirectory = " + mappingDirectory)
-    logger.debug("mappingFilename = " + mappingFilename)
-    val properties: MorphCSVProperties = new MorphCSVProperties
-    properties.setDatabaseName(mappingpediaUsername + "/" + mappingDirectory)
+    val organizationId = dataset.dctPublisher.dctIdentifier;
+    val datasetId = dataset.dctIdentifier;
+    val distribution = dataset.getDistribution();
+
+    logger.debug("organizationId = " + organizationId)
+    logger.debug("datasetId = " + datasetId)
+
+    /*
     val templateString: String = "${mappingpediaUsername}/${mappingDirectory}/${mappingFilename}"
     val valuesMap: java.util.Map[String, String] = new java.util.HashMap[String, String]
-    valuesMap.put("mappingpediaUsername", mappingpediaUsername)
-    valuesMap.put("mappingDirectory", mappingDirectory)
+    valuesMap.put("mappingpediaUsername", organization.dctIdentifier)
+    valuesMap.put("mappingDirectory", dataset.dctIdentifier)
     valuesMap.put("mappingFilename", mappingFilename)
     val sub: StrSubstitutor = new StrSubstitutor(valuesMap)
     val templateResultString: String = sub.replace(templateString)
@@ -39,21 +42,30 @@ object MappingExecutionController {
     val mappingBlobURL: String = githubRepo + "/blob/master/" + templateResultString
     //val mappingBlobURL: String = "https://github.com/oeg-upm/mappingpedia-contents/blob/master/" + templateResultString
     logger.debug("mappingBlobURL = " + mappingBlobURL)
-    properties.setMappingDocumentFilePath(mappingBlobURL)
+    */
+
+
+    var errorOccured = false;
+    var collectiveErrorMessage: List[String] = Nil;
+
+    val properties: MorphCSVProperties = new MorphCSVProperties
+    properties.setDatabaseName(organizationId + "/" + datasetId)
+    properties.setMappingDocumentFilePath(mappingDocument.getDownloadURL())
     val outputFileName = if (pOutputFilename == null) {
       //"output.nt";
       MappingPediaConstant.DEFAULT_OUTPUT_FILENAME;
     } else {
       pOutputFilename;
     }
-    val outputFilepath = "executions/" + templateResultString + "/" + outputFileName
+    val outputFilepath:String = s"executions/$organizationId/$datasetId/$outputFileName"
+    logger.info(s"outputFilepath = $outputFilepath")
 
     properties.setOutputFilePath(outputFilepath);
 
 
 
-    properties.setCSVFile(datasetFile);
-    logger.debug("datasetFile = " + datasetFile)
+    properties.setCSVFile(distribution.dcatDownloadURL);
+    logger.debug("datasetFile = " + distribution.dcatDownloadURL)
 
     properties.setQueryFilePath(queryFile);
     try {
@@ -64,7 +76,7 @@ object MappingExecutionController {
       val outputFile: File = new File(outputFilepath)
       val response = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
         , MappingPediaEngine.mappingpediaProperties.githubAccessToken
-        , mappingpediaUsername, mappingDirectory, outputFileName
+        , organizationId, datasetId, outputFileName
         , "add mapping execution result by mappingpedia engine", outputFile);
 
       val responseStatus: Int = response.getStatus

@@ -27,10 +27,14 @@ class MappingPediaProperties(is:InputStream) extends Properties {
 	val githubEnabled = this.getPropertyAsBoolean("github.enabled", true);
 	val githubUser:String = this.getProperty("github.mappingpedia.username")
 	val githubAccessToken:String = this.getProperty("github.mappingpedia.accesstoken")
-	val githubRepo = this.getProperty("github.mappingpedia.repository"
-		, MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY)
-	val githubRepoContents = this.getProperty("github.mappingpedia.repository.contents"
-		, MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY_CONTENTS)
+	//val githubRepo = this.getProperty("github.mappingpedia.repository", MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY)
+	//val githubRepoContents = this.getProperty("github.mappingpedia.repository.contents", MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY_CONTENTS)
+
+	/*
+	val githubUsername = this.getProperty("github.username", "oeg-upm");
+	val githubRepository = this.getProperty("github.repository", "mappingpedia-contents");
+	*/
+	val githubRepository = this.getProperty("github.repository", "oeg-upm/mappingpedia-contents");
 
 
 	//CKAN

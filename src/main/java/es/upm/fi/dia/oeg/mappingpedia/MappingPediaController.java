@@ -12,6 +12,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
+import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ public class MappingPediaController {
     @RequestMapping(value="/githubRepoURL", method= RequestMethod.GET)
     public String getGitHubRepoURL() {
         logger.info("/githubRepo(GET) ...");
-        return MappingPediaEngine.mappingpediaProperties().githubRepo();
+        return MappingPediaEngine.mappingpediaProperties().githubRepository();
     }
 
     @RequestMapping(value="/virtuosoEnabled", method= RequestMethod.GET)
@@ -111,11 +112,6 @@ public class MappingPediaController {
     }
 
 
-    @RequestMapping(value="/githubRepoContentsURL", method= RequestMethod.GET)
-    public String getGitHubRepoContentsURL() {
-        logger.info("/githubRepoContentsURL(GET) ...");
-        return MappingPediaEngine.mappingpediaProperties().githubRepoContents();
-    }
 
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
     public ExecuteMappingResult executeMapping2(
@@ -181,18 +177,31 @@ public class MappingPediaController {
 
     }
 
-    @RequestMapping(value="/executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.POST)
-    public GeneralResult executeMapping(@PathVariable("mappingpediaUsername") String mappingpediaUsername
-            , @PathVariable("mappingDirectory") String mappingDirectory
+    @RequestMapping(value="/executions/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
+    public GeneralResult executeMapping1(
+            @PathVariable("organizationId") String organizationId
+            , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
             , @RequestParam(value="datasetFile") String datasetFile
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
     )
     {
-        logger.info("POST /executions/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
-        return MappingExecutionController.executeMapping1(mappingpediaUsername, mappingDirectory, mappingFilename
-                , datasetFile, queryFile, outputFilename);
+        logger.info("POST /executions/{organizationId}/{datasetId}/{mappingFilename}");
+        Organization organization = new Organization(organizationId);
+        Dataset dataset = new Dataset(organization, datasetId);
+        Distribution distribution = new Distribution(dataset);
+        distribution.dcatDownloadURL_$eq(datasetFile);
+
+        //String githubRepo = MappingPediaEngine.mappingpediaProperties().githubRepoContents()
+        //String mappingBlobURL = githubRepo + "/blob/master/" + organizationId + "/" + datasetId + "/" + mappingFilename;
+
+        String mappingDocumentDownloadURL = GitHubUtility.generateDownloadURL(organizationId, datasetId, mappingFilename);
+        MappingDocument md = new MappingDocument();
+        md.setDownloadURL(mappingDocumentDownloadURL);
+
+        return MappingExecutionController.executeMapping1(dataset, md
+                , queryFile, outputFilename);
     }
 
     @RequestMapping(value = "/mappings/{organizationID}", method= RequestMethod.POST)
