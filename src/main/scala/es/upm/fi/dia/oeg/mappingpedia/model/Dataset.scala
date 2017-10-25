@@ -19,6 +19,12 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
   def getDistribution() = this.dcatDistribution.iterator.next()
 
   def addDistribution(distribution: Distribution) = {
-    this.dcatDistribution = distribution :: this.dcatDistribution;
+    if(this.dcatDistribution == null) {
+      this.dcatDistribution = List(distribution);
+    } else {
+      if(!this.dcatDistribution.contains(distribution)) {
+        this.dcatDistribution = distribution :: this.dcatDistribution;
+      }
+    }
   }
 }

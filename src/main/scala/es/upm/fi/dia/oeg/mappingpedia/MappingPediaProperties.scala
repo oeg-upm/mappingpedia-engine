@@ -8,8 +8,8 @@ import org.slf4j.{Logger, LoggerFactory}
 
 
 /**
-  * Created by freddy on 10/08/2017.
-  */
+	* Created by freddy on 10/08/2017.
+	*/
 class MappingPediaProperties(is:InputStream) extends Properties {
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
 	super.load(is);
@@ -27,20 +27,24 @@ class MappingPediaProperties(is:InputStream) extends Properties {
 	val githubEnabled = this.getPropertyAsBoolean("github.enabled", true);
 	val githubUser:String = this.getProperty("github.mappingpedia.username")
 	val githubAccessToken:String = this.getProperty("github.mappingpedia.accesstoken")
-	val githubRepo = this.getProperty("github.mappingpedia.repository"
-		, MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY)
-	val githubRepoContents = this.getProperty("github.mappingpedia.repository.contents"
-		, MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY_CONTENTS)
+	//val githubRepo = this.getProperty("github.mappingpedia.repository", MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY)
+	//val githubRepoContents = this.getProperty("github.mappingpedia.repository.contents", MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY_CONTENTS)
+
+	/*
+	val githubUsername = this.getProperty("github.username", "oeg-upm");
+	val githubRepository = this.getProperty("github.repository", "mappingpedia-contents");
+	*/
+	val githubRepository = this.getProperty("github.repository", "oeg-upm/mappingpedia-contents");
 
 
 	//CKAN
 	val ckanEnable = this.getPropertyAsBoolean("ckan.enabled", true);
 	val ckanKey:String = this.getProperty("ckan.key")
-/*
-	val ckanActionOrganizationCreate:String=this.getProperty("ckan.action.organization.create")
-	val ckanActionPackageCreate:String=this.getProperty("ckan.action.package.create")
-	val ckanActionResourceCreate:String=this.getProperty("ckan.action.resource.create")
-*/
+	/*
+    val ckanActionOrganizationCreate:String=this.getProperty("ckan.action.organization.create")
+    val ckanActionPackageCreate:String=this.getProperty("ckan.action.package.create")
+    val ckanActionResourceCreate:String=this.getProperty("ckan.action.resource.create")
+  */
 
 	val ckanURL:String = this.getProperty("ckan.url")
 	val ckanActionOrganizationCreate:String=ckanURL + "organization_create"
@@ -50,8 +54,8 @@ class MappingPediaProperties(is:InputStream) extends Properties {
 
 	def getPropertyAsBoolean(propertyKey:String, defaultValue:Boolean) = {
 		val propertyValue = this.getProperty(propertyKey);
-		if ("true".equalsIgnoreCase(propertyKey) || "yes".equalsIgnoreCase(propertyKey)) { true }
-		else if ("false".equalsIgnoreCase(propertyKey) || "no".equalsIgnoreCase(propertyKey)) { false}
+		if ("true".equalsIgnoreCase(propertyValue) || "yes".equalsIgnoreCase(propertyValue)) { true }
+		else if ("false".equalsIgnoreCase(propertyValue) || "no".equalsIgnoreCase(propertyValue)) { false}
 		else { defaultValue }
 	}
 }

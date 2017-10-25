@@ -142,7 +142,7 @@ object MappingPediaEngine {
 
 			logger.info("storing a new query file in github ...")
 			val commitMessage = "Add a new query file by mappingpedia-engine"
-			val response = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
+			val response = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
 				, MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername
 				, datasetID, queryFile.getName, commitMessage, queryFile)
 			logger.debug("response.getHeaders = " + response.getHeaders)
@@ -489,7 +489,7 @@ object MappingPediaEngine {
 					mappingExecution.outputFileName = outputFilename;
 
 					//THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-					val executionResult = MappingExecutionController.executeMapping2(md, queryFile, outputFilename, dataset, "false");
+					val executionResult = MappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, false);
 					//val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
 					executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;

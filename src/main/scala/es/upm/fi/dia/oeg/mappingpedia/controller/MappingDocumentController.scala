@@ -286,7 +286,7 @@ object MappingDocumentController {
       if (manifestFile != null) {
         logger.info("Storing manifest file on GitHub ...")
         val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-        val githubResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
+        val githubResponse = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
           , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
           , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = githubResponse.getStatus
