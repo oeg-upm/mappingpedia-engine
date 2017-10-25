@@ -58,7 +58,7 @@ object GitHubUtility {
     response;
   }
 
-  def putEncodedFile(githubUsername:String, githubAccessToken:String
+  def encodeAndPutFile(githubUsername:String, githubAccessToken:String
                         , mappingpediaUsername:String, directory:String, filename:String
                         , message:String, file:File
                        ) = {

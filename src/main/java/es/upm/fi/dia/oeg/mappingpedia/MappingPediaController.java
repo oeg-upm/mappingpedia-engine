@@ -327,7 +327,7 @@ public class MappingPediaController {
     @RequestMapping(value = "/datasets/{organizationID}", method= RequestMethod.POST)
     public AddDatasetResult uploadNewDataset(
             @PathVariable("organizationID") String organizationID
-            , @RequestParam(value="datasetFile", required = true) MultipartFile datasetFileRef
+            , @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
             , @RequestParam(value="datasetTitle", required = false) String datasetTitle
             , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
             , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage

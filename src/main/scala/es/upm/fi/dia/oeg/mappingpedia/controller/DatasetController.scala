@@ -80,16 +80,35 @@ object DatasetController {
     var errorOccured = false;
     var collectiveErrorMessage:List[String] = Nil;
 
+    val (filename:String, base64DatasetContent:String)= if(distribution.ckanFileRef != null) {
+      val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
+      (datasetFile.getName, GitHubUtility.encodeToBase64(datasetFile));
+    } else {
+      if(distribution.dcatDownloadURL != null) {
+        val downloadURLFilename = distribution.dcatDownloadURL.substring(
+          distribution.dcatDownloadURL.lastIndexOf('/') + 1, distribution.dcatDownloadURL.length)
+        val downloadURLContent = scala.io.Source.fromURL(distribution.dcatDownloadURL).mkString
+        (downloadURLFilename, GitHubUtility.encodeToBase64(downloadURLContent));
+      } else {
+        errorOccured = true;
+        val errorMessage = "Specify either datasetFile or downloadURL!"
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        (null, null)
+      }
+    }
+    //logger.info(s"filename = $filename")
+    //logger.info(s"base64DatasetContent = $base64DatasetContent")
+
 
     //STORING DATASET FILE ON GITHUB
     val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
-      if(distribution.ckanFileRef != null) {
         logger.info("storing a new dataset file on github ...")
-        val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
+        //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
         val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
-        val githubResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
+        val githubResponse = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
           , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
-          , dataset.dctIdentifier, datasetFile.getName, addNewDatasetCommitMessage, datasetFile)
+          , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64DatasetContent)
         logger.info("New dataset file stored on github ...")
 
         if(githubResponse != null) {
@@ -116,9 +135,7 @@ object DatasetController {
         }
 
         githubResponse;
-      } else {
-        null
-      }
+
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -197,7 +214,7 @@ object DatasetController {
     val addManifestFileGitHubResponse:HttpResponse[JsonNode] = try {
       logger.info("storing manifest file on github ...")
       val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-      val githubResponse = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
+      val githubResponse = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
         , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
         , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
       logger.info("manifest file stored on github ...")

@@ -82,7 +82,7 @@ object MappingExecutionController {
     //STORING MAPPING EXECUTION RESULT ON GITHUB
     val githubResponse = try {
       val outputFile: File = new File(outputFilepath)
-      val response = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
+      val response = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
         , MappingPediaEngine.mappingpediaProperties.githubAccessToken
         , "executions", mappingExecutionDirectory, outputFileName
         , "add mapping execution result by mappingpedia engine", outputFile);
