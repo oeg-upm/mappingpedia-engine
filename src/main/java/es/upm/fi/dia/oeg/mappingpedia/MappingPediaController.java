@@ -159,7 +159,7 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return MappingExecutionController.executeMapping2(md, queryFile, outputFilename, dataset, "true");
+            return MappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
@@ -178,7 +178,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/executions/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
-    public GeneralResult executeMapping1(
+    public ExecuteMappingResult executeMapping1(
             @PathVariable("organizationId") String organizationId
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
@@ -200,8 +200,28 @@ public class MappingPediaController {
         MappingDocument md = new MappingDocument();
         md.setDownloadURL(mappingDocumentDownloadURL);
 
-        return MappingExecutionController.executeMapping1(dataset, md
-                , queryFile, outputFilename);
+
+        //return MappingExecutionController.executeMapping2(md, dataset, queryFile, outputFilename, true);
+
+        try {
+            //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
+            return MappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
+            //return MappingExecutionController.executeMapping2(mappingExecution);
+        } catch (Exception e) {
+            e.printStackTrace();
+            String errorMessage = "Error occured: " + e.getMessage();
+            logger.error("mapping execution failed: " + errorMessage);
+            ExecuteMappingResult executeMappingResult = new ExecuteMappingResult(
+                    HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error"
+                    , null, null
+                    , null
+                    , null, null
+                    , null
+            );
+            return executeMappingResult;
+        }
+
+
     }
 
     @RequestMapping(value = "/mappings/{organizationID}", method= RequestMethod.POST)

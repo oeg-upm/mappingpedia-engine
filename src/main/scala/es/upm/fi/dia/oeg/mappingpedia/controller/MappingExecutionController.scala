@@ -20,100 +20,13 @@ import org.apache.commons.lang.text.StrSubstitutor
 object MappingExecutionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  def executeMapping1(dataset: Dataset
-                      , mappingDocument: MappingDocument
-                      , queryFile:String, pOutputFilename: String) : GeneralResult = {
-    val organizationId = dataset.dctPublisher.dctIdentifier;
-    val datasetId = dataset.dctIdentifier;
-    val distribution = dataset.getDistribution();
-
-    logger.debug("organizationId = " + organizationId)
-    logger.debug("datasetId = " + datasetId)
-
-    /*
-    val templateString: String = "${mappingpediaUsername}/${mappingDirectory}/${mappingFilename}"
-    val valuesMap: java.util.Map[String, String] = new java.util.HashMap[String, String]
-    valuesMap.put("mappingpediaUsername", organization.dctIdentifier)
-    valuesMap.put("mappingDirectory", dataset.dctIdentifier)
-    valuesMap.put("mappingFilename", mappingFilename)
-    val sub: StrSubstitutor = new StrSubstitutor(valuesMap)
-    val templateResultString: String = sub.replace(templateString)
-    val githubRepo = MappingPediaEngine.mappingpediaProperties.githubRepo
-    val mappingBlobURL: String = githubRepo + "/blob/master/" + templateResultString
-    //val mappingBlobURL: String = "https://github.com/oeg-upm/mappingpedia-contents/blob/master/" + templateResultString
-    logger.debug("mappingBlobURL = " + mappingBlobURL)
-    */
-
-
-    var errorOccured = false;
-    var collectiveErrorMessage: List[String] = Nil;
-
-    val properties: MorphCSVProperties = new MorphCSVProperties
-    properties.setDatabaseName(organizationId + "/" + datasetId)
-    properties.setMappingDocumentFilePath(mappingDocument.getDownloadURL())
-    val outputFileName = if (pOutputFilename == null) {
-      //"output.nt";
-      MappingPediaConstant.DEFAULT_OUTPUT_FILENAME;
-    } else {
-      pOutputFilename;
-    }
-    val outputFilepath:String = s"executions/$organizationId/$datasetId/$outputFileName"
-    logger.info(s"outputFilepath = $outputFilepath")
-
-    properties.setOutputFilePath(outputFilepath);
-
-
-
-    properties.setCSVFile(distribution.dcatDownloadURL);
-    logger.debug("datasetFile = " + distribution.dcatDownloadURL)
-
-    properties.setQueryFilePath(queryFile);
-    try {
-      val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
-      val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
-      runner.run
-      logger.info("mapping execution success!")
-      val outputFile: File = new File(outputFilepath)
-      val response = GitHubUtility.putEncodedFile(MappingPediaEngine.mappingpediaProperties.githubUser
-        , MappingPediaEngine.mappingpediaProperties.githubAccessToken
-        , organizationId, datasetId, outputFileName
-        , "add mapping execution result by mappingpedia engine", outputFile);
-
-      val responseStatus: Int = response.getStatus
-      logger.info("responseStatus = " + responseStatus)
-      val responseStatusText: String = response.getStatusText
-      logger.info("responseStatusText = " + responseStatusText)
-      if (HttpURLConnection.HTTP_CREATED== responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
-        val outputGitHubURL: String = response.getBody.getObject.getJSONObject("content").getString("url");
-        val executionResult: GeneralResult = new GeneralResult(null, null, null
-          ,null , outputGitHubURL, responseStatusText, responseStatus, null)
-        return executionResult
-      }
-      else {
-        val executionResult: GeneralResult = new GeneralResult(null, null, null
-          , null, null, responseStatusText, responseStatus, null)
-        return executionResult
-      }
-    }
-    catch {
-      case e: Exception => {
-        e.printStackTrace
-        val errorMessage: String = "Error occured: " + e.getMessage
-        logger.error("mapping execution failed: " + errorMessage)
-        val executionResult: GeneralResult = new GeneralResult(null, null, null
-          , null, null, errorMessage, HttpURLConnection.HTTP_INTERNAL_ERROR, null)
-        return executionResult
-      }
-    }
-  }
-
   @throws(classOf[Exception])
-  def executeMapping2(
+  def executeMapping(
                        md:MappingDocument
+                       , dataset:Dataset
                        , queryFileName:String
                        , pOutputFilename: String
-                       , dataset:Dataset
-                       , storeToCKAN:String
+                       , pStoreToCKAN:Boolean
                      ) : ExecuteMappingResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
@@ -200,6 +113,10 @@ object MappingExecutionController {
         }
         (url, downloadURL)
       } else {
+        errorOccured = true;
+        val errorMessage = "Error storing mapping execution result on GitHub: " + responseStatus
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         (null, null)
       }
     } else {
@@ -208,7 +125,7 @@ object MappingExecutionController {
 
     //STORING DATASET & RESOURCE ON CKAN
     val ckanResponse = try {
-      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
+      if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
         logger.info("storing dataset on CKAN ...")
 
         val distribution = new Distribution(dataset)
