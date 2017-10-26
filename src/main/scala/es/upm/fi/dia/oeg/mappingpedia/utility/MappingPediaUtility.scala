@@ -18,6 +18,7 @@ import virtuoso.jena.driver.VirtGraph
 
 import scala.collection.JavaConversions._
 
+import org.apache.commons.io.FileUtils
 
 /**
   * Created by freddy on 10/08/2017.
@@ -394,4 +395,5 @@ object MappingPediaUtility {
       }
 
   }
+
 }

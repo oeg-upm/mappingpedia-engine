@@ -16,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile
 
 object DatasetController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val ckanUtility = new CKANUtility(
+    MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
 
   def generateManifestFile(distribution: Distribution) = {
     val dataset = distribution.dataset;
@@ -82,6 +84,7 @@ object DatasetController {
 
     val (filename:String, base64DatasetContent:String)= if(distribution.ckanFileRef != null) {
       val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
+      distribution.distributionFile = datasetFile;
       (datasetFile.getName, GitHubUtility.encodeToBase64(datasetFile));
     } else {
       if(distribution.dcatDownloadURL != null) {
@@ -240,8 +243,9 @@ object DatasetController {
     val (ckanAddPackageResponse, ckanAddResourceResponse) = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse = CKANUtility.addNewPackage(organization, dataset);
-        val addNewResourceResponse = CKANUtility.addNewResource(dataset, distribution);
+        val addNewPackageResponse = CKANUtility.addNewPackage(dataset);
+        //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
+        val addNewResourceResponse = ckanUtility.createResource(distribution);
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
       } else {
@@ -257,7 +261,8 @@ object DatasetController {
         null
       }
     }
-    val ckanResponseStatusText = ckanAddPackageResponse.getStatusText + "," + ckanAddResourceResponse.getStatusText;
+    //val ckanResponseStatusText = ckanAddPackageResponse.getStatusText + "," + ckanAddResourceResponse.getStatusText;
+    val ckanResponseStatusText = ckanAddPackageResponse.getStatusText + "," + ckanAddResourceResponse;
 
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
@@ -279,8 +284,8 @@ object DatasetController {
 
       , addManifestVirtuosoResponse
 
-      , ckanAddPackageResponse.getStatusText
-      , ckanAddResourceResponse.getStatusText
+      , ckanAddPackageResponse.getStatus
+      , ckanAddResourceResponse
 
       , dataset.dctIdentifier
     )

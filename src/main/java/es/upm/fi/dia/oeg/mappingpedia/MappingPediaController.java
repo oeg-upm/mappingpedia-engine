@@ -1,6 +1,9 @@
 package es.upm.fi.dia.oeg.mappingpedia;
 
+import java.io.File;
 import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -12,7 +15,10 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
+import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
+import eu.trentorise.opendata.jackan.CkanClient;
+import org.apache.commons.io.FileUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -48,6 +54,15 @@ public class MappingPediaController {
         return MappingPediaEngine.mappingpediaProperties().githubRepository();
     }
 
+    @RequestMapping(value="/ckanDatasetList", method= RequestMethod.GET)
+    public ListResult getCKANDatasetList(@RequestParam(value="catalogUrl", required = false) String catalogUrl) {
+        if(catalogUrl == null) {
+            catalogUrl = MappingPediaEngine.mappingpediaProperties().ckanURL();
+        }
+        logger.info("GET /ckanDatasetList ...");
+        return CKANUtility.getDatasetList(catalogUrl);
+    }
+
     @RequestMapping(value="/virtuosoEnabled", method= RequestMethod.GET)
     public String getVirtuosoEnabled() {
         logger.info("GET /virtuosoEnabled ...");
@@ -78,6 +93,30 @@ public class MappingPediaController {
         return MappingPediaEngine.mappingpediaProperties().ckanActionResourceCreate();
     }
 
+    @RequestMapping(value="/ckanResource", method= RequestMethod.POST)
+    public Integer postCKANResource(
+            @RequestParam(value="filePath", required = true) String filePath
+            , @RequestParam(value="packageId", required = true) String packageId
+    ) {
+        logger.info("POST /ckanResource...");
+        String ckanURL = MappingPediaEngine.mappingpediaProperties().ckanURL();
+        String ckanKey = MappingPediaEngine.mappingpediaProperties().ckanKey();
+
+        CKANUtility ckanUtility = new CKANUtility(ckanURL, ckanKey);
+        File file = new File(filePath);
+        try {
+            if(!file.exists()) {
+                String fileName = file.getName();
+                file = new File(fileName);
+                FileUtils.copyURLToFile(new URL(filePath), file);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        //return ckanUtility.createResource(file.getPath(), packageId);
+        return null;
+    }
 
     @RequestMapping(value="/triplesMaps", method= RequestMethod.GET)
     public ListResult getTriplesMaps() {

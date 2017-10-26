@@ -1,5 +1,7 @@
 package es.upm.fi.dia.oeg.mappingpedia.model
 
+import java.io.File
+
 import org.springframework.web.multipart.MultipartFile
 
 //based on dcat:Disctribution
@@ -16,4 +18,5 @@ class Distribution (val dataset: Dataset){
   var ckanDescription:String = null;
 
   var cvsFieldSeparator:String=",";
+  var distributionFile:File = null;
 }

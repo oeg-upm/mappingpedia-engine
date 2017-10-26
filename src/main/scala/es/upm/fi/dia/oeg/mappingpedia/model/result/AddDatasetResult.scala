@@ -12,8 +12,8 @@ class AddDatasetResult(
 
                         , val virtuosoStoreManifestResponseStatusText:String
 
-                        , val ckanStorePackageStatus:String
-                        , val ckanStoreResourceStatus:String
+                        , val ckanStorePackageStatus:Integer
+                        , val ckanStoreResourceStatus:Integer
 
                         , datasetID:String
                       ) {

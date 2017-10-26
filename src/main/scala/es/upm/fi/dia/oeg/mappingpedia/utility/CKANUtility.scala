@@ -1,18 +1,104 @@
 package es.upm.fi.dia.oeg.mappingpedia.utility
 
+
+import java.io.File
+import java.net.HttpURLConnection
+
 import com.mashape.unirest.http.Unirest
+import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
 import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
+import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaEngine, MappingPediaProperties}
+import eu.trentorise.opendata.jackan.CkanClient
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
-import org.springframework.web.multipart.MultipartFile
 
-class CKANUtility {
+import scala.collection.JavaConverters._
+import scala.collection.JavaConversions
+import org.apache.http.HttpEntity
+import org.apache.http.HttpResponse
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.mime.MultipartEntityBuilder
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.HttpClientBuilder
+
+class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
+  def createResource(distribution: Distribution) = {
+    val filePath = distribution.distributionFile;
+    val packageId = distribution.dataset.dctIdentifier;
+
+    val httpClient = HttpClientBuilder.create.build
+    try {
+
+      val uploadFileUrl = ckanUrl + "/api/action/resource_create"
+      val httpPostRequest = new HttpPost(uploadFileUrl)
+      httpPostRequest.setHeader("Authorization", authorizationToken)
+      val builder = MultipartEntityBuilder.create()
+        .addTextBody("package_id", packageId)
+        .addTextBody("url", distribution.dcatDownloadURL)
+        .addTextBody("description", distribution.ckanDescription)
+        .addTextBody("mimetype", distribution.dcatMediaType)
+      ;
+      if(filePath != null) {
+        builder.addBinaryBody("upload", filePath)
+      }
+
+      val mpEntity = builder.build();
+      httpPostRequest.setEntity(mpEntity)
+      val response = httpClient.execute(httpPostRequest)
+      if (response.getStatusLine.getStatusCode < 200 || response.getStatusLine.getStatusCode >= 300)
+        throw new RuntimeException("failed to add the file to CKAN storage. response status line from " + uploadFileUrl + " was: " + response.getStatusLine)
+      val responseEntity = response.getEntity
+      logger.info(responseEntity.toString)
+      HttpURLConnection.HTTP_CREATED
+    } catch {
+      case e: Exception => {
+        e.printStackTrace()
+        HttpURLConnection.HTTP_INTERNAL_ERROR
+      }
+
+      // log error
+    } finally if (httpClient != null) httpClient.close()
+
+  }
+
+  def updateResource(filePath: String, resourceId: String) : Integer = {
+    val file = new File(filePath);
+    this.updateResource(file, resourceId);
+  }
+
+  def updateResource(file:File, resourceId: String) : Integer = {
+    val httpClient = HttpClientBuilder.create.build
+    try {
+      val uploadFileUrl = ckanUrl + "/api/action/resource_update"
+      val httpPostRequest = new HttpPost(uploadFileUrl)
+      httpPostRequest.setHeader("Authorization", authorizationToken)
+      val mpEntity = MultipartEntityBuilder.create().addBinaryBody("upload", file)
+        .addTextBody("id", resourceId).build();
+      httpPostRequest.setEntity(mpEntity)
+      val response = httpClient.execute(httpPostRequest)
+      if (response.getStatusLine.getStatusCode < 200 || response.getStatusLine.getStatusCode >= 300) throw new RuntimeException("failed to add the file to CKAN storage. response status line from " + uploadFileUrl + " was: " + response.getStatusLine)
+      val responseEntity = response.getEntity
+      System.out.println(responseEntity.toString)
+      HttpURLConnection.HTTP_OK
+    } catch {
+      case e: Exception => {
+        e.printStackTrace()
+        HttpURLConnection.HTTP_INTERNAL_ERROR
+      }
+    } finally if (httpClient != null) httpClient.close()
+
+  }
+
 
 }
 
 object CKANUtility {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val ckanUtility = new CKANUtility(
+    MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
 
   def addNewOrganization(organization:Organization) = {
     val jsonObj = new JSONObject();
@@ -26,7 +112,9 @@ object CKANUtility {
     response;
   }
 
-  def addNewPackage(organization:Organization, dataset:Dataset) = {
+  def addNewPackage(dataset:Dataset) = {
+    val organization = dataset.dctPublisher;
+
     val jsonObj = new JSONObject();
     jsonObj.put("name", dataset.dctIdentifier);
     jsonObj.put("owner_org", organization.dctIdentifier);
@@ -44,16 +132,19 @@ object CKANUtility {
       .header("Authorization", MappingPediaEngine.mappingpediaProperties.ckanKey)
       .body(jsonObj)
       .asJson();
-/*
-    logger.info(s"response.getHeaders = ${response.getHeaders}")
-    logger.info(s"response.getHeaders = ${response.getBody}")
-    logger.info(s"response.getStatus = ${response.getStatus}")
-*/
+    /*
+        logger.info(s"response.getHeaders = ${response.getHeaders}")
+        logger.info(s"response.getHeaders = ${response.getBody}")
+        logger.info(s"response.getStatus = ${response.getStatus}")
+    */
 
     response;
   }
 
-  def addNewResource(dataset:Dataset, distribution:Distribution) = {
+  /*
+  def addNewResource(distribution:Distribution) = {
+    val dataset = distribution.dataset;
+
     val jsonObj = new JSONObject();
     jsonObj.put("package_id", dataset.dctIdentifier);
     jsonObj.put("url", distribution.dcatDownloadURL);
@@ -68,11 +159,24 @@ object CKANUtility {
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionResourceCreate
+
     val response = Unirest.post(uri)
       .header("Authorization", MappingPediaEngine.mappingpediaProperties.ckanKey)
       .body(jsonObj)
       .asJson();
+
+    //ckanUtility.updateResource(distribution.distributionFile, dataset.dctIdentifier);
+
     response;
+  }
+  */
+
+  def getDatasetList(catalogUrl:String) : ListResult = {
+    val cc: CkanClient = new CkanClient(catalogUrl)
+    val datasetList = cc.getDatasetList.asScala
+
+    logger.info(s"ckanDatasetList $catalogUrl = " + datasetList)
+    new ListResult(datasetList.size, datasetList)
   }
 
 }

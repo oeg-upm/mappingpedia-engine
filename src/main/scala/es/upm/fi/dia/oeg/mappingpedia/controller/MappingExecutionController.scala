@@ -5,20 +5,19 @@ import java.net.HttpURLConnection
 import java.util.UUID
 
 import com.mashape.unirest.http.Unirest
-import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, GeneralResult}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
-//import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
-import org.apache.commons.lang.text.StrSubstitutor
 
 object MappingExecutionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val ckanUtility = new CKANUtility(
+    MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
 
   @throws(classOf[Exception])
   def executeMapping(
@@ -123,8 +122,8 @@ object MappingExecutionController {
       (null, null)
     }
 
-    //STORING DATASET & RESOURCE ON CKAN
-    val ckanResponse = try {
+    //STORING MAPPING EXECUTION RESULT ON CKAN
+    val ckanResponseStatus = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
         logger.info("storing dataset on CKAN ...")
 
@@ -138,12 +137,13 @@ object MappingExecutionController {
 
         //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
         //            , resourceMediaType, resourceFileRef, resourceDownloadURL)
-        val addNewResourceResponse = CKANUtility.addNewResource(dataset, distribution);
+        //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
+        val addNewResourceResponse = ckanUtility.createResource(distribution);
 
         logger.info("dataset stored on CKAN.")
         addNewResourceResponse
       } else {
-        null
+        HttpURLConnection.HTTP_OK;
       }
     }
     catch {
@@ -153,11 +153,9 @@ object MappingExecutionController {
         val errorMessage = "Error storing mapping execution result on CKAN: " + e.getMessage
         logger.error(errorMessage)
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
+        HttpURLConnection.HTTP_INTERNAL_ERROR
       }
     }
-    val ckanResponseText = if(ckanResponse == null) { null}
-    else { ckanResponse.getStatusText}
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -170,7 +168,7 @@ object MappingExecutionController {
       , distributionDownloadURL, mdDownloadURL
       , queryFileName
       , mappingExecutionResultURL, mappingExecutionResultDownloadURL
-      , ckanResponseText:String
+      , ckanResponseStatus
     )
 
     /*
