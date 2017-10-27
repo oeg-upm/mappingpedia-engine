@@ -31,8 +31,8 @@ object MappingExecutionController {
     var collectiveErrorMessage: List[String] = Nil;
 
     val organization = dataset.dctPublisher;
-    val distribution = dataset.getDistribution();
-    val distributionDownloadURL = distribution.dcatDownloadURL;
+    val datasetDistribution = dataset.getDistribution();
+    val datasetDistributionDownloadURL = datasetDistribution.dcatDownloadURL;
 
     val mdDownloadURL = md.getDownloadURL();
     val mappingLanguage = if (md.mappingLanguage == null) {
@@ -51,6 +51,7 @@ object MappingExecutionController {
       pOutputFilename;
     }
     val outputFilepath = "executions/" + mappingExecutionDirectory + "/" + outputFileName
+    val outputFile: File = new File(outputFilepath)
 
     //EXECUTING MAPPING
     try {
@@ -60,7 +61,7 @@ object MappingExecutionController {
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
         logger.info("Executing RML mapping ...")
         val rmlConnector = new RMLMapperConnector();
-        rmlConnector.executeWithMain(distributionDownloadURL, mdDownloadURL, outputFilepath);
+        rmlConnector.executeWithMain(datasetDistributionDownloadURL, mdDownloadURL, outputFilepath);
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
         throw new Exception(mappingLanguage + " Language is not supported yet");
       } else {
@@ -80,7 +81,6 @@ object MappingExecutionController {
 
     //STORING MAPPING EXECUTION RESULT ON GITHUB
     val githubResponse = try {
-      val outputFile: File = new File(outputFilepath)
       val response = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
         , MappingPediaEngine.mappingpediaProperties.githubAccessToken
         , "executions", mappingExecutionDirectory, outputFileName
@@ -125,22 +125,23 @@ object MappingExecutionController {
     //STORING MAPPING EXECUTION RESULT ON CKAN
     val ckanResponseStatus = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
-        logger.info("storing dataset on CKAN ...")
+        logger.info("storing mapping execution result on CKAN ...")
 
-        val distribution = new Distribution(dataset)
-        distribution.dcatAccessURL = mappingExecutionResultURL;
-        distribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
-        distribution.dcatMediaType = null //TODO FIXME
-        distribution.ckanFileRef = null;
-        distribution.ckanDescription = "Mapping Execution Result";
+        val mappingExecutionResultDistribution = new Distribution(dataset)
+        mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
+        mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
+        mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
+        mappingExecutionResultDistribution.ckanFileRef = null;
+        mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation:" + mdDownloadURL;
+        mappingExecutionResultDistribution.distributionFile = outputFile;
 
 
         //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
         //            , resourceMediaType, resourceFileRef, resourceDownloadURL)
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
-        val addNewResourceResponse = ckanUtility.createResource(distribution);
+        val addNewResourceResponse = ckanUtility.createResource(mappingExecutionResultDistribution);
 
-        logger.info("dataset stored on CKAN.")
+        logger.info("mapping execution result stored on CKAN.")
         addNewResourceResponse
       } else {
         HttpURLConnection.HTTP_OK;
@@ -165,7 +166,7 @@ object MappingExecutionController {
 
     new ExecuteMappingResult(
       responseStatus, responseStatusText
-      , distributionDownloadURL, mdDownloadURL
+      , datasetDistributionDownloadURL, mdDownloadURL
       , queryFileName
       , mappingExecutionResultURL, mappingExecutionResultDownloadURL
       , ckanResponseStatus

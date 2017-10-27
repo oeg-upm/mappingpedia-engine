@@ -7,16 +7,19 @@ import org.springframework.web.multipart.MultipartFile
 //based on dcat:Disctribution
 //see also ckan:Resource
 class Distribution (val dataset: Dataset){
-  if(dataset.dcatDistribution == null) {
-    dataset.dcatDistribution = Nil;
-  }
   dataset.addDistribution(this);
+
+  //FIELDS FROM DCAT
+  var dctTitle:String = null;
+  var dctDescription:String = null;
   var dcatAccessURL:String = null;
   var dcatDownloadURL:String = null;
   var dcatMediaType:String = null;
-  var ckanFileRef:MultipartFile = null; // This is not used at the moment because ckan always do to the download url
-  var ckanDescription:String = null;
 
+  //FIELDS FROM CKAN
+  var ckanFileRef:MultipartFile = null;
+
+  //CUSTOM FIELDS
   var cvsFieldSeparator:String=",";
   var distributionFile:File = null;
 }

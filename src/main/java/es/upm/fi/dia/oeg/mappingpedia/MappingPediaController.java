@@ -402,9 +402,9 @@ public class MappingPediaController {
         distribution.dcatMediaType_$eq(distributionMediaType);
         distribution.ckanFileRef_$eq(datasetFileRef);
         if(distributionDescription == null) {
-            distribution.ckanDescription_$eq("Original Dataset");
+            distribution.dctDescription_$eq("Original Dataset");
         } else {
-            distribution.ckanDescription_$eq(distributionDescription);
+            distribution.dctDescription_$eq(distributionDescription);
         }
         dataset.addDistribution(distribution);
 
