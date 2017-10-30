@@ -71,16 +71,11 @@ object DatasetController {
         null;
       }
     }
-
   }
 
-  def addDataset(dataset:Dataset, manifestFileRef:MultipartFile, generateManifestFile:String
-                ) : AddDatasetResult = {
-
-    val organization: Organization = dataset.dctPublisher;
-    val distribution = dataset.getDistribution();
-    var errorOccured = false;
-    var collectiveErrorMessage:List[String] = Nil;
+  def storeDatasetDistributionFileOnGitHub(distribution: Distribution) = {
+    val dataset = distribution.dataset;
+    val organization = dataset.dctPublisher;
 
     val (filename:String, base64DatasetContent:String)= if(distribution.ckanFileRef != null) {
       val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
@@ -93,52 +88,80 @@ object DatasetController {
         val downloadURLContent = scala.io.Source.fromURL(distribution.dcatDownloadURL).mkString
         (downloadURLFilename, GitHubUtility.encodeToBase64(downloadURLContent));
       } else {
-        errorOccured = true;
         val errorMessage = "Specify either datasetFile or downloadURL!"
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        (null, null)
+        throw new Exception(errorMessage);
       }
     }
-    //logger.info(s"filename = $filename")
-    //logger.info(s"base64DatasetContent = $base64DatasetContent")
+
+    logger.info("storing a new dataset file on github ...")
+    //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
+    val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
+    val githubResponse = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
+      , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
+      , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64DatasetContent)
+    logger.info("New dataset file stored on github ...")
+
+    if(githubResponse != null) {
+      val responseStatus = githubResponse.getStatus;
+      if (HttpURLConnection.HTTP_OK == responseStatus || HttpURLConnection.HTTP_CREATED == responseStatus) {
+        logger.info("Dataset stored on GitHub")
+        if(distribution.dcatAccessURL == null) {
+          distribution.dcatAccessURL =
+            githubResponse.getBody.getObject.getJSONObject("content").getString("url")
+          logger.info(s"distribution.dcatAccessURL = ${distribution.dcatAccessURL}")
+        }
+        if(distribution.dcatDownloadURL == null) {
+          distribution.dcatDownloadURL =
+            githubResponse.getBody.getObject.getJSONObject("content").getString("download_url")
+          logger.info(s"distribution.dcatDownloadURL = ${distribution.dcatDownloadURL}")
+        }
+      } else {
+        val errorMessage = "Error when storing dataset on GitHub: " + responseStatus
+        throw new Exception(errorMessage);
+      }
+    }
+
+    githubResponse;
+  }
+
+
+  def storeManifestOnVirtuoso(manifestFile:File) = {
+    if(manifestFile != null) {
+      logger.info("storing the manifest triples on virtuoso ...")
+      logger.debug("manifestFile = " + manifestFile);
+      MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
+      logger.info("manifest triples stored on virtuoso.")
+      "OK";
+    } else {
+      "No manifest file specified/generated!";
+    }
+  }
+
+  def storeManifestFileOnGitHub(manifestFile:File, dataset:Dataset) = {
+    val organization = dataset.dctPublisher;
+
+    logger.info("storing manifest file on github ...")
+    val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+    val githubResponse = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
+      , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
+      , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+    logger.info("manifest file stored on github ...")
+    githubResponse
+  }
+
+
+  def addDataset(dataset:Dataset, manifestFileRef:MultipartFile, generateManifestFile:String
+                ) : AddDatasetResult = {
+
+    val organization: Organization = dataset.dctPublisher;
+    val distribution = dataset.getDistribution();
+    var errorOccured = false;
+    var collectiveErrorMessage:List[String] = Nil;
 
 
     //STORING DATASET FILE ON GITHUB
     val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
-        logger.info("storing a new dataset file on github ...")
-        //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
-        val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
-        val githubResponse = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
-          , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
-          , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64DatasetContent)
-        logger.info("New dataset file stored on github ...")
-
-        if(githubResponse != null) {
-          val responseStatus = githubResponse.getStatus;
-          if (HttpURLConnection.HTTP_OK == responseStatus || HttpURLConnection.HTTP_CREATED == responseStatus) {
-            logger.info("Dataset stored on GitHub")
-            if(distribution.dcatAccessURL == null) {
-              distribution.dcatAccessURL =
-                githubResponse.getBody.getObject.getJSONObject("content").getString("url")
-              logger.info(s"distribution.dcatAccessURL = ${distribution.dcatAccessURL}")
-            }
-            if(distribution.dcatDownloadURL == null) {
-              distribution.dcatDownloadURL =
-                githubResponse.getBody.getObject.getJSONObject("content").getString("download_url")
-              logger.info(s"distribution.dcatDownloadURL = ${distribution.dcatDownloadURL}")
-            }
-          } else {
-            errorOccured = true;
-            val errorMessage = "Error when storing dataset on GitHub: " + responseStatus
-            logger.error(errorMessage)
-            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-          }
-
-        }
-
-        githubResponse;
-
+      this.storeDatasetDistributionFileOnGitHub(distribution);
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -149,13 +172,8 @@ object DatasetController {
         null
       }
     }
-    val datasetURL = if(addDatasetFileGitHubResponse == null) {
-      null
-    } else {
-      addDatasetFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
 
-    //MANIFEST FILE GENERATION
+    //MANIFEST FILE
     val manifestFile:File = try {
       if (manifestFileRef != null) {//if the user provides a manifest file
         logger.info("Generating manifest file ... (manifestFileRef is not null)")
@@ -164,13 +182,13 @@ object DatasetController {
         generatedFile
       } else { // if the user does not provide any manifest file
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+          //MANIFEST FILE GENERATION
           val generatedFile = this.generateManifestFile(distribution);
           generatedFile
         } else {
           null
         }
       }
-
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -181,22 +199,14 @@ object DatasetController {
         null
       }
     }
-    //val manifest_in_str = scala.io.Source.fromFile(manifestFile).getLines.reduceLeft(_+_)
+
 
     //STORING MANIFEST ON VIRTUOSO
     val addManifestVirtuosoResponse:String = try {
-      if(manifestFile != null && MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
-        logger.info("storing the manifest triples on virtuoso ...")
-        logger.debug("manifestFile = " + manifestFile);
-        MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
-        logger.info("manifest triples stored on virtuoso.")
-        "OK";
-      } else if(manifestFile == null) {
-        "No manifest file specified/generated!";
-      } else if(!MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
-        "Storing to Virtuoso is not enabled!";
+      if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
+        this.storeManifestOnVirtuoso(manifestFile);
       } else {
-        "Not storing manifest on virtuoso.";
+        "Storing to Virtuoso is not enabled!";
       }
     } catch {
       case e: Exception => {
@@ -210,18 +220,9 @@ object DatasetController {
     }
 
 
-
-
-
     //STORING MANIFEST ON GITHUB
     val addManifestFileGitHubResponse:HttpResponse[JsonNode] = try {
-      logger.info("storing manifest file on github ...")
-      val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-      val githubResponse = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
-        , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
-        , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
-      logger.info("manifest file stored on github ...")
-      githubResponse
+      this.storeManifestFileOnGitHub(manifestFile, dataset);
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -232,24 +233,19 @@ object DatasetController {
         null
       }
     }
-    val manifestURL = if(addManifestFileGitHubResponse == null) {
-      null
-    } else {
-      addManifestFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
 
 
     //STORING DATASET & RESOURCE ON CKAN
-    val (ckanAddPackageResponse, ckanAddResourceResponse) = try {
+    val (ckanAddPackageResponse:HttpResponse[JsonNode], ckanAddResourceResponse:Integer) = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse = CKANUtility.addNewPackage(dataset);
+        val addNewPackageResponse:HttpResponse[JsonNode] = CKANUtility.addNewPackage(dataset);
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
-        val addNewResourceResponse = ckanUtility.createResource(distribution);
+        val addNewResourceResponse:Integer = ckanUtility.createResource(distribution);
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
       } else {
-        null
+        (null, null)
       }
     } catch {
       case e: Exception => {
@@ -261,15 +257,33 @@ object DatasetController {
         null
       }
     }
-    //val ckanResponseStatusText = ckanAddPackageResponse.getStatusText + "," + ckanAddResourceResponse.getStatusText;
-    val ckanResponseStatusText = ckanAddPackageResponse.getStatusText + "," + ckanAddResourceResponse;
-
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
     } else {
       (HttpURLConnection.HTTP_OK, "OK")
     }
+
+    val datasetURL = if(addDatasetFileGitHubResponse == null) {
+      null
+    } else {
+      addDatasetFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
+    }
+
+    val manifestURL = if(addManifestFileGitHubResponse == null) {
+      null
+    } else {
+      addManifestFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
+    }
+
+    val ckanAddPackageResponseText = {
+      if(ckanAddPackageResponse == null) {
+        "null"
+      } else {
+        ckanAddPackageResponse.getStatusText
+      }
+    }
+    val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponse;
 
     val addDatasetResult:AddDatasetResult = new AddDatasetResult(
       responseStatus, responseStatusText
