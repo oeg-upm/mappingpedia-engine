@@ -77,9 +77,9 @@ object DatasetController {
     val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
-    val (filename:String, base64DatasetContent:String) =
+    val (filename:String, fileContent:String) =
       MappingPediaUtility.getFileNameAndContent(distribution.distributionFile, distribution.dcatDownloadURL);
-    val base64EncodedContent = GitHubUtility.encodeToBase64(base64DatasetContent)
+    val base64EncodedContent = GitHubUtility.encodeToBase64(fileContent)
 
 
     logger.info("storing a new dataset file on github ...")
@@ -87,7 +87,7 @@ object DatasetController {
     val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
     val githubResponse = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
       , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
-      , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64DatasetContent)
+      , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64EncodedContent)
     logger.info("New dataset file stored on github ...")
 
     if(githubResponse != null) {

@@ -400,14 +400,13 @@ object MappingPediaUtility {
   def getFileNameAndContent(file: File, downloadURL:String) = {
     val (fileName:String, fileContent:String) = {
       if(file != null && downloadURL== null) {
-        val filename = file.getName;
-        val fileContent = Source.fromFile(filename).getLines.mkString
-        (filename, fileContent)
+        val fileContent = Source.fromFile(file.getAbsolutePath).getLines.mkString
+        (file.getName, fileContent)
       } else if(file == null && downloadURL!= null) {
         val downloadURLFilename = downloadURL.substring(
           downloadURL.lastIndexOf('/') + 1, downloadURL.length)
         val downloadURLContent = scala.io.Source.fromURL(downloadURL).mkString
-        (downloadURLFilename, GitHubUtility.encodeToBase64(downloadURLContent));
+        (downloadURLFilename, downloadURLContent);
       } else if(file == null && downloadURL== null) {
         val errorMessage = "Specify either datasetFile or downloadURL!"
         throw new Exception(errorMessage);
