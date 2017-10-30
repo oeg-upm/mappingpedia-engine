@@ -376,7 +376,7 @@ object MappingPediaEngine {
 	}
 
 	def getMappingContent(manifestFilePath:String, manifestText:String, pMappingFilePath:String, pMappingText:String):String = {
-		logger.info("reading r2rml file ...");
+
 		val mappingContent:String = if(pMappingText == null) {
 			val mappingFilePath = if(pMappingFilePath == null) {
 				val mappingFilePathFromManifest = MappingPediaEngine.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
@@ -385,8 +385,9 @@ object MappingPediaEngine {
 				pMappingFilePath;
 			}
 
-			val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
-			//logger.info("mappingFileContent = \n" + mappingFileContent);
+			logger.info(s"reading r2rml file from $mappingFilePath ...");
+			//val mappingFileContent = fromFile(mappingFilePath).getLines.mkString("\n");
+			val mappingFileContent = scala.io.Source.fromURL(mappingFilePath).mkString; //DO NOT USE \n HERE!
 			mappingFileContent;
 		} else {
 			pMappingText;
@@ -581,7 +582,7 @@ object MappingPediaEngine {
 			oldMappingText;
 		}
 		val mappingDocumentModel = MappingPediaUtility.readModelFromString(mappingText
-			, MappingPediaConstant.R2RML_FILE_LANGUAGE);
+			, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 		//mappingpediaEngine.mappingDocumentModel = mappingDocumentModel;
 
 		//val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();

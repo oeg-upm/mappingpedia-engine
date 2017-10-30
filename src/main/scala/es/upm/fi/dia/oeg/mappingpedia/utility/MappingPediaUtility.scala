@@ -400,7 +400,8 @@ object MappingPediaUtility {
   def getFileNameAndContent(file: File, downloadURL:String) = {
     val (fileName:String, fileContent:String) = {
       if(file != null && downloadURL== null) {
-        val fileContent = Source.fromFile(file.getAbsolutePath).getLines.mkString
+        val fileContent = Source.fromFile(file.getAbsolutePath).getLines.mkString("\n")
+        //logger.info(s"fileContent = $fileContent")
         (file.getName, fileContent)
       } else if(file == null && downloadURL!= null) {
         val downloadURLFilename = downloadURL.substring(
@@ -408,7 +409,7 @@ object MappingPediaUtility {
         val downloadURLContent = scala.io.Source.fromURL(downloadURL).mkString
         (downloadURLFilename, downloadURLContent);
       } else if(file == null && downloadURL== null) {
-        val errorMessage = "Specify either datasetFile or downloadURL!"
+        val errorMessage = "Either upload a file or specify the download URL!"
         throw new Exception(errorMessage);
       }
     }

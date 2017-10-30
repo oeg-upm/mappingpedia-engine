@@ -268,7 +268,7 @@ public class MappingPediaController {
     public AddMappingDocumentResult uploadNewMapping(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
+            , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileRef
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
             , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
             , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
@@ -309,7 +309,7 @@ public class MappingPediaController {
             @PathVariable("organizationID") String organizationID
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
+            , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileRef
             , @RequestParam(value="mappingDocumentDownloadURL", required = false) String mappingDocumentDownloadURL
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
             , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile

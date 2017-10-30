@@ -7,6 +7,7 @@ import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, MappingPediaEngine, MappingPediaRunner}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
+import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
@@ -173,7 +174,8 @@ object MappingDocumentController {
     val responseStatus = response.getStatus
     if (HttpURLConnection.HTTP_OK == responseStatus
       || HttpURLConnection.HTTP_CREATED == responseStatus) {
-      //val url = response.getBody.getObject.getJSONObject("content").getString("url")
+      val githubDownloadURL = response.getBody.getObject.getJSONObject("content").getString("download_url");
+      mappingDocument.setDownloadURL(githubDownloadURL);
       logger.info("Mapping stored on GitHub")
     } else {
       val errorMessage = "Error when storing mapping on GitHub: " + responseStatus
