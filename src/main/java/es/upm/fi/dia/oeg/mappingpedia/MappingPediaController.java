@@ -17,6 +17,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
 import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
 import eu.trentorise.opendata.jackan.CkanClient;
 import org.apache.commons.io.FileUtils;
 import org.springframework.web.bind.annotation.*;
@@ -281,19 +282,22 @@ public class MappingPediaController {
         Organization organization = new Organization(organizationID);
         Dataset dataset = new Dataset(organization);
         MappingDocument mappingDocument = new MappingDocument();
-        mappingDocument.subject_$eq(mappingDocumentSubjects);
-        mappingDocument.creator_$eq(mappingDocumentCreator);
+        mappingDocument.dctSubject_$eq(mappingDocumentSubjects);
+        mappingDocument.dctCreator_$eq(mappingDocumentCreator);
         if(mappingDocumentTitle == null) {
-            mappingDocument.title_$eq(dataset.dctIdentifier());
+            mappingDocument.dctTitle_$eq(dataset.dctIdentifier());
         } else {
-            mappingDocument.title_$eq(mappingDocumentTitle);
+            mappingDocument.dctTitle_$eq(mappingDocumentTitle);
         }
         if(mappingLanguage == null) {
             mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
         } else {
             mappingDocument.mappingLanguage_$eq(mappingLanguage);
         }
-        mappingDocument.multipartFile_$eq(mappingFileRef);
+        if(mappingFileRef != null) {
+            File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingFileRef , dataset.dctIdentifier());
+            mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
+        }
 
         return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
@@ -306,6 +310,7 @@ public class MappingPediaController {
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
+            , @RequestParam(value="mappingDocumentDownloadURL", required = false) String mappingDocumentDownloadURL
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
             , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
             , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
@@ -318,20 +323,21 @@ public class MappingPediaController {
         logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
         Organization organization = new Organization(organizationID);
         Dataset dataset = new Dataset(organization, datasetID);
+
         MappingDocument mappingDocument = new MappingDocument();
-        mappingDocument.subject_$eq(mappingDocumentSubjects);
-        mappingDocument.creator_$eq(mappingDocumentCreator);
+        mappingDocument.dctSubject_$eq(mappingDocumentSubjects);
+        mappingDocument.dctCreator_$eq(mappingDocumentCreator);
         if(mappingDocumentTitle == null) {
-            mappingDocument.title_$eq(dataset.dctIdentifier());
+            mappingDocument.dctTitle_$eq(dataset.dctIdentifier());
         } else {
-            mappingDocument.title_$eq(mappingDocumentTitle);
+            mappingDocument.dctTitle_$eq(mappingDocumentTitle);
         }
-        if(mappingLanguage == null) {
-            mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
-        } else {
-            mappingDocument.mappingLanguage_$eq(mappingLanguage);
+        mappingDocument.mappingLanguage_$eq(mappingLanguage);
+        if(mappingFileRef != null) {
+            File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingFileRef , dataset.dctIdentifier());
+            mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
         }
-        mappingDocument.multipartFile_$eq(mappingFileRef);
+        mappingDocument.setDownloadURL(mappingDocumentDownloadURL);
 
 
         return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
@@ -400,7 +406,11 @@ public class MappingPediaController {
         }
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
-        distribution.ckanFileRef_$eq(datasetFileRef);
+        if(datasetFileRef != null) {
+            distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
+                    datasetFileRef , dataset.dctIdentifier()));
+        }
+
         if(distributionDescription == null) {
             distribution.dctDescription_$eq("Original Dataset");
         } else {
@@ -450,7 +460,10 @@ public class MappingPediaController {
         }
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
-        distribution.ckanFileRef_$eq(datasetFileRef);
+        if(datasetFileRef != null) {
+            distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
+                    datasetFileRef , dataset.dctIdentifier()));
+        }
         dataset.addDistribution(distribution);
 
         return DatasetController.addDataset(dataset, manifestFileRef, generateManifestFile);

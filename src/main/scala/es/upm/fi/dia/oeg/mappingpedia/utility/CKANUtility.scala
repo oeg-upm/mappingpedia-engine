@@ -26,7 +26,6 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def createResource(distribution: Distribution) = {
-    val filePath = distribution.distributionFile;
     val packageId = distribution.dataset.dctIdentifier;
 
     val httpClient = HttpClientBuilder.create.build
@@ -44,8 +43,8 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       if(distribution.dcatMediaType != null) {
         builder.addTextBody("mimetype", distribution.dcatMediaType)
       }
-      if(filePath != null) {
-        builder.addBinaryBody("upload", filePath)
+      if(distribution.distributionFile != null) {
+        builder.addBinaryBody("upload", distribution.distributionFile)
       }
 
       val mpEntity = builder.build();

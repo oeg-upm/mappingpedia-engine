@@ -131,7 +131,6 @@ object MappingExecutionController {
         mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
         mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
         mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
-        mappingExecutionResultDistribution.ckanFileRef = null;
         mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation:" + mdDownloadURL;
         mappingExecutionResultDistribution.distributionFile = outputFile;
 

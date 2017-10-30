@@ -77,21 +77,10 @@ object DatasetController {
     val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
-    val (filename:String, base64DatasetContent:String)= if(distribution.ckanFileRef != null) {
-      val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
-      distribution.distributionFile = datasetFile;
-      (datasetFile.getName, GitHubUtility.encodeToBase64(datasetFile));
-    } else {
-      if(distribution.dcatDownloadURL != null) {
-        val downloadURLFilename = distribution.dcatDownloadURL.substring(
-          distribution.dcatDownloadURL.lastIndexOf('/') + 1, distribution.dcatDownloadURL.length)
-        val downloadURLContent = scala.io.Source.fromURL(distribution.dcatDownloadURL).mkString
-        (downloadURLFilename, GitHubUtility.encodeToBase64(downloadURLContent));
-      } else {
-        val errorMessage = "Specify either datasetFile or downloadURL!"
-        throw new Exception(errorMessage);
-      }
-    }
+    val (filename:String, base64DatasetContent:String) =
+      MappingPediaUtility.getFileNameAndContent(distribution.distributionFile, distribution.dcatDownloadURL);
+    val base64EncodedContent = GitHubUtility.encodeToBase64(base64DatasetContent)
+
 
     logger.info("storing a new dataset file on github ...")
     //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)

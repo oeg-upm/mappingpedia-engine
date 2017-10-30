@@ -2,10 +2,9 @@ package es.upm.fi.dia.oeg.mappingpedia.model
 
 import java.io.File
 
-import org.springframework.web.multipart.MultipartFile
 
-//based on dcat:Disctribution
-//see also ckan:Resource
+//based on dcat:Disctribution https://www.w3.org/TR/vocab-dcat/#class-distribution
+//see also ckan:Resource  http://docs.ckan.org/en/ckan-1.7.4/domain-model-resource.html
 class Distribution (val dataset: Dataset){
   dataset.addDistribution(this);
 
@@ -16,10 +15,8 @@ class Distribution (val dataset: Dataset){
   var dcatDownloadURL:String = null;
   var dcatMediaType:String = null;
 
-  //FIELDS FROM CKAN
-  var ckanFileRef:MultipartFile = null;
-
   //CUSTOM FIELDS
   var cvsFieldSeparator:String=",";
   var distributionFile:File = null;
+
 }
