@@ -51,6 +51,7 @@ class MappingPediaEngine() {
 
 
 
+
 	/*
     def getMappingpediaGraph : VirtGraph = {
       if(mappingpediaGraph != null) {
@@ -69,6 +70,7 @@ class MappingPediaEngine() {
 
 	//def getMappingpediaGraph() = this.mappingpediaGraph;
 
+
 }
 
 object MappingPediaEngine {
@@ -77,8 +79,12 @@ object MappingPediaEngine {
 	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
 
 	var mappingpediaProperties:MappingPediaProperties = null;
+
+	//val mappingExecutionController = new MappingExecutionController(ckanClient, githubClient);
+
 	var githubClient:GitHubUtility = null;
 	var ckanClient:CKANUtility = null;
+
 
 	//val githubRepository:String = MappingPediaEngine.mappingpediaProperties.githubRepository;
 	//val githubUsername:String = MappingPediaEngine.mappingpediaProperties.githubUser;
@@ -142,46 +148,6 @@ object MappingPediaEngine {
 
 
 
-	def addQueryFile(queryFileRef: MultipartFile, mappingpediaUsername:String, datasetID:String) : GeneralResult = {
-		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
-		logger.debug("datasetID = " + datasetID)
-
-		try {
-			val queryFile:File = MappingPediaUtility.multipartFileToFile(queryFileRef, datasetID)
-
-			logger.info("storing a new query file in github ...")
-			val commitMessage = "Add a new query file by mappingpedia-engine"
-			val response = githubClient.encodeAndPutFile(mappingpediaUsername
-				, datasetID, queryFile.getName, commitMessage, queryFile)
-			logger.debug("response.getHeaders = " + response.getHeaders)
-			logger.debug("response.getBody = " + response.getBody)
-			val responseStatus = response.getStatus
-			logger.debug("responseStatus = " + responseStatus)
-			val responseStatusText = response.getStatusText
-			logger.debug("responseStatusText = " + responseStatusText)
-			if (HttpURLConnection.HTTP_CREATED == responseStatus) {
-				val queryURL = response.getBody.getObject.getJSONObject("content").getString("url")
-				logger.debug("queryURL = " + queryURL)
-				logger.info("dataset stored.")
-				val executionResult = new GeneralResult(null, null, null
-					, queryURL, null, responseStatusText, responseStatus, null)
-				return executionResult
-			}
-			else {
-				val executionResult = new GeneralResult(null, null, null
-					, null , null, responseStatusText, responseStatus, null)
-				return executionResult
-			}
-		} catch {
-			case e: Exception =>
-				val errorMessage = e.getMessage
-				logger.error("error uploading a new query file: " + errorMessage)
-				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
-				val executionResult = new GeneralResult(null, null, null
-					, null, null, errorMessage, errorCode, null)
-				return executionResult
-		}
-	}
 
 
 
@@ -269,66 +235,8 @@ object MappingPediaEngine {
 
 
 
-	def getMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String):GeneralResult = {
-		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
-		logger.debug("mappingDirectory = " + mappingDirectory)
-		logger.debug("mappingFilename = " + mappingFilename)
-		val response = githubClient.getFile(
-			//MappingPediaEngine.mappingpediaProperties.githubUser
-			//MappingPediaEngine.mappingpediaProperties.githubAccessToken,
-			mappingpediaUsername, mappingDirectory, mappingFilename)
-		val responseStatus = response.getStatus
-		logger.debug("responseStatus = " + responseStatus)
-		val responseStatusText = response.getStatusText
-		logger.debug("responseStatusText = " + responseStatusText)
-		val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
-			val githubMappingURL = response.getBody.getObject.getString("url")
-			logger.debug("githubMappingURL = " + githubMappingURL)
-			new GeneralResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
-		} else {
-			new GeneralResult(null, null, null, null, null, responseStatusText, responseStatus, null)
-		}
-		executionResult;
-	}
 
-	def updateExistingMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
-														, mappingFileRef:MultipartFile): GeneralResult = {
-		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
-		logger.debug("mappingDirectory = " + mappingDirectory)
-		logger.debug("mappingFilename = " + mappingFilename)
-		logger.debug("mappingFileRef = " + mappingFileRef)
-		try {
-			val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, mappingDirectory)
-			val mappingFilePath = mappingFile.getPath
-			logger.debug("mapping file path = " + mappingFilePath)
-			val commitMessage = "Mapping modification by mappingpedia-engine.Application"
-			val mappingContent = MappingPediaEngine.getMappingContent(null, null, mappingFilePath, null)
-			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
-			val response = githubClient.putEncodedContent(mappingpediaUsername, mappingDirectory, mappingFilename
-				, commitMessage, base64EncodedContent)
-			val responseStatus = response.getStatus
-			logger.debug("responseStatus = " + responseStatus)
-			val responseStatusText = response.getStatusText
-			logger.debug("responseStatusText = " + responseStatusText)
 
-			val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
-				val githubMappingURL = response.getBody.getObject.getJSONObject("content").getString("url")
-				logger.debug("githubMappingURL = " + githubMappingURL)
-				new GeneralResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
-			} else {
-				new GeneralResult(null, null, null, null, null, responseStatusText, responseStatus, null)
-			}
-			executionResult;
-		} catch {
-			case e: Exception =>
-				e.printStackTrace()
-				val errorMessage = "error processing the uploaded mapping file: " + e.getMessage
-				logger.error(errorMessage)
-				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
-				val executionResult = new GeneralResult(null, null, null, null, null, errorMessage, errorCode, null)
-				executionResult
-		}
-	}
 
 	def storeRDFFile(fileRef: MultipartFile, graphURI: String): GeneralResult = {
 		try {
@@ -445,79 +353,9 @@ object MappingPediaEngine {
 		MappingPediaUtility.getSubclassesDetail(aClass, this.schemaOrgModel, outputType, inputType);
 	}
 
-	def getInstances(aClass:String) : ListResult = {
-		this.getInstances(aClass, "0", "0")
-	}
-
-	def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
-		val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
-			aClass, this.schemaOrgModel, outputType, inputType);
-		logger.info(s"subclassesListResult = subclassesListResult")
-
-		val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
-			result => result.asInstanceOf[OntologyClass].getURI).toList.distinct
-		//		val subclassesInList:Iterable[String] = subclassesListResult.results.values.map(
-		//      result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
-
-		logger.debug("subclassesInList" + subclassesURIs)
-		//new ListResult(subclassesInList.size, subclassesInList);
-		val queryFile:String = null;
-
-		val mappingDocuments:Iterable[MappingDocument] = subclassesURIs.flatMap(subclassURI =>
-			MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults())
-			.asInstanceOf[Iterable[MappingDocument]];
-
-		var executedMappings:List[(String, String)]= Nil;
-
-		val executionResults:Iterable[Execution] = mappingDocuments.flatMap(mappingDocument => {
-			val md = mappingDocument.asInstanceOf[MappingDocument];
-			val mappingLanguage = md.mappingLanguage;
-			val distributionFieldSeparator = if(md.distributionFieldSeparator != null && md.distributionFieldSeparator.isDefined) {
-				md.distributionFieldSeparator.get
-			} else {
-				null
-			}
-			val outputFilename = UUID.randomUUID.toString + ".nt"
-			val mappingDocumentDownloadURL = md.getDownloadURL();
-			logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
-			val mdDistributionAccessURL = md.distributionAccessURL;
-			logger.info("mdDistributionAccessURL = " + mdDistributionAccessURL);
-
-			if(mappingDocumentDownloadURL != null && mdDistributionAccessURL != null) {
-				if(executedMappings.contains((mappingDocumentDownloadURL,mdDistributionAccessURL))) {
-					None
-				} else {
-					val dataset = new Dataset(new Organization());
-					val distribution = new Distribution(dataset);
-					dataset.addDistribution(distribution);
-					distribution.dcatDownloadURL = mdDistributionAccessURL;
-
-					val mappingExecution = new MappingExecution(md, dataset);
-					mappingExecution.setStoreToCKAN("false")
-					mappingExecution.queryFilePath = queryFile;
-					mappingExecution.outputFileName = outputFilename;
-
-					//THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-					val executionResult = MappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, false);
-					//val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
-
-					executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
-
-					val executionResultURL = executionResult.mappingExecutionResultDownloadURL;
-					//executionResultURL;
-
-					Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL, executionResultURL))
-					//mappingDocumentURL + " -- " + datasetDistributionURL
-				}
-			} else {
-				None
-			}
 
 
-		})
-		new ListResult(executionResults.size, executionResults);
 
-	}
 
 
 
@@ -627,4 +465,111 @@ object MappingPediaEngine {
 
 
 	}
+
+	def addQueryFile(queryFileRef: MultipartFile, mappingpediaUsername:String, datasetID:String) : GeneralResult = {
+		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+		logger.debug("datasetID = " + datasetID)
+
+		try {
+			val queryFile:File = MappingPediaUtility.multipartFileToFile(queryFileRef, datasetID)
+
+			logger.info("storing a new query file in github ...")
+			val commitMessage = "Add a new query file by mappingpedia-engine"
+			val response = githubClient.encodeAndPutFile(mappingpediaUsername
+				, datasetID, queryFile.getName, commitMessage, queryFile)
+			logger.debug("response.getHeaders = " + response.getHeaders)
+			logger.debug("response.getBody = " + response.getBody)
+			val responseStatus = response.getStatus
+			logger.debug("responseStatus = " + responseStatus)
+			val responseStatusText = response.getStatusText
+			logger.debug("responseStatusText = " + responseStatusText)
+			if (HttpURLConnection.HTTP_CREATED == responseStatus) {
+				val queryURL = response.getBody.getObject.getJSONObject("content").getString("url")
+				logger.debug("queryURL = " + queryURL)
+				logger.info("dataset stored.")
+				val executionResult = new GeneralResult(null, null, null
+					, queryURL, null, responseStatusText, responseStatus, null)
+				return executionResult
+			}
+			else {
+				val executionResult = new GeneralResult(null, null, null
+					, null , null, responseStatusText, responseStatus, null)
+				return executionResult
+			}
+		} catch {
+			case e: Exception =>
+				val errorMessage = e.getMessage
+				logger.error("error uploading a new query file: " + errorMessage)
+				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
+				val executionResult = new GeneralResult(null, null, null
+					, null, null, errorMessage, errorCode, null)
+				return executionResult
+		}
+	}
+
+	def getMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String):GeneralResult = {
+		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+		logger.debug("mappingDirectory = " + mappingDirectory)
+		logger.debug("mappingFilename = " + mappingFilename)
+		val response = githubClient.getFile(
+			//MappingPediaEngine.mappingpediaProperties.githubUser
+			//MappingPediaEngine.mappingpediaProperties.githubAccessToken,
+			mappingpediaUsername, mappingDirectory, mappingFilename)
+		val responseStatus = response.getStatus
+		logger.debug("responseStatus = " + responseStatus)
+		val responseStatusText = response.getStatusText
+		logger.debug("responseStatusText = " + responseStatusText)
+		val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
+			val githubMappingURL = response.getBody.getObject.getString("url")
+			logger.debug("githubMappingURL = " + githubMappingURL)
+			new GeneralResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
+		} else {
+			new GeneralResult(null, null, null, null, null, responseStatusText, responseStatus, null)
+		}
+		executionResult;
+	}
+
+	def updateExistingMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
+														, mappingFileRef:MultipartFile): GeneralResult = {
+		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+		logger.debug("mappingDirectory = " + mappingDirectory)
+		logger.debug("mappingFilename = " + mappingFilename)
+		logger.debug("mappingFileRef = " + mappingFileRef)
+		try {
+			val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, mappingDirectory)
+			val mappingFilePath = mappingFile.getPath
+			logger.debug("mapping file path = " + mappingFilePath)
+			val commitMessage = "Mapping modification by mappingpedia-engine.Application"
+			val mappingContent = MappingPediaEngine.getMappingContent(null, null, mappingFilePath, null)
+			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
+			val response = githubClient.putEncodedContent(mappingpediaUsername, mappingDirectory, mappingFilename
+				, commitMessage, base64EncodedContent)
+			val responseStatus = response.getStatus
+			logger.debug("responseStatus = " + responseStatus)
+			val responseStatusText = response.getStatusText
+			logger.debug("responseStatusText = " + responseStatusText)
+
+			val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
+				val githubMappingURL = response.getBody.getObject.getJSONObject("content").getString("url")
+				logger.debug("githubMappingURL = " + githubMappingURL)
+				new GeneralResult(null, null, githubMappingURL, null, null, responseStatusText, responseStatus, null)
+			} else {
+				new GeneralResult(null, null, null, null, null, responseStatusText, responseStatus, null)
+			}
+			executionResult;
+		} catch {
+			case e: Exception =>
+				e.printStackTrace()
+				val errorMessage = "error processing the uploaded mapping file: " + e.getMessage
+				logger.error(errorMessage)
+				val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
+				val executionResult = new GeneralResult(null, null, null, null, null, errorMessage, errorCode, null)
+				executionResult
+		}
+	}
+
+
+
+
+
 }

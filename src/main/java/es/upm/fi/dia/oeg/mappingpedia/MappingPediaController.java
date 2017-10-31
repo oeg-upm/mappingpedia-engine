@@ -35,10 +35,12 @@ public class MappingPediaController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
 
-    private DatasetController datasetController = new DatasetController(
-            MappingPediaEngine.ckanClient(), MappingPediaEngine.githubClient());
-    private MappingDocumentController mappingDocumentController = new MappingDocumentController(
-            MappingPediaEngine.githubClient());
+    private GitHubUtility githubClient = MappingPediaEngine.githubClient();
+    private CKANUtility ckanClient = MappingPediaEngine.ckanClient();
+
+    private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
+    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient);
+    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
     public Greeting greetingGET(@RequestParam(value="name", defaultValue="World") String name) {
@@ -204,7 +206,7 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return MappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
@@ -250,7 +252,7 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return MappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
@@ -530,7 +532,7 @@ public class MappingPediaController {
     ) {
         logger.info("GET /ogd/instances ...");
         logger.info("Getting instances of the class:" + aClass);
-        ListResult result = MappingPediaEngine.getInstances(aClass, outputType, inputType) ;
+        ListResult result = mappingExecutionController.getInstances(aClass, outputType, inputType) ;
         return result;
     }
 

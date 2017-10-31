@@ -15,6 +15,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class Application {
+	public Application() {
+
+	}
+
 	static String configurationFilename = "config.properties";
 
 	static Logger logger = LoggerFactory.getLogger("Application");
@@ -23,10 +27,11 @@ public class Application {
 	public static void main(String[] args) {
 		logger.info("Working Directory = " + System.getProperty("user.dir"));
 		logger.info("Starting MappingPedia Engine version 1.8.1 ...");
-		Application.mappingpediaEngine = new MappingPediaEngine();
 
 		InputStream is = null;
 		try {
+			Application.mappingpediaEngine = new MappingPediaEngine();
+
 			logger.info("Loading configuration file ...");
 			//String filename="config.properties";
 			is = Application.class.getClassLoader().getResourceAsStream(Application.configurationFilename);
@@ -43,11 +48,11 @@ public class Application {
 					, properties.githubAccessToken()
 			);
 			Application.mappingpediaEngine.githubClient_$eq(githubClient);
-
 			CKANUtility ckanClient = new CKANUtility(properties.ckanURL(), properties.ckanKey());
 			Application.mappingpediaEngine.ckanClient_$eq(ckanClient);
 
-			//logger.info("MappingPediaProperties = " + MappingPediaProperties.);
+
+
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		} finally{
