@@ -50,6 +50,7 @@ class MappingPediaEngine() {
 
 
 
+
 	/*
     def getMappingpediaGraph : VirtGraph = {
       if(mappingpediaGraph != null) {
@@ -75,6 +76,11 @@ object MappingPediaEngine {
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
 	var mappingpediaProperties:MappingPediaProperties = null;
+	var githubClient:GitHubUtility = null;
+	//val githubRepository:String = MappingPediaEngine.mappingpediaProperties.githubRepository;
+	//val githubUsername:String = MappingPediaEngine.mappingpediaProperties.githubUser;
+	//val githubAccessToken:String = MappingPediaEngine.mappingpediaProperties.githubAccessToken;
+
 
 
 
@@ -142,8 +148,7 @@ object MappingPediaEngine {
 
 			logger.info("storing a new query file in github ...")
 			val commitMessage = "Add a new query file by mappingpedia-engine"
-			val response = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
-				, MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername
+			val response = githubClient.encodeAndPutFile(mappingpediaUsername
 				, datasetID, queryFile.getName, commitMessage, queryFile)
 			logger.debug("response.getHeaders = " + response.getHeaders)
 			logger.debug("response.getBody = " + response.getBody)
@@ -265,9 +270,10 @@ object MappingPediaEngine {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("mappingDirectory = " + mappingDirectory)
 		logger.debug("mappingFilename = " + mappingFilename)
-		val response = GitHubUtility.getFile(MappingPediaEngine.mappingpediaProperties.githubUser
-			, MappingPediaEngine.mappingpediaProperties.githubAccessToken
-			, mappingpediaUsername, mappingDirectory, mappingFilename)
+		val response = githubClient.getFile(
+			//MappingPediaEngine.mappingpediaProperties.githubUser
+			//MappingPediaEngine.mappingpediaProperties.githubAccessToken,
+			mappingpediaUsername, mappingDirectory, mappingFilename)
 		val responseStatus = response.getStatus
 		logger.debug("responseStatus = " + responseStatus)
 		val responseStatusText = response.getStatusText
@@ -295,8 +301,7 @@ object MappingPediaEngine {
 			val commitMessage = "Mapping modification by mappingpedia-engine.Application"
 			val mappingContent = MappingPediaEngine.getMappingContent(null, null, mappingFilePath, null)
 			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
-			val response = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
-				, MappingPediaEngine.mappingpediaProperties.githubAccessToken, mappingpediaUsername, mappingDirectory, mappingFilename
+			val response = githubClient.putEncodedContent(mappingpediaUsername, mappingDirectory, mappingFilename
 				, commitMessage, base64EncodedContent)
 			val responseStatus = response.getStatus
 			logger.debug("responseStatus = " + responseStatus)

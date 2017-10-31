@@ -18,6 +18,7 @@ object DatasetController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val ckanUtility = new CKANUtility(
     MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
+  val githubClient = MappingPediaEngine.githubClient;
 
   def generateManifestFile(distribution: Distribution) = {
     val dataset = distribution.dataset;
@@ -85,8 +86,7 @@ object DatasetController {
     logger.info("storing a new dataset file on github ...")
     //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
     val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
-    val githubResponse = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
-      , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
+    val githubResponse = githubClient.putEncodedContent(organization.dctIdentifier
       , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64EncodedContent)
     logger.info("New dataset file stored on github ...")
 
@@ -131,8 +131,7 @@ object DatasetController {
 
     logger.info("storing manifest file on github ...")
     val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-    val githubResponse = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
-      , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
+    val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
       , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
     logger.info("manifest file stored on github ...")
     githubResponse

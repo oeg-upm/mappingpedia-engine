@@ -18,6 +18,7 @@ import scala.io.Source
 
 object MappingDocumentController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val githubClient = MappingPediaEngine.githubClient;
 
   def findMappingDocuments(queryString: String): ListResult = {
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
@@ -167,8 +168,7 @@ object MappingDocumentController {
     //val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
 
     logger.info("Storing mapping file on GitHub ...")
-    val response = GitHubUtility.putEncodedContent(MappingPediaEngine.mappingpediaProperties.githubUser
-      , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
+    val response = githubClient.putEncodedContent(organization.dctIdentifier
       , dataset.dctIdentifier, mappingDocumentFileName
       , commitMessage, base64EncodedContent)
     val responseStatus = response.getStatus
@@ -303,8 +303,7 @@ object MappingDocumentController {
       if (manifestFile != null) {
         logger.info("Storing manifest file on GitHub ...")
         val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-        val githubResponse = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
-          , MappingPediaEngine.mappingpediaProperties.githubAccessToken, organization.dctIdentifier
+        val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
           , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = githubResponse.getStatus
         val addNewManifestResponseStatusText = githubResponse.getStatusText

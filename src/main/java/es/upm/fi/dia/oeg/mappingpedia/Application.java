@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
+import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,12 @@ public class Application {
 			properties.load(is);
 			logger.info("Configuration file loaded.");
 			Application.mappingpediaEngine.mappingpediaProperties_$eq(properties);
+
+			GitHubUtility githubClient = new GitHubUtility(properties.githubRepository(), properties.githubUser()
+					, properties.githubAccessToken()
+			);
+			Application.mappingpediaEngine.githubClient_$eq(githubClient);
+
 			//logger.info("MappingPediaProperties = " + MappingPediaProperties.);
 		} catch (Exception ex) {
 			ex.printStackTrace();

@@ -18,6 +18,7 @@ object MappingExecutionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val ckanUtility = new CKANUtility(
     MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
+  val githubClient = MappingPediaEngine.githubClient;
 
   @throws(classOf[Exception])
   def executeMapping(
@@ -81,9 +82,7 @@ object MappingExecutionController {
 
     //STORING MAPPING EXECUTION RESULT ON GITHUB
     val githubResponse = try {
-      val response = GitHubUtility.encodeAndPutFile(MappingPediaEngine.mappingpediaProperties.githubUser
-        , MappingPediaEngine.mappingpediaProperties.githubAccessToken
-        , "executions", mappingExecutionDirectory, outputFileName
+      val response = githubClient.encodeAndPutFile("executions", mappingExecutionDirectory, outputFileName
         , "add mapping execution result by mappingpedia engine", outputFile);
       response
     } catch {
