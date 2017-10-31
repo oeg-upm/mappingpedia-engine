@@ -398,12 +398,17 @@ object MappingPediaUtility {
   }
 
   def getFileNameAndContent(file: File, downloadURL:String) = {
+    logger.info(s"getFileNameAndContent from file: $file")
+    logger.info(s"getFileNameAndContent from downloadURL: $downloadURL")
+
     val (fileName:String, fileContent:String) = {
       if(file != null && downloadURL== null) {
         val fileContent = Source.fromFile(file.getAbsolutePath).getLines.mkString("\n")
         //logger.info(s"fileContent = $fileContent")
         (file.getName, fileContent)
       } else if(file == null && downloadURL!= null) {
+
+
         val downloadURLFilename = downloadURL.substring(
           downloadURL.lastIndexOf('/') + 1, downloadURL.length)
         val downloadURLContent = scala.io.Source.fromURL(downloadURL).mkString
