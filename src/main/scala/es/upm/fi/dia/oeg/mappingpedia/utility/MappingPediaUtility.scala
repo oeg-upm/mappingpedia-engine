@@ -29,25 +29,25 @@ object MappingPediaUtility {
 
 
   def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {
-		val it = resource.listProperties(property);
-		var result: Literal = null;
-		if(it != null && it.hasNext()) {
-			val statement = it.next();
-			val objectNode = statement.getObject();
-			result = objectNode.asLiteral()
-		}
-		return result;
+    val it = resource.listProperties(property);
+    var result: Literal = null;
+    if(it != null && it.hasNext()) {
+      val statement = it.next();
+      val objectNode = statement.getObject();
+      result = objectNode.asLiteral()
+    }
+    return result;
   }
 
   def getVirtuosoGraph(virtuosoJDBC : String, virtuosoUser : String, virtuosoPwd : String
-		, virtuosoGraphName : String) : VirtGraph = {
-				logger.info("Connecting to Virtuoso Graph...");
-     logger.info(s"virtuosoGraphName = $virtuosoGraphName");
+                       , virtuosoGraphName : String) : VirtGraph = {
+    logger.info("Connecting to Virtuoso Graph...");
+    logger.info(s"virtuosoGraphName = $virtuosoGraphName");
 
-				val virtGraph : VirtGraph = new VirtGraph (
-						virtuosoGraphName, virtuosoJDBC, virtuosoUser, virtuosoPwd);
-        logger.info("Connected to Virtuoso Graph...");
-				return virtGraph;
+    val virtGraph : VirtGraph = new VirtGraph (
+      virtuosoGraphName, virtuosoJDBC, virtuosoUser, virtuosoPwd);
+    logger.info("Connected to Virtuoso Graph...");
+    return virtGraph;
   }
 
   def store(file:File, graphURI:String) : Unit = {
@@ -71,22 +71,22 @@ object MappingPediaUtility {
   }
 
   def store(pTriples:List[Triple], virtuosoGraph:VirtGraph, skolemizeBlankNode:Boolean, baseURI:String) : Unit = {
-		val initialGraphSize = virtuosoGraph.getCount();
-		logger.debug("initialGraphSize = " + initialGraphSize);
+    val initialGraphSize = virtuosoGraph.getCount();
+    logger.debug("initialGraphSize = " + initialGraphSize);
 
-		val newTriples = if(skolemizeBlankNode) { this.skolemizeTriples(pTriples, baseURI)} else { pTriples }
+    val newTriples = if(skolemizeBlankNode) { this.skolemizeTriples(pTriples, baseURI)} else { pTriples }
 
-		val triplesIterator = newTriples.iterator;
-		while(triplesIterator.hasNext) {
-			val triple = triplesIterator.next();
-			virtuosoGraph.add(triple);
-		}
+    val triplesIterator = newTriples.iterator;
+    while(triplesIterator.hasNext) {
+      val triple = triplesIterator.next();
+      virtuosoGraph.add(triple);
+    }
 
     val finalGraphSize = virtuosoGraph.getCount();
-		logger.debug("finalGraphSize = " + finalGraphSize);
+    logger.debug("finalGraphSize = " + finalGraphSize);
 
-		val addedTriplesSize = finalGraphSize - initialGraphSize;
-		logger.info("No of added triples = " + addedTriplesSize);
+    val addedTriplesSize = finalGraphSize - initialGraphSize;
+    logger.info("No of added triples = " + addedTriplesSize);
   }
 
   def readModelFromFile(filePath:String) : Model = {
@@ -100,7 +100,7 @@ object MappingPediaUtility {
   }
 
   def readModelFromFile(filePath:String, lang:String) : Model = {
-		val inputStream = FileManager.get().open(filePath);
+    val inputStream = FileManager.get().open(filePath);
     val model = this.readModelFromInputStream(inputStream, lang);
     model;
   }
@@ -250,33 +250,33 @@ object MappingPediaUtility {
   }
 
   def multipartFileToFile(fileRef:MultipartFile) : File = {
-			// Path where the uploaded files will be stored.
-		val uuid = UUID.randomUUID().toString();
+    // Path where the uploaded files will be stored.
+    val uuid = UUID.randomUUID().toString();
 
-		val file = this.multipartFileToFile(fileRef, uuid);
-		file;
+    val file = this.multipartFileToFile(fileRef, uuid);
+    file;
   }
 
   def multipartFileToFile(fileRef:MultipartFile, uuid:String) : File = {
 
-		// Create the input stream to uploaded files to read data from it.
-		val fis:FileInputStream = try {
-			if(fileRef != null) {
-				val inputStreamAux = fileRef.getInputStream().asInstanceOf[FileInputStream];
-				inputStreamAux;
-			} else {
-			  val errorMessage = "can't process the uploaded file, fileRef is null";
-			  throw new Exception(errorMessage);
-			}
-		} catch {
-		  case e:Exception => {
-  			e.printStackTrace();
-  			throw e;
-		  }
-		}
+    // Create the input stream to uploaded files to read data from it.
+    val fis:FileInputStream = try {
+      if(fileRef != null) {
+        val inputStreamAux = fileRef.getInputStream().asInstanceOf[FileInputStream];
+        inputStreamAux;
+      } else {
+        val errorMessage = "can't process the uploaded file, fileRef is null";
+        throw new Exception(errorMessage);
+      }
+    } catch {
+      case e:Exception => {
+        e.printStackTrace();
+        throw e;
+      }
+    }
 
-			// Get the name of uploaded files.
-		val fileName = fileRef.getOriginalFilename();
+    // Get the name of uploaded files.
+    val fileName = fileRef.getOriginalFilename();
 
     val file = MappingPediaUtility.materializeFileInputStream(fis, uuid, fileName);
     file;
@@ -386,28 +386,33 @@ object MappingPediaUtility {
     val subclassesDetail= this.getSubclassesDetail(aClass, ontModel, outputType, inputType)
 
 
-      if(subclassesDetail != null) {
-        val subclassesInList:Iterable[String] = subclassesDetail.results.map(
-          result => result.asInstanceOf[OntologyClass].getLocalName).toList.distinct
-        val result = new ListResult(subclassesInList.size, subclassesInList);
-        result
-      } else {
-        null
-      }
+    if(subclassesDetail != null) {
+      val subclassesInList:Iterable[String] = subclassesDetail.results.map(
+        result => result.asInstanceOf[OntologyClass].getLocalName).toList.distinct
+      val result = new ListResult(subclassesInList.size, subclassesInList);
+      result
+    } else {
+      null
+    }
 
   }
 
-  def getFileNameAndContent(file: File, downloadURL:String) = {
+  def getFileNameAndContent(file: File, downloadURL:String, encoding:String) = {
+    logger.info(s"encoding= $encoding")
+
     val (fileName:String, fileContent:String) = {
       if(file != null && downloadURL== null) {
-        val fileContent = Source.fromFile(file.getAbsolutePath).getLines.mkString("\n")
-        //logger.info(s"fileContent = $fileContent")
-        (file.getName, fileContent)
+        logger.info(s"getFileNameAndContent from file: $file")
+        val fileContent = Source.fromFile(file.getAbsolutePath, encoding)
+        val fileContentString = fileContent.getLines.mkString("\n")
+        (file.getName, fileContentString)
       } else if(file == null && downloadURL!= null) {
+        logger.info(s"getFileNameAndContent from downloadURL: $downloadURL")
         val downloadURLFilename = downloadURL.substring(
           downloadURL.lastIndexOf('/') + 1, downloadURL.length)
-        val downloadURLContent = scala.io.Source.fromURL(downloadURL).mkString
-        (downloadURLFilename, downloadURLContent);
+        val downloadURLContent = scala.io.Source.fromURL(downloadURL, encoding)
+        val downloadURLContentString = downloadURLContent.mkString
+        (downloadURLFilename, downloadURLContentString);
       } else if(file == null && downloadURL== null) {
         val errorMessage = "Either upload a file or specify the download URL!"
         throw new Exception(errorMessage);

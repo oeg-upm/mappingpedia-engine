@@ -11,6 +11,7 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
+import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
@@ -22,11 +23,11 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     val organization = dataset.dctPublisher;
 
     val (filename:String, fileContent:String) =
-      MappingPediaUtility.getFileNameAndContent(distribution.distributionFile, distribution.dcatDownloadURL);
+      MappingPediaUtility.getFileNameAndContent(distribution.distributionFile, distribution.dcatDownloadURL, distribution.encoding);
     val base64EncodedContent = GitHubUtility.encodeToBase64(fileContent)
 
 
-    logger.info("storing a new dataset file on github ...")
+    logger.info("storing a new dataset and its distribution file on github ...")
     //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
     val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
     val githubResponse = githubClient.putEncodedContent(organization.dctIdentifier

@@ -388,6 +388,7 @@ public class MappingPediaController {
             , @RequestParam(value="distributionDownloadURL", required = false) String distributionDownloadURL
             , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
             , @RequestParam(value="distributionDescription", required = false) String distributionDescription
+            , @RequestParam(value="distributionEncoding", required = false, defaultValue="UTF-8") String distributionEncoding
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
     )
@@ -423,6 +424,7 @@ public class MappingPediaController {
         } else {
             distribution.dctDescription_$eq(distributionDescription);
         }
+        distribution.encoding_$eq(distributionEncoding);
         dataset.addDistribution(distribution);
 
 

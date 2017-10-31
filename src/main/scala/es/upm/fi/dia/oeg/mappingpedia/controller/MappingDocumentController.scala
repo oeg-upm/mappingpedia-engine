@@ -26,7 +26,7 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
     val mappingDocumentDownloadURL = mappingDocument.getDownloadURL();
 
     val (mappingDocumentFileName:String, mappingDocumentFileContent:String) =
-      MappingPediaUtility.getFileNameAndContent(mappingDocument.mappingDocumentFile, mappingDocumentDownloadURL);
+      MappingPediaUtility.getFileNameAndContent(mappingDocument.mappingDocumentFile, mappingDocumentDownloadURL, "UTF-8");
     val base64EncodedContent = GitHubUtility.encodeToBase64(mappingDocumentFileContent)
 
     val commitMessage = "add a new mapping file by mappingpedia-engine"
