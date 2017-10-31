@@ -23,7 +23,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     val organization = dataset.dctPublisher;
 
     val (filename:String, fileContent:String) =
-      MappingPediaUtility.getFileNameAndContent(distribution.distributionFile, distribution.dcatDownloadURL);
+      MappingPediaUtility.getFileNameAndContent(distribution.distributionFile, distribution.dcatDownloadURL, distribution.encoding);
     val base64EncodedContent = GitHubUtility.encodeToBase64(fileContent)
 
 

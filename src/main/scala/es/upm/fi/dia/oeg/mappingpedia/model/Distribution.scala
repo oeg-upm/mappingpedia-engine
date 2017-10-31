@@ -24,6 +24,7 @@ class Distribution (val dataset: Dataset){
   //CUSTOM FIELDS
   var cvsFieldSeparator:String=",";
   var distributionFile:File = null;
+  var encoding:String="UTF-8";
 
 
 }
