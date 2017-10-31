@@ -15,41 +15,35 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class Application {
-	public Application() {
 
-	}
-
-	static String configurationFilename = "config.properties";
-
-	static Logger logger = LoggerFactory.getLogger("Application");
-	static MappingPediaEngine mappingpediaEngine = null;
 
 	public static void main(String[] args) {
+		Logger logger = LoggerFactory.getLogger("Application");
 		logger.info("Working Directory = " + System.getProperty("user.dir"));
 		logger.info("Starting MappingPedia Engine version 1.8.1 ...");
 
 		InputStream is = null;
+		String configurationFilename = "config.properties";
 		try {
-			Application.mappingpediaEngine = new MappingPediaEngine();
 
 			logger.info("Loading configuration file ...");
 			//String filename="config.properties";
-			is = Application.class.getClassLoader().getResourceAsStream(Application.configurationFilename);
+			is = Application.class.getClassLoader().getResourceAsStream(configurationFilename);
 			if(is==null){
-				logger.error("Sorry, unable to find " + Application.configurationFilename);
+				logger.error("Sorry, unable to find " + configurationFilename);
 				return;
 			}
 			MappingPediaProperties properties = new MappingPediaProperties(is);
 			properties.load(is);
 			logger.info("Configuration file loaded.");
-			Application.mappingpediaEngine.mappingpediaProperties_$eq(properties);
+			MappingPediaEngine.mappingpediaProperties_$eq(properties);
 
 			GitHubUtility githubClient = new GitHubUtility(properties.githubRepository(), properties.githubUser()
 					, properties.githubAccessToken()
 			);
-			Application.mappingpediaEngine.githubClient_$eq(githubClient);
+			MappingPediaEngine.githubClient_$eq(githubClient);
 			CKANUtility ckanClient = new CKANUtility(properties.ckanURL(), properties.ckanKey());
-			Application.mappingpediaEngine.ckanClient_$eq(ckanClient);
+			MappingPediaEngine.ckanClient_$eq(ckanClient);
 
 
 

@@ -42,33 +42,9 @@ import org.apache.commons.io.{FileUtils, FilenameUtils}
 
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
+//class MappingPediaEngine() {
 class MappingPediaEngine() {
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
-	var manifestModel:Model = null;
-	var mappingDocumentModel:Model = null;
-	var clearGraph:Boolean = false;
-
-
-
-
-
-	/*
-    def getMappingpediaGraph : VirtGraph = {
-      if(mappingpediaGraph != null) {
-        mappingpediaGraph
-      }	else {
-        MappingPediaUtility.getVirtuosoGraph(MappingPediaProperties.virtuosoJDBC, MappingPediaProperties.virtuosoUser
-          , MappingPediaProperties.virtuosoPwd, MappingPediaProperties.graphName)
-      }
-    }
-  */
-
-
-
-
-
-
-	//def getMappingpediaGraph() = this.mappingpediaGraph;
 
 
 }
@@ -77,21 +53,9 @@ object MappingPediaEngine {
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
-
 	var mappingpediaProperties:MappingPediaProperties = null;
-
-	//val mappingExecutionController = new MappingExecutionController(ckanClient, githubClient);
-
 	var githubClient:GitHubUtility = null;
 	var ckanClient:CKANUtility = null;
-
-
-	//val githubRepository:String = MappingPediaEngine.mappingpediaProperties.githubRepository;
-	//val githubUsername:String = MappingPediaEngine.mappingpediaProperties.githubUser;
-	//val githubAccessToken:String = MappingPediaEngine.mappingpediaProperties.githubAccessToken;
-
-
-
 
 	def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
@@ -466,6 +430,10 @@ object MappingPediaEngine {
 
 	}
 
+
+
+
+
 	def addQueryFile(queryFileRef: MultipartFile, mappingpediaUsername:String, datasetID:String) : GeneralResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
 		logger.debug("datasetID = " + datasetID)
@@ -506,6 +474,7 @@ object MappingPediaEngine {
 				return executionResult
 		}
 	}
+
 
 	def getMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String):GeneralResult = {
 		logger.debug("mappingpediaUsername = " + mappingpediaUsername)
@@ -567,6 +536,7 @@ object MappingPediaEngine {
 				executionResult
 		}
 	}
+
 
 
 
