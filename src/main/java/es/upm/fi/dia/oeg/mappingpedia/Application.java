@@ -5,6 +5,8 @@ import java.io.InputStream;
 
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
+import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,30 +15,38 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class Application {
-	static String configurationFilename = "config.properties";
 
-	static Logger logger = LoggerFactory.getLogger("Application");
-	static MappingPediaEngine mappingpediaEngine = null;
 
 	public static void main(String[] args) {
+		Logger logger = LoggerFactory.getLogger("Application");
 		logger.info("Working Directory = " + System.getProperty("user.dir"));
 		logger.info("Starting MappingPedia Engine version 1.8.1 ...");
-		Application.mappingpediaEngine = new MappingPediaEngine();
 
 		InputStream is = null;
+		String configurationFilename = "config.properties";
 		try {
+
 			logger.info("Loading configuration file ...");
 			//String filename="config.properties";
-			is = Application.class.getClassLoader().getResourceAsStream(Application.configurationFilename);
+			is = Application.class.getClassLoader().getResourceAsStream(configurationFilename);
 			if(is==null){
-				logger.error("Sorry, unable to find " + Application.configurationFilename);
+				logger.error("Sorry, unable to find " + configurationFilename);
 				return;
 			}
 			MappingPediaProperties properties = new MappingPediaProperties(is);
 			properties.load(is);
 			logger.info("Configuration file loaded.");
-			Application.mappingpediaEngine.mappingpediaProperties_$eq(properties);
-			//logger.info("MappingPediaProperties = " + MappingPediaProperties.);
+			MappingPediaEngine.mappingpediaProperties_$eq(properties);
+
+			GitHubUtility githubClient = new GitHubUtility(properties.githubRepository(), properties.githubUser()
+					, properties.githubAccessToken()
+			);
+			MappingPediaEngine.githubClient_$eq(githubClient);
+			CKANUtility ckanClient = new CKANUtility(properties.ckanURL(), properties.ckanKey());
+			MappingPediaEngine.ckanClient_$eq(ckanClient);
+
+
+
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		} finally{

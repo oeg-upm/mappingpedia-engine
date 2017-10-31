@@ -1,6 +1,9 @@
 package es.upm.fi.dia.oeg.mappingpedia;
 
+import java.io.File;
 import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -12,7 +15,11 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
+import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
+import eu.trentorise.opendata.jackan.CkanClient;
+import org.apache.commons.io.FileUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -27,6 +34,13 @@ public class MappingPediaController {
 
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
+
+    private GitHubUtility githubClient = MappingPediaEngine.githubClient();
+    private CKANUtility ckanClient = MappingPediaEngine.ckanClient();
+
+    private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
+    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient);
+    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
     public Greeting greetingGET(@RequestParam(value="name", defaultValue="World") String name) {
@@ -46,6 +60,15 @@ public class MappingPediaController {
     public String getGitHubRepoURL() {
         logger.info("/githubRepo(GET) ...");
         return MappingPediaEngine.mappingpediaProperties().githubRepository();
+    }
+
+    @RequestMapping(value="/ckanDatasetList", method= RequestMethod.GET)
+    public ListResult getCKANDatasetList(@RequestParam(value="catalogUrl", required = false) String catalogUrl) {
+        if(catalogUrl == null) {
+            catalogUrl = MappingPediaEngine.mappingpediaProperties().ckanURL();
+        }
+        logger.info("GET /ckanDatasetList ...");
+        return CKANUtility.getDatasetList(catalogUrl);
     }
 
     @RequestMapping(value="/virtuosoEnabled", method= RequestMethod.GET)
@@ -78,6 +101,30 @@ public class MappingPediaController {
         return MappingPediaEngine.mappingpediaProperties().ckanActionResourceCreate();
     }
 
+    @RequestMapping(value="/ckanResource", method= RequestMethod.POST)
+    public Integer postCKANResource(
+            @RequestParam(value="filePath", required = true) String filePath
+            , @RequestParam(value="packageId", required = true) String packageId
+    ) {
+        logger.info("POST /ckanResource...");
+        String ckanURL = MappingPediaEngine.mappingpediaProperties().ckanURL();
+        String ckanKey = MappingPediaEngine.mappingpediaProperties().ckanKey();
+
+        CKANUtility ckanUtility = new CKANUtility(ckanURL, ckanKey);
+        File file = new File(filePath);
+        try {
+            if(!file.exists()) {
+                String fileName = file.getName();
+                file = new File(fileName);
+                FileUtils.copyURLToFile(new URL(filePath), file);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        //return ckanUtility.createResource(file.getPath(), packageId);
+        return null;
+    }
 
     @RequestMapping(value="/triplesMaps", method= RequestMethod.GET)
     public ListResult getTriplesMaps() {
@@ -159,7 +206,7 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return MappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
@@ -205,7 +252,7 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return MappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
@@ -228,7 +275,7 @@ public class MappingPediaController {
     public AddMappingDocumentResult uploadNewMapping(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
+            , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileRef
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
             , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
             , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
@@ -242,21 +289,24 @@ public class MappingPediaController {
         Organization organization = new Organization(organizationID);
         Dataset dataset = new Dataset(organization);
         MappingDocument mappingDocument = new MappingDocument();
-        mappingDocument.subject_$eq(mappingDocumentSubjects);
-        mappingDocument.creator_$eq(mappingDocumentCreator);
+        mappingDocument.dctSubject_$eq(mappingDocumentSubjects);
+        mappingDocument.dctCreator_$eq(mappingDocumentCreator);
         if(mappingDocumentTitle == null) {
-            mappingDocument.title_$eq(dataset.dctIdentifier());
+            mappingDocument.dctTitle_$eq(dataset.dctIdentifier());
         } else {
-            mappingDocument.title_$eq(mappingDocumentTitle);
+            mappingDocument.dctTitle_$eq(mappingDocumentTitle);
         }
         if(mappingLanguage == null) {
             mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
         } else {
             mappingDocument.mappingLanguage_$eq(mappingLanguage);
         }
-        mappingDocument.multipartFile_$eq(mappingFileRef);
+        if(mappingFileRef != null) {
+            File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingFileRef , dataset.dctIdentifier());
+            mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
+        }
 
-        return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
+        return mappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }
@@ -266,7 +316,8 @@ public class MappingPediaController {
             @PathVariable("organizationID") String organizationID
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="mappingFile") MultipartFile mappingFileRef
+            , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileRef
+            , @RequestParam(value="mappingDocumentDownloadURL", required = false) String mappingDocumentDownloadURL
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
             , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
             , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
@@ -279,23 +330,24 @@ public class MappingPediaController {
         logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
         Organization organization = new Organization(organizationID);
         Dataset dataset = new Dataset(organization, datasetID);
+
         MappingDocument mappingDocument = new MappingDocument();
-        mappingDocument.subject_$eq(mappingDocumentSubjects);
-        mappingDocument.creator_$eq(mappingDocumentCreator);
+        mappingDocument.dctSubject_$eq(mappingDocumentSubjects);
+        mappingDocument.dctCreator_$eq(mappingDocumentCreator);
         if(mappingDocumentTitle == null) {
-            mappingDocument.title_$eq(dataset.dctIdentifier());
+            mappingDocument.dctTitle_$eq(dataset.dctIdentifier());
         } else {
-            mappingDocument.title_$eq(mappingDocumentTitle);
+            mappingDocument.dctTitle_$eq(mappingDocumentTitle);
         }
-        if(mappingLanguage == null) {
-            mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
-        } else {
-            mappingDocument.mappingLanguage_$eq(mappingLanguage);
+        mappingDocument.mappingLanguage_$eq(mappingLanguage);
+        if(mappingFileRef != null) {
+            File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingFileRef , dataset.dctIdentifier());
+            mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
         }
-        mappingDocument.multipartFile_$eq(mappingFileRef);
+        mappingDocument.setDownloadURL(mappingDocumentDownloadURL);
 
 
-        return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
+        return mappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }
@@ -361,16 +413,20 @@ public class MappingPediaController {
         }
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
-        distribution.ckanFileRef_$eq(datasetFileRef);
+        if(datasetFileRef != null) {
+            distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
+                    datasetFileRef , dataset.dctIdentifier()));
+        }
+
         if(distributionDescription == null) {
-            distribution.ckanDescription_$eq("Original Dataset");
+            distribution.dctDescription_$eq("Original Dataset");
         } else {
-            distribution.ckanDescription_$eq(distributionDescription);
+            distribution.dctDescription_$eq(distributionDescription);
         }
         dataset.addDistribution(distribution);
 
 
-        return DatasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
+        return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
     @RequestMapping(value = "/datasets/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -411,10 +467,13 @@ public class MappingPediaController {
         }
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
-        distribution.ckanFileRef_$eq(datasetFileRef);
+        if(datasetFileRef != null) {
+            distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
+                    datasetFileRef , dataset.dctIdentifier()));
+        }
         dataset.addDistribution(distribution);
 
-        return DatasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
+        return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
     @RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -473,7 +532,7 @@ public class MappingPediaController {
     ) {
         logger.info("GET /ogd/instances ...");
         logger.info("Getting instances of the class:" + aClass);
-        ListResult result = MappingPediaEngine.getInstances(aClass, outputType, inputType) ;
+        ListResult result = mappingExecutionController.getInstances(aClass, outputType, inputType) ;
         return result;
     }
 

@@ -17,7 +17,9 @@ import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.VirtGraph
 
 import scala.collection.JavaConversions._
+import org.apache.commons.io.FileUtils
 
+import scala.io.Source
 
 /**
   * Created by freddy on 10/08/2017.
@@ -393,5 +395,24 @@ object MappingPediaUtility {
         null
       }
 
+  }
+
+  def getFileNameAndContent(file: File, downloadURL:String) = {
+    val (fileName:String, fileContent:String) = {
+      if(file != null && downloadURL== null) {
+        val fileContent = Source.fromFile(file.getAbsolutePath).getLines.mkString("\n")
+        //logger.info(s"fileContent = $fileContent")
+        (file.getName, fileContent)
+      } else if(file == null && downloadURL!= null) {
+        val downloadURLFilename = downloadURL.substring(
+          downloadURL.lastIndexOf('/') + 1, downloadURL.length)
+        val downloadURLContent = scala.io.Source.fromURL(downloadURL).mkString
+        (downloadURLFilename, downloadURLContent);
+      } else if(file == null && downloadURL== null) {
+        val errorMessage = "Either upload a file or specify the download URL!"
+        throw new Exception(errorMessage);
+      }
+    }
+    (fileName:String, fileContent:String);
   }
 }

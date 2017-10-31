@@ -1,14 +1,14 @@
 package es.upm.fi.dia.oeg.mappingpedia.model
 
+import java.io.File
 import java.util.UUID
 
 import com.mashape.unirest.http.Unirest
 import org.slf4j.{Logger, LoggerFactory}
-import org.springframework.web.multipart.MultipartFile
 
 /**
   * Created by fpriyatna on 07/04/2017.
-  * based on Dublin core Bibliographic Reource
+  * based on Dublin core Bibliographic Resource: http://dublincore.org/documents/dcmi-terms/#terms-BibliographicResource
   */
 class MappingDocument(val dctIdentifier:String) {
   def this() = {
@@ -17,18 +17,22 @@ class MappingDocument(val dctIdentifier:String) {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  var title:String = null;
-  var dataset:String = null; // it is a hack by Freddy
-  var creator:String = null;
-  var subject:String = null;
-  var distributionAccessURL:String = null;
-  var mappingLanguage:String = null;
-  var distributionFieldSeparator:Option[String] = None;
+  //FIELDS FROM dct:BibliographicResource
+  var dctTitle:String = null;
+  var dctCreator:String = null;
+  var dctSubject:String = null;
+  var dctDateSubmitted:String = null;
+
+  //FIELDS SPECIFIC FOR A MAPPING DOCUMENT
   var accessURL:String = null;
   private var downloadURL:String = null;
-  var multipartFile: MultipartFile = null;
-  var dateSubmitted:String = null;
+  var mappingLanguage:String = null;
+  var distributionFieldSeparator:Option[String] = None;
+  //var multipartFile: MultipartFile = null;
+  var mappingDocumentFile:File = null;
 
+  var dataset:String = null; // it is a hack by Freddy
+  var distributionAccessURL:String = null;
 
   def setDownloadURL(pMappingDocumentURL:String) = {
     downloadURL = if(pMappingDocumentURL != null && pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
@@ -57,9 +61,9 @@ class MappingDocument(val dctIdentifier:String) {
   }
 
   def getId = this.dctIdentifier;
-  def getTitle = this.title;
+  def getTitle = this.dctTitle;
   def getDataset = this.dataset;
-  def getCreator = this.creator;
+  def getCreator = this.dctCreator;
 
-  def getDateSubmitted = this.dateSubmitted;
+  def getDateSubmitted = this.dctDateSubmitted;
 }

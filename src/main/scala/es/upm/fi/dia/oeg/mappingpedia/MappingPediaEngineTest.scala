@@ -12,6 +12,6 @@ object MappingPediaEngineTest {
 
   //Application.main(args)
 
-  val result: ListResult = MappingPediaEngine.getInstances("Place")
-  logger.info(s"result = $result")
+  //val result: ListResult = MappingPediaEngine.getInstances("Place")
+  //logger.info(s"result = $result")
 }
