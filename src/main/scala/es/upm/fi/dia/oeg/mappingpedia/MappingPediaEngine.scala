@@ -16,7 +16,7 @@ import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.controller.{MappingDocumentController, MappingExecutionController}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{GeneralResult, ListResult}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
 import org.apache.commons.cli.CommandLine
@@ -75,8 +75,11 @@ object MappingPediaEngine {
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
+
 	var mappingpediaProperties:MappingPediaProperties = null;
 	var githubClient:GitHubUtility = null;
+	var ckanClient:CKANUtility = null;
+
 	//val githubRepository:String = MappingPediaEngine.mappingpediaProperties.githubRepository;
 	//val githubUsername:String = MappingPediaEngine.mappingpediaProperties.githubUser;
 	//val githubAccessToken:String = MappingPediaEngine.mappingpediaProperties.githubAccessToken;

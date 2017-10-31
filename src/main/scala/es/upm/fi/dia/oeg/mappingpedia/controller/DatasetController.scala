@@ -6,73 +6,15 @@ import java.util.Date
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
+import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import org.slf4j.{Logger, LoggerFactory}
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
-
-object DatasetController {
+class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtility)  {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  val ckanUtility = new CKANUtility(
-    MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
-  val githubClient = MappingPediaEngine.githubClient;
-
-  def generateManifestFile(distribution: Distribution) = {
-    val dataset = distribution.dataset;
-    val organization = dataset.dctPublisher;
-
-    var distributionAccessURL = distribution.dcatAccessURL
-    if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
-      distributionAccessURL = "<" + distributionAccessURL;
-    }
-    if(distributionAccessURL != null && !distributionAccessURL.endsWith(">")) {
-      distributionAccessURL = distributionAccessURL + ">";
-    }
-    var distributionDownloadURL = distribution.dcatDownloadURL
-    if(distributionDownloadURL != null && !distributionDownloadURL.startsWith("<")) {
-      distributionDownloadURL = "<" + distributionDownloadURL;
-    }
-    if(distributionDownloadURL != null && !distributionDownloadURL.endsWith(">")) {
-      distributionDownloadURL = distributionDownloadURL + ">";
-    }
-
-    logger.info("Generating manifest file ...")
-    try {
-      val templateFiles = List(
-        "templates/metadata-namespaces-template.ttl"
-        , "templates/metadata-dataset-template.ttl"
-        , "templates/metadata-distributions-template.ttl"
-      );
-
-      val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
-
-      val mapValues:Map[String,String] = Map(
-        "$datasetID" -> dataset.dctIdentifier
-        , "$datasetTitle" -> dataset.dctTitle
-        , "$datasetKeywords" -> dataset.dcatKeyword
-        , "$publisherId" -> organization.dctIdentifier
-        , "$datasetLanguage" -> dataset.dctLanguage
-        , "$distributionID" -> dataset.dctIdentifier
-        , "$distributionAccessURL" -> distributionAccessURL
-        , "$distributionDownloadURL" -> distributionDownloadURL
-        , "$distributionMediaType" -> distribution.dcatMediaType
-      );
-
-      val filename = "metadata-dataset.ttl";
-      val manifestFile = MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
-      logger.info("Manifest file generated.")
-      manifestFile;
-    } catch {
-      case e:Exception => {
-        e.printStackTrace()
-        val errorMessage = "Error occured when generating manifest file: " + e.getMessage
-        null;
-      }
-    }
-  }
 
   def storeDatasetDistributionFileOnGitHub(distribution: Distribution) = {
     val dataset = distribution.dataset;
@@ -113,19 +55,6 @@ object DatasetController {
     githubResponse;
   }
 
-
-  def storeManifestOnVirtuoso(manifestFile:File) = {
-    if(manifestFile != null) {
-      logger.info("storing the manifest triples on virtuoso ...")
-      logger.debug("manifestFile = " + manifestFile);
-      MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
-      logger.info("manifest triples stored on virtuoso.")
-      "OK";
-    } else {
-      "No manifest file specified/generated!";
-    }
-  }
-
   def storeManifestFileOnGitHub(manifestFile:File, dataset:Dataset) = {
     val organization = dataset.dctPublisher;
 
@@ -136,7 +65,6 @@ object DatasetController {
     logger.info("manifest file stored on github ...")
     githubResponse
   }
-
 
   def addDataset(dataset:Dataset, manifestFileRef:MultipartFile, generateManifestFile:String
                 ) : AddDatasetResult = {
@@ -171,7 +99,7 @@ object DatasetController {
       } else { // if the user does not provide any manifest file
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
           //MANIFEST FILE GENERATION
-          val generatedFile = this.generateManifestFile(distribution);
+          val generatedFile = distribution.generateManifestFile();
           generatedFile
         } else {
           null
@@ -192,7 +120,7 @@ object DatasetController {
     //STORING MANIFEST ON VIRTUOSO
     val addManifestVirtuosoResponse:String = try {
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
-        this.storeManifestOnVirtuoso(manifestFile);
+        DatasetController.storeManifestOnVirtuoso(manifestFile);
       } else {
         "Storing to Virtuoso is not enabled!";
       }
@@ -229,7 +157,7 @@ object DatasetController {
         logger.info("storing dataset on CKAN ...")
         val addNewPackageResponse:HttpResponse[JsonNode] = CKANUtility.addNewPackage(dataset);
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
-        val addNewResourceResponse:Integer = ckanUtility.createResource(distribution);
+        val addNewResourceResponse:Integer = ckanClient.createResource(distribution);
         logger.info("dataset stored on CKAN.")
         (addNewPackageResponse, addNewResourceResponse)
       } else {
@@ -300,5 +228,36 @@ object DatasetController {
     */
 
   }
+}
+
+object DatasetController {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  /*
+  val ckanUtility = new CKANUtility(
+    MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
+  val githubClient = MappingPediaEngine.githubClient;
+  */
+
+
+
+
+
+
+  def storeManifestOnVirtuoso(manifestFile:File) = {
+    if(manifestFile != null) {
+      logger.info("storing the manifest triples on virtuoso ...")
+      logger.debug("manifestFile = " + manifestFile);
+      MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
+      logger.info("manifest triples stored on virtuoso.")
+      "OK";
+    } else {
+      "No manifest file specified/generated!";
+    }
+  }
+
+
+
+
+
 
 }

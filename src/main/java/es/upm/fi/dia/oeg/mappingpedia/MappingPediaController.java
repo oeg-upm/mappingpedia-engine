@@ -35,6 +35,9 @@ public class MappingPediaController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
 
+    private DatasetController datasetController = new DatasetController(
+            MappingPediaEngine.ckanClient(), MappingPediaEngine.githubClient());
+
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
     public Greeting greetingGET(@RequestParam(value="name", defaultValue="World") String name) {
         logger.info("/greeting(GET) ...");
@@ -419,7 +422,7 @@ public class MappingPediaController {
         dataset.addDistribution(distribution);
 
 
-        return DatasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
+        return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
     @RequestMapping(value = "/datasets/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -466,7 +469,7 @@ public class MappingPediaController {
         }
         dataset.addDistribution(distribution);
 
-        return DatasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
+        return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
     @RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
