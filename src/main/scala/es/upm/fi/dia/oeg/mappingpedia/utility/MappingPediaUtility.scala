@@ -415,7 +415,7 @@ object MappingPediaUtility {
         val downloadURLFilename = downloadURL.substring(
           downloadURL.lastIndexOf('/') + 1, downloadURL.length)
 
-        val downloadURLContent = scala.io.Source.fromURL(downloadURL)
+        val downloadURLContent = scala.io.Source.fromURL(downloadURL, "UTF-8")
         logger.info(s"downloadURLContent: $downloadURLContent")
 
         val downloadURLContentString = downloadURLContent.mkString
