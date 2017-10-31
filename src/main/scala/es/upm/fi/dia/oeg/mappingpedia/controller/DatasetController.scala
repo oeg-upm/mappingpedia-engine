@@ -6,6 +6,7 @@ import java.util.Date
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
@@ -99,7 +100,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
       } else { // if the user does not provide any manifest file
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
           //MANIFEST FILE GENERATION
-          val generatedFile = distribution.generateManifestFile();
+          val generatedFile = DatasetController.generateManifestFile(distribution);
           generatedFile
         } else {
           null
@@ -255,7 +256,59 @@ object DatasetController {
     }
   }
 
+  def generateManifestFile(distribution: Distribution) = {
+    val dataset = distribution.dataset;
+    val organization = dataset.dctPublisher;
 
+    var distributionAccessURL = distribution.dcatAccessURL
+    if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
+      distributionAccessURL = "<" + distributionAccessURL;
+    }
+    if(distributionAccessURL != null && !distributionAccessURL.endsWith(">")) {
+      distributionAccessURL = distributionAccessURL + ">";
+    }
+    var distributionDownloadURL = distribution.dcatDownloadURL
+    if(distributionDownloadURL != null && !distributionDownloadURL.startsWith("<")) {
+      distributionDownloadURL = "<" + distributionDownloadURL;
+    }
+    if(distributionDownloadURL != null && !distributionDownloadURL.endsWith(">")) {
+      distributionDownloadURL = distributionDownloadURL + ">";
+    }
+
+    logger.info("Generating manifest file ...")
+    try {
+      val templateFiles = List(
+        "templates/metadata-namespaces-template.ttl"
+        , "templates/metadata-dataset-template.ttl"
+        , "templates/metadata-distributions-template.ttl"
+      );
+
+      val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
+
+      val mapValues:Map[String,String] = Map(
+        "$datasetID" -> dataset.dctIdentifier
+        , "$datasetTitle" -> dataset.dctTitle
+        , "$datasetKeywords" -> dataset.dcatKeyword
+        , "$publisherId" -> organization.dctIdentifier
+        , "$datasetLanguage" -> dataset.dctLanguage
+        , "$distributionID" -> dataset.dctIdentifier
+        , "$distributionAccessURL" -> distributionAccessURL
+        , "$distributionDownloadURL" -> distributionDownloadURL
+        , "$distributionMediaType" -> distribution.dcatMediaType
+      );
+
+      val filename = "metadata-dataset.ttl";
+      val manifestFile = MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, dataset.dctIdentifier);
+      logger.info("Manifest file generated.")
+      manifestFile;
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+        val errorMessage = "Error occured when generating manifest file: " + e.getMessage
+        null;
+      }
+    }
+  }
 
 
 

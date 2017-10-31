@@ -8,17 +8,198 @@ import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, Mappin
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
+import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
 
 import scala.io.Source
 
+class MappingDocumentController(val githubClient:GitHubUtility) {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
+  def storeMappingDocumentOnGitHub(mappingDocument:MappingDocument, dataset: Dataset) = {
+    val organization = dataset.dctPublisher;
+
+    val mappingDocumentDownloadURL = mappingDocument.getDownloadURL();
+
+    val (mappingDocumentFileName:String, mappingDocumentFileContent:String) =
+      MappingPediaUtility.getFileNameAndContent(mappingDocument.mappingDocumentFile, mappingDocumentDownloadURL);
+    val base64EncodedContent = GitHubUtility.encodeToBase64(mappingDocumentFileContent)
+
+    val commitMessage = "add a new mapping file by mappingpedia-engine"
+    //val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
+
+    logger.info("Storing mapping file on GitHub ...")
+    val response = githubClient.putEncodedContent(organization.dctIdentifier
+      , dataset.dctIdentifier, mappingDocumentFileName
+      , commitMessage, base64EncodedContent)
+    val responseStatus = response.getStatus
+    if (HttpURLConnection.HTTP_OK == responseStatus
+      || HttpURLConnection.HTTP_CREATED == responseStatus) {
+      val githubDownloadURL = response.getBody.getObject.getJSONObject("content").getString("download_url");
+      mappingDocument.setDownloadURL(githubDownloadURL);
+      logger.info("Mapping stored on GitHub")
+    } else {
+      val errorMessage = "Error when storing mapping on GitHub: " + responseStatus
+      throw new Exception(errorMessage);
+    }
+    response
+  }
+
+  def uploadNewMapping(dataset: Dataset, manifestFileRef: MultipartFile
+                       , replaceMappingBaseURI: String, generateManifestFile: String
+                       , mappingDocument: MappingDocument
+                      ): AddMappingDocumentResult = {
+    var errorOccured = false;
+    var collectiveErrorMessage: List[String] = Nil;
+
+    val organization = dataset.dctPublisher;
+
+
+    val mappingDocumentFile = mappingDocument.mappingDocumentFile;
+    //val mappingFilePath = mappingFile.getPath
+
+    //STORING MAPPING DOCUMENT FILE ON GITHUB
+    val mappingFileGitHubResponse: HttpResponse[JsonNode] = try {
+      this.storeMappingDocumentOnGitHub(mappingDocument, dataset);
+    } catch {
+      case e: Exception =>
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error generating manifest file: " + e.getMessage
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+    }
+    val mappingDocumentGitHubURL = if (mappingFileGitHubResponse == null) {
+      ""
+    } else {
+      mappingFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
+    }
+
+
+    //MANIFEST FILE
+    val manifestFile = try {
+      if (manifestFileRef != null) {
+        logger.info("Manifest file is provided")
+        MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
+      } else {
+        logger.info("Manifest file is not provided")
+        if ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+          //GENERATE MANIFEST FILE IF NOT PROVIDED
+          MappingDocumentController.generateManifestFile(mappingDocument, dataset);
+        } else {
+          null
+        }
+      }
+    }
+    catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace();
+        val errorMessage = "Error occured when generating manifest file: " + e.getMessage;
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
+
+    //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
+    val virtuosoStoreMappingStatus = try {
+      logger.info("Storing mapping and manifest file on Virtuoso ...")
+      val manifestFilePath: String = if (manifestFile == null) {
+        null
+      } else {
+        manifestFile.getPath;
+      }
+      val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
+      MappingPediaEngine.storeManifestAndMapping(manifestFilePath, mappingDocument.getDownloadURL(), "false"
+        //, Application.mappingpediaEngine
+        , replaceMappingBaseURI, newMappingBaseURI)
+      logger.info("Mapping and manifest file stored on Virtuoso")
+      "OK"
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace();
+        val errorMessage = "Error occurred when storing mapping and manifest files on virtuoso: " + e.getMessage;
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        e.getMessage
+      }
+    }
+
+
+    //STORING MANIFEST FILE ON GITHUB
+    val addNewManifestResponse = try {
+      if (manifestFile != null) {
+        logger.info("Storing manifest file on GitHub ...")
+        val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+        val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
+          , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+        val addNewManifestResponseStatus = githubResponse.getStatus
+        val addNewManifestResponseStatusText = githubResponse.getStatusText
+
+        if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
+          || HttpURLConnection.HTTP_OK == addNewManifestResponseStatus) {
+          logger.info("Manifest file stored on GitHub")
+        } else {
+          errorOccured = true;
+          val errorMessage = "Error occured when storing manifest file on GitHub: " + addNewManifestResponseStatusText;
+          logger.error(errorMessage)
+          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        }
+        githubResponse
+      } else {
+        null
+      }
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace();
+        val errorMessage = "Error occurred when storing manifest files on github: " + e.getMessage;
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
+    val manifestGitHubURL = if (addNewManifestResponse == null) {
+      null
+    } else {
+      addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
+    }
+
+    val (responseStatus, responseStatusText) = if (errorOccured) {
+      (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
+    } else {
+      (HttpURLConnection.HTTP_OK, "OK")
+    }
+
+
+    val addMappingResult:AddMappingDocumentResult = new AddMappingDocumentResult(
+      responseStatus, responseStatusText
+      , mappingDocumentGitHubURL
+      , manifestGitHubURL
+
+      , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
+    )
+    addMappingResult
+
+    /*
+    new MappingPediaExecutionResult(manifestGitHubURL, null, mappingDocumentGitHubURL
+      , null, null, responseStatusText, responseStatus, null)
+      */
+
+
+  }
+}
+
 object MappingDocumentController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  val githubClient = MappingPediaEngine.githubClient;
+  //val githubClient = MappingPediaEngine.githubClient;
 
   def findMappingDocuments(queryString: String): ListResult = {
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
@@ -155,34 +336,7 @@ object MappingDocumentController {
     result;
   }
 
-  def storeMappingDocumentOnGitHub(mappingDocument:MappingDocument, dataset: Dataset) = {
-    val organization = dataset.dctPublisher;
 
-    val mappingDocumentDownloadURL = mappingDocument.getDownloadURL();
-
-    val (mappingDocumentFileName:String, mappingDocumentFileContent:String) =
-      MappingPediaUtility.getFileNameAndContent(mappingDocument.mappingDocumentFile, mappingDocumentDownloadURL);
-    val base64EncodedContent = GitHubUtility.encodeToBase64(mappingDocumentFileContent)
-
-    val commitMessage = "add a new mapping file by mappingpedia-engine"
-    //val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
-
-    logger.info("Storing mapping file on GitHub ...")
-    val response = githubClient.putEncodedContent(organization.dctIdentifier
-      , dataset.dctIdentifier, mappingDocumentFileName
-      , commitMessage, base64EncodedContent)
-    val responseStatus = response.getStatus
-    if (HttpURLConnection.HTTP_OK == responseStatus
-      || HttpURLConnection.HTTP_CREATED == responseStatus) {
-      val githubDownloadURL = response.getBody.getObject.getJSONObject("content").getString("download_url");
-      mappingDocument.setDownloadURL(githubDownloadURL);
-      logger.info("Mapping stored on GitHub")
-    } else {
-      val errorMessage = "Error when storing mapping on GitHub: " + responseStatus
-      throw new Exception(errorMessage);
-    }
-    response
-  }
 
   def generateManifestFile(mappingDocument: MappingDocument, dataset: Dataset) = {
     logger.info("Generating manifest file ...")
@@ -214,150 +368,5 @@ object MappingDocumentController {
     generatedManifestFile
   }
 
-  def uploadNewMapping(dataset: Dataset, manifestFileRef: MultipartFile
-                       , replaceMappingBaseURI: String, generateManifestFile: String
-                       , mappingDocument: MappingDocument
-                      ): AddMappingDocumentResult = {
-    var errorOccured = false;
-    var collectiveErrorMessage: List[String] = Nil;
 
-    val organization = dataset.dctPublisher;
-
-
-    val mappingDocumentFile = mappingDocument.mappingDocumentFile;
-    //val mappingFilePath = mappingFile.getPath
-
-    //STORING MAPPING DOCUMENT FILE ON GITHUB
-    val mappingFileGitHubResponse: HttpResponse[JsonNode] = try {
-      this.storeMappingDocumentOnGitHub(mappingDocument, dataset);
-    } catch {
-      case e: Exception =>
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "error generating manifest file: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
-    }
-    val mappingDocumentGitHubURL = if (mappingFileGitHubResponse == null) {
-      ""
-    } else {
-      mappingFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
-
-
-    //MANIFEST FILE
-    val manifestFile = try {
-      if (manifestFileRef != null) {
-        logger.info("Manifest file is provided")
-        MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
-      } else {
-        logger.info("Manifest file is not provided")
-        if ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
-          //GENERATE MANIFEST FILE IF NOT PROVIDED
-          this.generateManifestFile(mappingDocument, dataset);
-        } else {
-          null
-        }
-      }
-    }
-    catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace();
-        val errorMessage = "Error occured when generating manifest file: " + e.getMessage;
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
-      }
-    }
-
-    //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
-    val virtuosoStoreMappingStatus = try {
-      logger.info("Storing mapping and manifest file on Virtuoso ...")
-      val manifestFilePath: String = if (manifestFile == null) {
-        null
-      } else {
-        manifestFile.getPath;
-      }
-      val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
-      MappingPediaEngine.storeManifestAndMapping(manifestFilePath, mappingDocument.getDownloadURL(), "false"
-        //, Application.mappingpediaEngine
-        , replaceMappingBaseURI, newMappingBaseURI)
-      logger.info("Mapping and manifest file stored on Virtuoso")
-      "OK"
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace();
-        val errorMessage = "Error occurred when storing mapping and manifest files on virtuoso: " + e.getMessage;
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        e.getMessage
-      }
-    }
-
-
-    //STORING MANIFEST FILE ON GITHUB
-    val addNewManifestResponse = try {
-      if (manifestFile != null) {
-        logger.info("Storing manifest file on GitHub ...")
-        val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-        val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
-          , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
-        val addNewManifestResponseStatus = githubResponse.getStatus
-        val addNewManifestResponseStatusText = githubResponse.getStatusText
-
-        if (HttpURLConnection.HTTP_CREATED == addNewManifestResponseStatus
-          || HttpURLConnection.HTTP_OK == addNewManifestResponseStatus) {
-          logger.info("Manifest file stored on GitHub")
-        } else {
-          errorOccured = true;
-          val errorMessage = "Error occured when storing manifest file on GitHub: " + addNewManifestResponseStatusText;
-          logger.error(errorMessage)
-          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        }
-        githubResponse
-      } else {
-        null
-      }
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace();
-        val errorMessage = "Error occurred when storing manifest files on github: " + e.getMessage;
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
-      }
-    }
-    val manifestGitHubURL = if (addNewManifestResponse == null) {
-      null
-    } else {
-      addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
-
-    val (responseStatus, responseStatusText) = if (errorOccured) {
-      (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
-    } else {
-      (HttpURLConnection.HTTP_OK, "OK")
-    }
-
-
-    val addMappingResult:AddMappingDocumentResult = new AddMappingDocumentResult(
-      responseStatus, responseStatusText
-      , mappingDocumentGitHubURL
-      , manifestGitHubURL
-
-      , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
-    )
-    addMappingResult
-
-    /*
-    new MappingPediaExecutionResult(manifestGitHubURL, null, mappingDocumentGitHubURL
-      , null, null, responseStatusText, responseStatus, null)
-      */
-
-
-  }
 }

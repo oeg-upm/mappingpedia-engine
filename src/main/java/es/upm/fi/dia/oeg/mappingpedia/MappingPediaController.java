@@ -37,6 +37,8 @@ public class MappingPediaController {
 
     private DatasetController datasetController = new DatasetController(
             MappingPediaEngine.ckanClient(), MappingPediaEngine.githubClient());
+    private MappingDocumentController mappingDocumentController = new MappingDocumentController(
+            MappingPediaEngine.githubClient());
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
     public Greeting greetingGET(@RequestParam(value="name", defaultValue="World") String name) {
@@ -302,7 +304,7 @@ public class MappingPediaController {
             mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
         }
 
-        return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
+        return mappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }
@@ -343,7 +345,7 @@ public class MappingPediaController {
         mappingDocument.setDownloadURL(mappingDocumentDownloadURL);
 
 
-        return MappingDocumentController.uploadNewMapping(dataset, manifestFileRef
+        return mappingDocumentController.uploadNewMapping(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }
