@@ -414,7 +414,13 @@ object MappingPediaUtility {
         logger.info(s"getFileNameAndContent from downloadURL: $downloadURL")
         val downloadURLFilename = downloadURL.substring(
           downloadURL.lastIndexOf('/') + 1, downloadURL.length)
-        val downloadURLContent = scala.io.Source.fromURL(downloadURL).mkString
+
+        val downloadURLContent = scala.io.Source.fromURL(downloadURL)
+        logger.info(s"downloadURLContent: $downloadURLContent")
+
+        val downloadURLContentString = downloadURLContent.mkString
+        logger.info(s"downloadURLContentString: $downloadURLContentString")
+
         (downloadURLFilename, downloadURLContent);
       } else if(file == null && downloadURL== null) {
         val errorMessage = "Either upload a file or specify the download URL!"
