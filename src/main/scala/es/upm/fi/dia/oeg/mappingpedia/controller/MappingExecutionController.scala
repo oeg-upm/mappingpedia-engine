@@ -172,6 +172,24 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       }
     }
 
+    //STORING MANIFEST FILE AS TRIPLES ON VIRTUOSO
+    val addManifestVirtuosoResponse:String = try {
+      if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
+        MappingExecutionController.storeManifestOnVirtuoso(manifestFile);
+      } else {
+        "Storing to Virtuoso is not enabled!";
+      }
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error storing manifest file of a mapping execution result on Virtuoso: " + e.getMessage
+        logger.error(errorMessage);
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        e.getMessage
+      }
+    }
+
     val manifestURL = if(addManifestFileGitHubResponse == null) {
       null
     } else {
@@ -359,4 +377,15 @@ object MappingExecutionController {
     runner.run
   }
 
+  def storeManifestOnVirtuoso(manifestFile:File) = {
+    if(manifestFile != null) {
+      logger.info("storing the manifest triples of a mapping execution result on virtuoso ...")
+      logger.debug("manifestFile = " + manifestFile);
+      MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
+      logger.info("manifest triples stored on virtuoso.")
+      "OK";
+    } else {
+      "No manifest file specified/generated!";
+    }
+  }
 }

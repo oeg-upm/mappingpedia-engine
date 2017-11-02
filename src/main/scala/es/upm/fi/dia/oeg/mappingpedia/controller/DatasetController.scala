@@ -63,7 +63,7 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
   def storeManifestFileOnGitHub(manifestFile:File, dataset:Dataset) = {
     val organization = dataset.dctPublisher;
 
-    logger.info("storing manifest file on github ...")
+    logger.info("storing manifest file for a dataset on github ...")
     val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
     val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
       , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
@@ -271,7 +271,7 @@ object DatasetController {
 
   def storeManifestOnVirtuoso(manifestFile:File) = {
     if(manifestFile != null) {
-      logger.info("storing the manifest triples on virtuoso ...")
+      logger.info("storing the manifest triples of a dataset on virtuoso ...")
       logger.debug("manifestFile = " + manifestFile);
       MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
       logger.info("manifest triples stored on virtuoso.")
