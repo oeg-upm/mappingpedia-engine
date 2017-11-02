@@ -21,6 +21,7 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.util.EntityUtils
 
 class CKANClient(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
@@ -50,15 +51,22 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
       val mpEntity = builder.build();
       httpPostRequest.setEntity(mpEntity)
       val response = httpClient.execute(httpPostRequest)
+      val responseStatus = response.getStatusLine;
+
       if (response.getStatusLine.getStatusCode < 200 || response.getStatusLine.getStatusCode >= 300)
         throw new RuntimeException("failed to add the file to CKAN storage. response status line from " + uploadFileUrl + " was: " + response.getStatusLine)
-      val responseEntity = response.getEntity
-      logger.info(responseEntity.toString)
-      HttpURLConnection.HTTP_CREATED
+      val httpEntity  = response.getEntity
+      val entity = EntityUtils.toString(httpEntity)
+      //logger.info(s"entity = " + entity)
+      val responseEntity = new JSONObject(entity);
+      //logger.info(s"responseEntity = " + responseEntity)
+      (responseStatus, responseEntity);
+
     } catch {
       case e: Exception => {
         e.printStackTrace()
-        HttpURLConnection.HTTP_INTERNAL_ERROR
+        //HttpURLConnection.HTTP_INTERNAL_ERROR
+        throw e;
       }
 
       // log error

@@ -13,6 +13,9 @@ import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
+import org.apache.http.client.methods.CloseableHttpResponse
+import org.apache.http.util.EntityUtils
+import org.json.JSONObject
 import org.springframework.web.multipart.MultipartFile
 
 class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtility)  {
@@ -154,14 +157,19 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
 
 
     //STORING DATASET & RESOURCE ON CKAN
-    val (ckanAddPackageResponse:HttpResponse[JsonNode], ckanAddResourceResponse:Integer) = try {
+    val (ckanAddPackageResponse:HttpResponse[JsonNode], ckanAddResourceResponse) = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
         val addNewPackageResponse:HttpResponse[JsonNode] = ckanClient.addNewPackage(dataset);
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
-        val addNewResourceResponse:Integer = ckanClient.createResource(distribution);
+        val (addResourceStatus, addResourceEntity) = ckanClient.createResource(distribution);
+
+        if (addResourceStatus.getStatusCode < 200 || addResourceStatus.getStatusCode >= 300) {
+          val errorMessage = "failed to add the distribution file to CKAN storage. response status line from was: " + addResourceStatus
+          throw new Exception(errorMessage);
+        }
         logger.info("dataset stored on CKAN.")
-        (addNewPackageResponse, addNewResourceResponse)
+        (addNewPackageResponse, (addResourceStatus, addResourceEntity))
       } else {
         (null, null)
       }
@@ -194,14 +202,29 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
       addManifestFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
 
-    val ckanAddPackageResponseText = {
+    val ckanAddPackageResponseStatusCode:Integer = {
       if(ckanAddPackageResponse == null) {
-        "null"
+        null
       } else {
-        ckanAddPackageResponse.getStatusText
+        ckanAddPackageResponse.getStatus
       }
     }
-    val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponse;
+    val ckanAddResourceResponseStatusCode:Integer = {
+      if(ckanAddResourceResponse == null) {
+        null
+      } else {
+        ckanAddResourceResponse._1.getStatusCode;
+      }
+    }
+    val ckanResourceId:String = {
+      if(ckanAddResourceResponse == null) {
+        null
+      } else {
+        val resourceId = ckanAddResourceResponse._2.getJSONObject("result").getString("id");
+        resourceId
+      }
+    }
+    //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;
 
     val addDatasetResult:AddDatasetResult = new AddDatasetResult(
       responseStatus, responseStatusText
@@ -210,14 +233,15 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
       , addManifestFileGitHubResponse.getStatus
       , addManifestFileGitHubResponse.getStatusText
 
-      , datasetURL:String
+      , datasetURL
       , addDatasetFileGitHubResponse.getStatus
       , addDatasetFileGitHubResponse.getStatusText
 
       , addManifestVirtuosoResponse
 
-      , ckanAddPackageResponse.getStatus
-      , ckanAddResourceResponse
+      , ckanAddPackageResponseStatusCode
+      , ckanAddResourceResponseStatusCode
+      , ckanResourceId
 
       , dataset.dctIdentifier
     )
