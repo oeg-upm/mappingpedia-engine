@@ -273,7 +273,7 @@ object DatasetController {
     if(manifestFile != null) {
       logger.info("storing the manifest triples of a dataset on virtuoso ...")
       logger.debug("manifestFile = " + manifestFile);
-      MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
+      MappingPediaEngine.virtuosoClient.store(manifestFile)
       logger.info("manifest triples stored on virtuoso.")
       "OK";
     } else {

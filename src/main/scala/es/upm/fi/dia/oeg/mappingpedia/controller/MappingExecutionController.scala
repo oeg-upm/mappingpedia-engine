@@ -222,7 +222,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
 
   def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
     val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
-      aClass, MappingPediaEngine.schemaOrgModel, outputType, inputType);
+      aClass, MappingPediaEngine.ontologyModel, outputType, inputType);
     logger.info(s"subclassesListResult = subclassesListResult")
 
     val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
@@ -381,7 +381,7 @@ object MappingExecutionController {
     if(manifestFile != null) {
       logger.info("storing the manifest triples of a mapping execution result on virtuoso ...")
       logger.debug("manifestFile = " + manifestFile);
-      MappingPediaUtility.store(manifestFile, MappingPediaEngine.mappingpediaProperties.graphName)
+      MappingPediaEngine.virtuosoClient.store(manifestFile)
       logger.info("manifest triples stored on virtuoso.")
       "OK";
     } else {

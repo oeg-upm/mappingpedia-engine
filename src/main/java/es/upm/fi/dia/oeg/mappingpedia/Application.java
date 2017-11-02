@@ -5,8 +5,12 @@ import java.io.InputStream;
 
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
+import es.upm.fi.dia.oeg.mappingpedia.model.MappingDocument;
 import es.upm.fi.dia.oeg.mappingpedia.utility.CKANClient;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.VirtuosoClient;
+import org.apache.jena.ontology.OntModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,15 +40,23 @@ public class Application {
 			MappingPediaProperties properties = new MappingPediaProperties(is);
 			properties.load(is);
 			logger.info("Configuration file loaded.");
-			MappingPediaEngine.mappingpediaProperties_$eq(properties);
+			MappingPediaEngine.setProperties(properties);
 
 			GitHubUtility githubClient = new GitHubUtility(properties.githubRepository(), properties.githubUser()
 					, properties.githubAccessToken()
 			);
 			MappingPediaEngine.githubClient_$eq(githubClient);
+
 			CKANClient ckanClient = new CKANClient(properties.ckanURL(), properties.ckanKey());
 			MappingPediaEngine.ckanClient_$eq(ckanClient);
 
+			VirtuosoClient virtuosoClient = new VirtuosoClient(properties.virtuosoJDBC(), properties.virtuosoUser()
+					, properties.virtuosoPwd(), properties.graphName()
+			);
+			MappingPediaEngine.virtuosoClient_$eq(virtuosoClient);
+
+			OntModel schemaOntology = MappingPediaUtility.loadSchemaOrgOntology();
+			MappingPediaEngine.setOntologyModel(schemaOntology);
 
 
 		} catch (Exception ex) {

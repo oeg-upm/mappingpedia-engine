@@ -14,7 +14,6 @@ import org.apache.jena.rdf.model._
 import org.apache.jena.util.FileManager
 import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
-import virtuoso.jena.driver.VirtGraph
 
 import scala.collection.JavaConversions._
 import org.apache.commons.io.FileUtils
@@ -26,6 +25,16 @@ import scala.io.Source
   */
 object MappingPediaUtility {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
+  /*
+  val virtuosoClient = new VirtuosoClient(MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+    ,MappingPediaEngine.mappingpediaProperties.virtuosoUser
+    , MappingPediaEngine.mappingpediaProperties.virtuosoPwd
+    , MappingPediaEngine.mappingpediaProperties.graphName
+
+  )
+  */
+
 
 
   def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {
@@ -39,6 +48,7 @@ object MappingPediaUtility {
     return result;
   }
 
+  /*
   def getVirtuosoGraph(virtuosoJDBC : String, virtuosoUser : String, virtuosoPwd : String
                        , virtuosoGraphName : String) : VirtGraph = {
     logger.info("Connecting to Virtuoso Graph...");
@@ -49,67 +59,9 @@ object MappingPediaUtility {
     logger.info("Connected to Virtuoso Graph...");
     return virtGraph;
   }
+  */
 
-  def store(file:File, graphURI:String) : Unit = {
-    val filePath = file.getPath;
-    this.store(filePath, graphURI)
-  }
 
-  def store(filePath:String, graphURI:String) : Unit = {
-    val model = this.readModelFromFile(filePath);
-    val triples = this.toTriples(model);
-
-    //val prop = Application.prop;
-    val virtuosoGraph = this.getVirtuosoGraph(MappingPediaEngine.mappingpediaProperties.virtuosoJDBC, MappingPediaEngine.mappingpediaProperties.virtuosoUser
-      , MappingPediaEngine.mappingpediaProperties.virtuosoPwd, graphURI);
-
-    this.store(triples, virtuosoGraph);
-  }
-
-  def store(pTriples:List[Triple], virtuosoGraph:VirtGraph) : Unit = {
-    this.store(pTriples, virtuosoGraph, false, null);
-  }
-
-  def store(pTriples:List[Triple], virtuosoGraph:VirtGraph, skolemizeBlankNode:Boolean, baseURI:String) : Unit = {
-    val initialGraphSize = virtuosoGraph.getCount();
-    logger.debug("initialGraphSize = " + initialGraphSize);
-
-    val newTriples = if(skolemizeBlankNode) { this.skolemizeTriples(pTriples, baseURI)} else { pTriples }
-
-    val triplesIterator = newTriples.iterator;
-    while(triplesIterator.hasNext) {
-      val triple = triplesIterator.next();
-      virtuosoGraph.add(triple);
-    }
-
-    val finalGraphSize = virtuosoGraph.getCount();
-    logger.debug("finalGraphSize = " + finalGraphSize);
-
-    val addedTriplesSize = finalGraphSize - initialGraphSize;
-    logger.info("No of added triples = " + addedTriplesSize);
-  }
-
-  def readModelFromFile(filePath:String) : Model = {
-    this.readModelFromFile(filePath, "TURTLE");
-  }
-
-  def readModelFromString(modelText:String, lang:String) : Model = {
-    val inputStream = new ByteArrayInputStream(modelText.getBytes());
-    val model = this.readModelFromInputStream(inputStream, lang);
-    model;
-  }
-
-  def readModelFromFile(filePath:String, lang:String) : Model = {
-    val inputStream = FileManager.get().open(filePath);
-    val model = this.readModelFromInputStream(inputStream, lang);
-    model;
-  }
-
-  def readModelFromInputStream(inputStream:InputStream, lang:String) : Model = {
-    val model = ModelFactory.createDefaultModel();
-    model.read(inputStream, null, lang);
-    model;
-  }
 
   def collectBlankNodes(triples:List[Triple]) : Set[Node] = {
     val blankNodes:Set[Node] = if(triples.isEmpty) {
@@ -327,7 +279,7 @@ object MappingPediaUtility {
     val ontologyFormat = "JSON-LD";
     val ontModelSpec = OntModelSpec.RDFS_MEM_TRANS_INF;
 
-    val defaultModel = MappingPediaUtility.readModelFromFile(ontologyFileName, ontologyFormat);
+    val defaultModel = MappingPediaEngine.virtuosoClient.readModelFromFile(ontologyFileName, ontologyFormat);
     val rdfsModel = ModelFactory.createOntologyModel(OntModelSpec.RDFS_MEM_TRANS_INF, defaultModel)
     rdfsModel;
   }

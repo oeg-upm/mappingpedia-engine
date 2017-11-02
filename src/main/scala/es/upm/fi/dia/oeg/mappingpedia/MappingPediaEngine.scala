@@ -16,7 +16,7 @@ import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.controller.{MappingDocumentController, MappingExecutionController}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{GeneralResult, ListResult}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility, VirtuosoClient}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
 import org.apache.commons.cli.CommandLine
@@ -35,6 +35,7 @@ import virtuoso.jena.driver.{VirtGraph, VirtModel, VirtuosoQueryExecutionFactory
 import scala.collection.JavaConversions._
 import scala.io.Source.fromFile
 import org.apache.commons.io.{FileUtils, FilenameUtils}
+import org.eclipse.egit.github.core.client.GitHubClient
 
 
 
@@ -52,15 +53,16 @@ class MappingPediaEngine() {
 object MappingPediaEngine {
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-	val schemaOrgModel:OntModel = MappingPediaUtility.loadSchemaOrgOntology();
+	var ontologyModel:OntModel = null;
 	var mappingpediaProperties:MappingPediaProperties = null;
 	var githubClient:GitHubUtility = null;
 	var ckanClient:CKANClient = null;
+	var virtuosoClient:VirtuosoClient = null;
 
 	def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 
-		val manifestModel = MappingPediaUtility.readModelFromFile(manifestFilePath, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
+		val manifestModel = MappingPediaEngine.virtuosoClient.readModelFromFile(manifestFilePath, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
 			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
@@ -207,7 +209,7 @@ object MappingPediaEngine {
 			val file = MappingPediaUtility.multipartFileToFile(fileRef)
 			val filePath = file.getPath
 			logger.info("file path = " + filePath)
-			MappingPediaUtility.store(filePath, graphURI)
+			MappingPediaEngine.virtuosoClient.store(filePath)
 			val errorCode = HttpURLConnection.HTTP_CREATED
 			val status = "success, file uploaded to: " + filePath
 			logger.info("file inserted.")
@@ -310,11 +312,11 @@ object MappingPediaEngine {
 
 
 	def getSubclassesLocalNames(aClass:String, outputType:String, inputType:String) : ListResult = {
-		MappingPediaUtility.getSubclassesLocalNames(aClass, this.schemaOrgModel, outputType, inputType);
+		MappingPediaUtility.getSubclassesLocalNames(aClass, this.ontologyModel, outputType, inputType);
 	}
 
 	def getSchemaOrgSubclassesDetail(aClass:String, outputType:String, inputType:String) : ListResult = {
-		MappingPediaUtility.getSubclassesDetail(aClass, this.schemaOrgModel, outputType, inputType);
+		MappingPediaUtility.getSubclassesDetail(aClass, this.ontologyModel, outputType, inputType);
 	}
 
 
@@ -375,7 +377,7 @@ object MappingPediaEngine {
 		}
 
 		val manifestModel = if(manifestText != null) {
-			MappingPediaUtility.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
+			MappingPediaEngine.virtuosoClient.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 		} else {
 			null;
 		}
@@ -391,16 +393,17 @@ object MappingPediaEngine {
 		} else {
 			oldMappingText;
 		}
-		val mappingDocumentModel = MappingPediaUtility.readModelFromString(mappingText
+		val mappingDocumentModel = MappingPediaEngine.virtuosoClient.readModelFromString(mappingText
 			, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 		//mappingpediaEngine.mappingDocumentModel = mappingDocumentModel;
 
 		//val virtuosoGraph = mappingpediaR2RML.getMappingpediaGraph();
-		val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
-			, MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd, MappingPediaEngine.mappingpediaProperties.graphName);
+
+		//val virtuosoGraph = MappingPediaUtility.getVirtuosoGraph(MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+			//, MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd, MappingPediaEngine.mappingpediaProperties.graphName);
 		if(clearGraphBoolean) {
 			try {
-				virtuosoGraph.clear();
+				MappingPediaEngine.virtuosoClient.virtGraph.clear();
 			} catch {
 				case e:Exception => {
 					logger.error("unable to clear the graph: " + e.getMessage);
@@ -412,20 +415,20 @@ object MappingPediaEngine {
 			logger.info("Storing manifest triples.");
 			val manifestTriples = MappingPediaUtility.toTriples(manifestModel);
 			//logger.info("manifestTriples = " + manifestTriples.mkString("\n"));
-			MappingPediaUtility.store(manifestTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+			MappingPediaEngine.virtuosoClient.store(manifestTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
 			logger.info("Storing generated triples.");
 			val additionalTriples = MappingPediaEngine.generateAdditionalTriples(manifestModel, mappingDocumentModel);
 			//logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
 
-			MappingPediaUtility.store(additionalTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+			MappingPediaEngine.virtuosoClient.store(additionalTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 		}
 
 		logger.info("Storing R2RML triples in Virtuoso.");
 		val r2rmlTriples = MappingPediaUtility.toTriples(mappingDocumentModel);
 		//logger.info("r2rmlTriples = " + r2rmlTriples.mkString("\n"));
 
-		MappingPediaUtility.store(r2rmlTriples, virtuosoGraph, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+		MappingPediaEngine.virtuosoClient.store(r2rmlTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
 
 	}
@@ -537,7 +540,9 @@ object MappingPediaEngine {
 		}
 	}
 
+	def setOntologyModel(ontModel: OntModel) = { this.ontologyModel = ontModel }
 
+	def setProperties(properties: MappingPediaProperties) = { this.mappingpediaProperties = properties }
 
 
 
