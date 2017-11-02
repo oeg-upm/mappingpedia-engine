@@ -3,7 +3,6 @@ package es.upm.fi.dia.oeg.mappingpedia;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -15,10 +14,9 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
-import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.CKANClient;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
-import eu.trentorise.opendata.jackan.CkanClient;
 import org.apache.commons.io.FileUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,7 +34,7 @@ public class MappingPediaController {
     private final AtomicLong counter = new AtomicLong();
 
     private GitHubUtility githubClient = MappingPediaEngine.githubClient();
-    private CKANUtility ckanClient = MappingPediaEngine.ckanClient();
+    private CKANClient ckanClient = MappingPediaEngine.ckanClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
     private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient);
@@ -68,7 +66,7 @@ public class MappingPediaController {
             catalogUrl = MappingPediaEngine.mappingpediaProperties().ckanURL();
         }
         logger.info("GET /ckanDatasetList ...");
-        return CKANUtility.getDatasetList(catalogUrl);
+        return CKANClient.getDatasetList(catalogUrl);
     }
 
     @RequestMapping(value="/virtuosoEnabled", method= RequestMethod.GET)
@@ -110,7 +108,7 @@ public class MappingPediaController {
         String ckanURL = MappingPediaEngine.mappingpediaProperties().ckanURL();
         String ckanKey = MappingPediaEngine.mappingpediaProperties().ckanKey();
 
-        CKANUtility ckanUtility = new CKANUtility(ckanURL, ckanKey);
+        CKANClient ckanClient = new CKANClient(ckanURL, ckanKey);
         File file = new File(filePath);
         try {
             if(!file.exists()) {

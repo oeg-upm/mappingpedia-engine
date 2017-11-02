@@ -12,10 +12,10 @@ import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 
-class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtility)  {
+class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtility)  {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def storeDatasetDistributionFileOnGitHub(distribution: Distribution) = {
@@ -157,7 +157,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     val (ckanAddPackageResponse:HttpResponse[JsonNode], ckanAddResourceResponse:Integer) = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse:HttpResponse[JsonNode] = CKANUtility.addNewPackage(dataset);
+        val addNewPackageResponse:HttpResponse[JsonNode] = ckanClient.addNewPackage(dataset);
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
         val addNewResourceResponse:Integer = ckanClient.createResource(distribution);
         logger.info("dataset stored on CKAN.")
