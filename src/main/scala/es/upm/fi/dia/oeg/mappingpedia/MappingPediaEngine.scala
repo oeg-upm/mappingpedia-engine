@@ -10,7 +10,6 @@ import be.ugent.mmlab.rml.config.RMLConfiguration
 import be.ugent.mmlab.rml.core.{StdMetadataRMLEngine, StdRMLEngine}
 import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory
 import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaRunner.logger
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.controller.{MappingDocumentController, MappingExecutionController}
@@ -44,11 +43,6 @@ import org.eclipse.egit.github.core.client.GitHubClient
 
 //class MappingPediaR2RML(mappingpediaGraph:VirtGraph) {
 //class MappingPediaEngine() {
-class MappingPediaEngine() {
-	val logger: Logger = LoggerFactory.getLogger(this.getClass);
-
-
-}
 
 object MappingPediaEngine {
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
@@ -62,7 +56,7 @@ object MappingPediaEngine {
 	def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
 
-		val manifestModel = MappingPediaEngine.virtuosoClient.readModelFromFile(manifestFilePath, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
+		val manifestModel = this.virtuosoClient.readModelFromFile(manifestFilePath, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 
 		val r2rmlResources = manifestModel.listResourcesWithProperty(
 			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
@@ -209,7 +203,7 @@ object MappingPediaEngine {
 			val file = MappingPediaUtility.multipartFileToFile(fileRef)
 			val filePath = file.getPath
 			logger.info("file path = " + filePath)
-			MappingPediaEngine.virtuosoClient.store(filePath)
+			this.virtuosoClient.store(filePath)
 			val errorCode = HttpURLConnection.HTTP_CREATED
 			val status = "success, file uploaded to: " + filePath
 			logger.info("file inserted.")
@@ -261,7 +255,7 @@ object MappingPediaEngine {
 
 		val mappingContent:String = if(pMappingText == null) {
 			val mappingFilePath = if(pMappingFilePath == null) {
-				val mappingFilePathFromManifest = MappingPediaEngine.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
+				val mappingFilePathFromManifest = this.getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath);
 				mappingFilePathFromManifest;
 			}  else {
 				pMappingFilePath;
@@ -280,11 +274,11 @@ object MappingPediaEngine {
 	def getAllTriplesMaps() : ListResult = {
 		val prolog = "PREFIX rr: <http://www.w3.org/ns/r2rml#> \n"
 		var queryString: String = prolog + "SELECT ?tm \n";
-		queryString = queryString + " FROM <" + MappingPediaEngine.mappingpediaProperties.graphName + ">\n";
+		queryString = queryString + " FROM <" + this.mappingpediaProperties.graphName + ">\n";
 		queryString = queryString + " WHERE {?tm rr:logicalTable ?lt} \n";
 
-		val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
-			, MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+		val m = VirtModel.openDatabaseModel(this.mappingpediaProperties.graphName, this.mappingpediaProperties.virtuosoJDBC
+			, this.mappingpediaProperties.virtuosoUser, this.mappingpediaProperties.virtuosoPwd);
 
 		logger.debug("Executing query=\n" + queryString)
 
@@ -371,20 +365,20 @@ object MappingPediaEngine {
 		val replaceMappingBaseURI = MappingPediaUtility.stringToBoolean(pReplaceMappingBaseURI);
 
 		val manifestText = if(manifestFilePath != null ) {
-			MappingPediaEngine.getManifestContent(manifestFilePath);
+			this.getManifestContent(manifestFilePath);
 		} else {
 			null;
 		}
 
 		val manifestModel = if(manifestText != null) {
-			MappingPediaEngine.virtuosoClient.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
+			this.virtuosoClient.readModelFromString(manifestText, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 		} else {
 			null;
 		}
 
 		//mappingpediaEngine.manifestModel = manifestModel;
 
-		val oldMappingText:String = MappingPediaEngine.getMappingContent(manifestFilePath, pMappingFilePath);
+		val oldMappingText:String = this.getMappingContent(manifestFilePath, pMappingFilePath);
 
 
 		val mappingText = if(replaceMappingBaseURI) {
@@ -393,7 +387,7 @@ object MappingPediaEngine {
 		} else {
 			oldMappingText;
 		}
-		val mappingDocumentModel = MappingPediaEngine.virtuosoClient.readModelFromString(mappingText
+		val mappingDocumentModel = this.virtuosoClient.readModelFromString(mappingText
 			, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 		//mappingpediaEngine.mappingDocumentModel = mappingDocumentModel;
 
@@ -403,7 +397,7 @@ object MappingPediaEngine {
 			//, MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd, MappingPediaEngine.mappingpediaProperties.graphName);
 		if(clearGraphBoolean) {
 			try {
-				MappingPediaEngine.virtuosoClient.virtGraph.clear();
+				this.virtuosoClient.virtGraph.clear();
 			} catch {
 				case e:Exception => {
 					logger.error("unable to clear the graph: " + e.getMessage);
@@ -415,20 +409,20 @@ object MappingPediaEngine {
 			logger.info("Storing manifest triples.");
 			val manifestTriples = MappingPediaUtility.toTriples(manifestModel);
 			//logger.info("manifestTriples = " + manifestTriples.mkString("\n"));
-			MappingPediaEngine.virtuosoClient.store(manifestTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+			this.virtuosoClient.store(manifestTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
 			logger.info("Storing generated triples.");
-			val additionalTriples = MappingPediaEngine.generateAdditionalTriples(manifestModel, mappingDocumentModel);
+			val additionalTriples = this.generateAdditionalTriples(manifestModel, mappingDocumentModel);
 			//logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
 
-			MappingPediaEngine.virtuosoClient.store(additionalTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+			this.virtuosoClient.store(additionalTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 		}
 
 		logger.info("Storing R2RML triples in Virtuoso.");
 		val r2rmlTriples = MappingPediaUtility.toTriples(mappingDocumentModel);
 		//logger.info("r2rmlTriples = " + r2rmlTriples.mkString("\n"));
 
-		MappingPediaEngine.virtuosoClient.store(r2rmlTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
+		this.virtuosoClient.store(r2rmlTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
 
 	}
@@ -512,7 +506,7 @@ object MappingPediaEngine {
 			val mappingFilePath = mappingFile.getPath
 			logger.debug("mapping file path = " + mappingFilePath)
 			val commitMessage = "Mapping modification by mappingpedia-engine.Application"
-			val mappingContent = MappingPediaEngine.getMappingContent(null, null, mappingFilePath, null)
+			val mappingContent = this.getMappingContent(null, null, mappingFilePath, null)
 			val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
 			val response = githubClient.putEncodedContent(mappingpediaUsername, mappingDirectory, mappingFilename
 				, commitMessage, base64EncodedContent)
