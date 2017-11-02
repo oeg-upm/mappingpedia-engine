@@ -122,7 +122,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     }
 
     //STORING MAPPING EXECUTION RESULT ON CKAN
-    val ckanResponseStatusCode = try {
+    val (ckanResponseStatusCode:Integer, mappingExecutionResultId:String) = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
         logger.info("storing mapping execution result on CKAN ...")
 
@@ -140,9 +140,9 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         val (addNewResourceStatus, addNewResourceEntity) = ckanClient.createResource(mappingExecutionResultDistribution);
 
         logger.info("mapping execution result stored on CKAN.")
-        addNewResourceStatus.getStatusCode
+        (addNewResourceStatus.getStatusCode, addNewResourceEntity.getJSONObject("result").getString("id"));
       } else {
-        HttpURLConnection.HTTP_OK;
+        (HttpURLConnection.HTTP_OK, null);
       }
     }
     catch {
@@ -168,6 +168,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       , queryFileName
       , mappingExecutionResultURL, mappingExecutionResultDownloadURL
       , ckanResponseStatusCode
+      , mappingExecutionResultId
     )
 
     /*
