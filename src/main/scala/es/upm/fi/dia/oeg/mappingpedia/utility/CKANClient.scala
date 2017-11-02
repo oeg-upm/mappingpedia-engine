@@ -7,7 +7,7 @@ import java.net.HttpURLConnection
 import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
 import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
-import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility.logger
+import es.upm.fi.dia.oeg.mappingpedia.utility.CKANClient.logger
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaEngine, MappingPediaProperties}
 import eu.trentorise.opendata.jackan.CkanClient
 import org.json.JSONObject
@@ -21,8 +21,9 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.util.EntityUtils
 
-class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
+class CKANClient(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def createResource(distribution: Distribution) = {
@@ -50,15 +51,22 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       val mpEntity = builder.build();
       httpPostRequest.setEntity(mpEntity)
       val response = httpClient.execute(httpPostRequest)
+      val responseStatus = response.getStatusLine;
+
       if (response.getStatusLine.getStatusCode < 200 || response.getStatusLine.getStatusCode >= 300)
         throw new RuntimeException("failed to add the file to CKAN storage. response status line from " + uploadFileUrl + " was: " + response.getStatusLine)
-      val responseEntity = response.getEntity
-      logger.info(responseEntity.toString)
-      HttpURLConnection.HTTP_CREATED
+      val httpEntity  = response.getEntity
+      val entity = EntityUtils.toString(httpEntity)
+      //logger.info(s"entity = " + entity)
+      val responseEntity = new JSONObject(entity);
+      //logger.info(s"responseEntity = " + responseEntity)
+      (responseStatus, responseEntity);
+
     } catch {
       case e: Exception => {
         e.printStackTrace()
-        HttpURLConnection.HTTP_INTERNAL_ERROR
+        //HttpURLConnection.HTTP_INTERNAL_ERROR
+        throw e;
       }
 
       // log error
@@ -95,20 +103,13 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   }
 
 
-}
-
-object CKANUtility {
-  val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  val ckanUtility = new CKANUtility(
-    MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
-
   def addNewOrganization(organization:Organization) = {
     val jsonObj = new JSONObject();
     jsonObj.put("name", organization.foafName);
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionOrganizationCreate
     val response = Unirest.post(uri)
-      .header("Authorization", MappingPediaEngine.mappingpediaProperties.ckanKey)
+      .header("Authorization", this.authorizationToken)
       .body(jsonObj)
       .asJson();
     response;
@@ -127,51 +128,19 @@ object CKANUtility {
       jsonObj.put("notes", dataset.dctDescription);
     }
 
-
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate
 
     val response = Unirest.post(uri)
-      .header("Authorization", MappingPediaEngine.mappingpediaProperties.ckanKey)
+      .header("Authorization", this.authorizationToken)
       .body(jsonObj)
       .asJson();
-    /*
-        logger.info(s"response.getHeaders = ${response.getHeaders}")
-        logger.info(s"response.getHeaders = ${response.getBody}")
-        logger.info(s"response.getStatus = ${response.getStatus}")
-    */
-
     response;
   }
 
-  /*
-  def addNewResource(distribution:Distribution) = {
-    val dataset = distribution.dataset;
+}
 
-    val jsonObj = new JSONObject();
-    jsonObj.put("package_id", dataset.dctIdentifier);
-    jsonObj.put("url", distribution.dcatDownloadURL);
-    if(distribution.ckanDescription != null) {
-      jsonObj.put("description", distribution.ckanDescription);
-    }
-    if(distribution.dcatMediaType != null ) {
-      jsonObj.put("mimetype", distribution.dcatMediaType);
-    }
-    if(distribution.ckanFileRef != null ) {
-      jsonObj.put("upload", distribution.ckanFileRef);
-    }
-
-    val uri = MappingPediaEngine.mappingpediaProperties.ckanActionResourceCreate
-
-    val response = Unirest.post(uri)
-      .header("Authorization", MappingPediaEngine.mappingpediaProperties.ckanKey)
-      .body(jsonObj)
-      .asJson();
-
-    //ckanUtility.updateResource(distribution.distributionFile, dataset.dctIdentifier);
-
-    response;
-  }
-  */
+object CKANClient {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def getDatasetList(catalogUrl:String) : ListResult = {
     val cc: CkanClient = new CkanClient(catalogUrl)

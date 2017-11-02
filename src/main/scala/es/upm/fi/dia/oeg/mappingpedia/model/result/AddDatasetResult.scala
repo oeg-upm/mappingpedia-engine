@@ -14,6 +14,7 @@ class AddDatasetResult(
 
                         , val ckanStorePackageStatus:Integer
                         , val ckanStoreResourceStatus:Integer
+                        , val ckanResourceId:String
 
                         , datasetID:String
                       ) {
@@ -31,4 +32,6 @@ class AddDatasetResult(
   def getCKANStoreResourceStatus = this.ckanStoreResourceStatus
 
   def getDatasetId = this.datasetID;
+
+  def getDistributionId = this.ckanResourceId;
 }

@@ -6,6 +6,8 @@ class ExecuteMappingResult (
                              , val queryURL:String
                              , val mappingExecutionResultURL:String, val mappingExecutionResultDownloadURL:String
                              , val ckanResponseStatus:Integer
+                           , val mappingExecutionResultId:String
+                           , val manifestURL:String
                            ){
 
   def getDatasetURL() = datasetURL;
@@ -16,4 +18,7 @@ class ExecuteMappingResult (
   def getErrorCode() = errorCode;
   def getMappingExecutionResultDownloadURL = mappingExecutionResultDownloadURL;
   def getCKANResponseStatus = ckanResponseStatus;
+  def getMappingExecutionResultId = this.mappingExecutionResultId
+  def getManifestURL = this.manifestURL
+
 }
