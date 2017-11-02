@@ -5,8 +5,9 @@
 mpimd:mappingExecutionResult-$mappingExecutionResultID a mpv:MappingExecutionResultEntity ;
     dcterms:identifier "mappingExecutionResult-$mappingExecutionResultID" ;
     dcterms:title "$mappingExecutionResultTitle" ;
+    dcterms:description "$mappingExecutionResultDescription" ;
     prov:wasGeneratedBy mpimd:mappingExecutionActivity ;
     prov:wasAttributedTo mpimd:mappingpediaAgent ;
-    prov:wasDerivedFrom mpidd:distribution-$distributionID ; #Assume the source is only one distribution
+    prov:wasDerivedFrom $datasetDistributionDownloadURL ;
     prov:hadPrimarySource mpimd:mappingDocument-$mappingDocumentID ;
 .
