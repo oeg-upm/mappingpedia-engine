@@ -50,13 +50,16 @@ public class Application {
 			CKANClient ckanClient = new CKANClient(properties.ckanURL(), properties.ckanKey());
 			MappingPediaEngine.ckanClient_$eq(ckanClient);
 
-			VirtuosoClient virtuosoClient = new VirtuosoClient(properties.virtuosoJDBC(), properties.virtuosoUser()
-					, properties.virtuosoPwd(), properties.graphName()
-			);
-			MappingPediaEngine.virtuosoClient_$eq(virtuosoClient);
+			if(properties.virtuosoEnabled()) {
+				VirtuosoClient virtuosoClient = new VirtuosoClient(properties.virtuosoJDBC(), properties.virtuosoUser()
+						, properties.virtuosoPwd(), properties.graphName()
+				);
+				MappingPediaEngine.virtuosoClient_$eq(virtuosoClient);
 
-			OntModel schemaOntology = MappingPediaUtility.loadSchemaOrgOntology();
-			MappingPediaEngine.setOntologyModel(schemaOntology);
+				OntModel schemaOntology = MappingPediaUtility.loadSchemaOrgOntology();
+				MappingPediaEngine.setOntologyModel(schemaOntology);
+			}
+
 
 
 		} catch (Exception ex) {
