@@ -27,12 +27,22 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def createResource(distribution: Distribution) = {
-    val packageId = distribution.dataset.dctIdentifier;
+    val dataset = distribution.dataset;
+    logger.info(s"dataset = $dataset")
+
+    val packageId = dataset.dctIdentifier;
+    logger.info(s"packageId = $packageId")
+    logger.info(s"url = ${distribution.dcatDownloadURL}")
+    logger.info(s"description = ${distribution.dctDescription}")
+    logger.info(s"mimetype = ${distribution.dcatMediaType}")
+    logger.info(s"upload = ${distribution.distributionFile}")
 
     val httpClient = HttpClientBuilder.create.build
     try {
 
       val uploadFileUrl = ckanUrl + "/api/action/resource_create"
+      logger.info(s"Hitting endpoint: $uploadFileUrl");
+
       val httpPostRequest = new HttpPost(uploadFileUrl)
       httpPostRequest.setHeader("Authorization", authorizationToken)
       val builder = MultipartEntityBuilder.create()
@@ -108,6 +118,7 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
     jsonObj.put("name", organization.foafName);
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionOrganizationCreate
+    logger.info(s"Hitting endpoint: $uri");
     val response = Unirest.post(uri)
       .header("Authorization", this.authorizationToken)
       .body(jsonObj)
@@ -129,6 +140,7 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate
+    logger.info(s"Hitting endpoint: $uri");
 
     val response = Unirest.post(uri)
       .header("Authorization", this.authorizationToken)

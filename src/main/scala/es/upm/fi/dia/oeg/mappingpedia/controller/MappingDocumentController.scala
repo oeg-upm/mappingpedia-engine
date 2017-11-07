@@ -108,29 +108,34 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
     }
 
     //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
-    val virtuosoStoreMappingStatus = try {
-      logger.info("Storing mapping and manifest file on Virtuoso ...")
-      val manifestFilePath: String = if (manifestFile == null) {
-        null
-      } else {
-        manifestFile.getPath;
+    val virtuosoStoreMappingStatus = if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
+      try {
+        logger.info("Storing mapping and manifest file on Virtuoso ...")
+        val manifestFilePath: String = if (manifestFile == null) {
+          null
+        } else {
+          manifestFile.getPath;
+        }
+        val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
+        MappingPediaEngine.storeManifestAndMapping(manifestFilePath, mappingDocument.getDownloadURL(), "false"
+          //, Application.mappingpediaEngine
+          , replaceMappingBaseURI, newMappingBaseURI)
+        logger.info("Mapping and manifest file stored on Virtuoso")
+        "OK"
+      } catch {
+        case e: Exception => {
+          errorOccured = true;
+          e.printStackTrace();
+          val errorMessage = "Error occurred when storing mapping and manifest files on virtuoso: " + e.getMessage;
+          logger.error(errorMessage)
+          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+          e.getMessage
+        }
       }
-      val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
-      MappingPediaEngine.storeManifestAndMapping(manifestFilePath, mappingDocument.getDownloadURL(), "false"
-        //, Application.mappingpediaEngine
-        , replaceMappingBaseURI, newMappingBaseURI)
-      logger.info("Mapping and manifest file stored on Virtuoso")
-      "OK"
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace();
-        val errorMessage = "Error occurred when storing mapping and manifest files on virtuoso: " + e.getMessage;
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        e.getMessage
-      }
+    } else {
+      "Storing to Virtuoso is not enabled!";
     }
+
 
 
     //STORING MANIFEST FILE ON GITHUB

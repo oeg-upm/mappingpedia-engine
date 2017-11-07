@@ -161,7 +161,7 @@ public class MappingPediaController {
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
     public ExecuteMappingResult executeMapping2(
             @RequestParam("mappingURL") String mappingURL
-            , @RequestParam(value="mappingLanguage", required = false) String mappingLanguage
+            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
             , @RequestParam("datasetDistributionURL") String datasetDistributionURL
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
             , @RequestParam(value="queryFile", required = false) String queryFile
@@ -232,6 +232,8 @@ public class MappingPediaController {
             , @RequestParam(value="datasetFile") String datasetFile
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
+            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
+
     )
     {
         logger.info("POST /executions/{organizationId}/{datasetId}/{mappingFilename}");
@@ -246,6 +248,7 @@ public class MappingPediaController {
         String mappingDocumentDownloadURL = GitHubUtility.generateDownloadURL(organizationId, datasetId, mappingFilename);
         MappingDocument md = new MappingDocument();
         md.setDownloadURL(mappingDocumentDownloadURL);
+        md.mappingLanguage_$eq(mappingLanguage);
 
 
         //return MappingExecutionController.executeMapping2(md, dataset, queryFile, outputFilename, true);
