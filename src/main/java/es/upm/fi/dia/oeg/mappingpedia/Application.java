@@ -24,7 +24,7 @@ public class Application {
 	public static void main(String[] args) {
 		Logger logger = LoggerFactory.getLogger("Application");
 		logger.info("Working Directory = " + System.getProperty("user.dir"));
-		logger.info("Starting MappingPedia Engine version 1.8.1 ...");
+		logger.info("Starting MappingPedia Engine version 0.9.1 ...");
 
 		InputStream is = null;
 		String configurationFilename = "config.properties";
