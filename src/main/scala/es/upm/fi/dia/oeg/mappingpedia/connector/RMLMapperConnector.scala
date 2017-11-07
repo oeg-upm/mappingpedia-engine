@@ -59,6 +59,9 @@ class RMLMapperConnector() {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def executeWithMain(datasetDistributionURL: String, mappingURL:String, outputFilepath:String) = {
+    logger.info(s"datasetDistributionURL = $datasetDistributionURL");
+    logger.info(s"outputFilepath = $outputFilepath");
+
     val url = new URL(datasetDistributionURL);
     val datasetFile = new File(FilenameUtils.getName(url.getPath()));
     datasetFile.deleteOnExit();
