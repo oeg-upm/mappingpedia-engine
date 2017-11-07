@@ -44,27 +44,44 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       md.mappingLanguage
     }
 
+    val organizationId = if(organization != null) {
+      organization.dctIdentifier
+    } else {
+      UUID.randomUUID.toString
+    }
+
+    val datasetId = if(dataset != null) {
+      dataset.dctIdentifier
+    } else {
+      UUID.randomUUID.toString
+    }
+
+    val mappingExecutionId = UUID.randomUUID.toString;
+
+    /*
     val mappingExecutionDirectory = if(organization != null && dataset != null) {
       organization.dctIdentifier + File.separator + dataset.dctIdentifier
     } else { UUID.randomUUID.toString }
+    */
+
+    val mappingExecutionDirectory = s"executions/$organizationId/$datasetId/$mappingExecutionId";
+    logger.info(s"mappingExecutionDirectory = $mappingExecutionDirectory");
 
     val outputFileName = if (pOutputFilename == null) {
       UUID.randomUUID.toString + ".txt"
     } else {
       pOutputFilename;
     }
-    val outputFilepath = "executions/" + mappingExecutionDirectory + "/" + outputFileName
+    val outputFilepath = s"$mappingExecutionDirectory/$outputFileName"
+    logger.info(s"outputFilepath = $outputFilepath");
     val outputFile: File = new File(outputFilepath)
 
     //EXECUTING MAPPING
     try {
       if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
-        logger.info("Executing R2RML mapping ...")
         MappingExecutionController.executeR2RMLMapping(md, dataset, outputFilepath, queryFileName);
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
-        logger.info("Executing RML mapping ...")
-        val rmlConnector = new RMLMapperConnector();
-        rmlConnector.executeWithMain(datasetDistributionDownloadURL, mdDownloadURL, outputFilepath);
+        MappingExecutionController.executeRMLMapping(md, dataset, outputFilepath);
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
         throw new Exception(mappingLanguage + " Language is not supported yet");
       } else {
@@ -122,6 +139,9 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     } else {
       (null, null)
     }
+    logger.info(s"mappingExecutionResultURL = $mappingExecutionResultURL")
+    logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL")
+
 
     val mappingExecutionResultDistribution = new Distribution(dataset)
     //STORING MAPPING EXECUTION RESULT ON CKAN
@@ -357,6 +377,7 @@ object MappingExecutionController {
 
 
   def executeR2RMLMapping(md:MappingDocument, dataset: Dataset, outputFilepath:String, queryFileName:String) = {
+    logger.info("Executing R2RML mapping ...")
     val distribution = dataset.getDistribution();
     val randomUUID = UUID.randomUUID.toString
     val databaseName =  s"executions/${md.dctIdentifier}/${randomUUID}"
@@ -375,6 +396,19 @@ object MappingExecutionController {
     val runnerFactory: MorphCSVRunnerFactory = new MorphCSVRunnerFactory
     val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
     runner.run
+  }
+
+  def executeRMLMapping(md:MappingDocument, dataset: Dataset, outputFilepath:String) = {
+    logger.info("Executing RML mapping ...")
+
+    val datasetDistributionDownloadURL = dataset.getDistribution().dcatDownloadURL;
+    logger.info(s"datasetDistributionDownloadURL = $datasetDistributionDownloadURL")
+
+    val mdDownloadURL = md.getDownloadURL();
+    logger.info(s"mdDownloadURL = $mdDownloadURL")
+
+    val rmlConnector = new RMLMapperConnector();
+    rmlConnector.executeWithMain(datasetDistributionDownloadURL, mdDownloadURL, outputFilepath);
   }
 
   def storeManifestOnVirtuoso(manifestFile:File) = {
