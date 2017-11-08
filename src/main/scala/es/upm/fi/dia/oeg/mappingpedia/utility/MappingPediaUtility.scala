@@ -350,22 +350,24 @@ object MappingPediaUtility {
   }
 
   def getFileNameAndContent(file: File, downloadURL:String, encoding:String) = {
-    logger.info(s"encoding= $encoding")
+    logger.info(s"encoding = $encoding")
+    logger.info(s"file = $file");
+    logger.info(s"downloadURL = $downloadURL");
 
     val (fileName:String, fileContent:String) = {
-      if(file != null && downloadURL== null) {
+      if(file != null) {
         logger.info(s"getFileNameAndContent from file: $file")
         val fileContent = Source.fromFile(file.getAbsolutePath, encoding)
         val fileContentString = fileContent.getLines.mkString("\n")
         (file.getName, fileContentString)
-      } else if(file == null && downloadURL!= null) {
+      } else if(downloadURL!= null) {
         logger.info(s"getFileNameAndContent from downloadURL: $downloadURL")
         val downloadURLFilename = downloadURL.substring(
           downloadURL.lastIndexOf('/') + 1, downloadURL.length)
         val downloadURLContent = scala.io.Source.fromURL(downloadURL, encoding)
         val downloadURLContentString = downloadURLContent.mkString
         (downloadURLFilename, downloadURLContentString);
-      } else if(file == null && downloadURL== null) {
+      } else {
         val errorMessage = "No distribution or distribution file has been provided"
         logger.info(errorMessage);
         throw new Exception(errorMessage);
