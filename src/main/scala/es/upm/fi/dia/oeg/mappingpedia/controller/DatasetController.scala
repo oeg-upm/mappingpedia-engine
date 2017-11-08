@@ -65,8 +65,12 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
 
     logger.info("storing manifest file for a dataset on github ...")
     val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
-    val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
-      , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+    val manifestFileName = manifestFile.getName
+    val datasetId = dataset.dctIdentifier;
+    val organizationId = organization.dctIdentifier;
+
+    val githubResponse = githubClient.encodeAndPutFile(organizationId
+      , datasetId, manifestFileName, addNewManifestCommitMessage, manifestFile)
     logger.info("manifest file stored on github ...")
     githubResponse
   }

@@ -10,7 +10,10 @@ import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 
 //based on dcat:Disctribution https://www.w3.org/TR/vocab-dcat/#class-distribution
 //see also ckan:Resource  http://docs.ckan.org/en/ckan-1.7.4/domain-model-resource.html
-class Distribution (val dataset: Dataset){
+class Distribution (val dataset: Dataset, val dctIdentifier:String = null){
+  def this(dataset: Dataset) {
+    this(dataset, UUID.randomUUID.toString)
+  }
 
 
   val createdDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date())
@@ -26,12 +29,12 @@ class Distribution (val dataset: Dataset){
   var dcatAccessURL:String = null;
   var dcatDownloadURL:String = null;
   var dcatMediaType:String = null;
-  var dctIdentifier:String = null
 
   //CUSTOM FIELDS
   var cvsFieldSeparator:String=",";
   var distributionFile:File = null;
   var encoding:String="UTF-8";
+  var ckanResourceId:String = null;
 
 
 }

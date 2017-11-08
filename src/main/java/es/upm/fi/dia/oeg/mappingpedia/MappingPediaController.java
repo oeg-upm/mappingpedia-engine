@@ -468,8 +468,6 @@ public class MappingPediaController {
         dataset.dctLanguage_$eq(datasetLanguage);
 
         Distribution distribution = new Distribution(dataset);
-        String distributionId = UUID.randomUUID().toString();
-        distribution.dctIdentifier_$eq(distributionId);
         if(distributionTitle == null) {
             distribution.dctTitle_$eq(distribution.dctIdentifier());
         } else {

@@ -30,6 +30,7 @@ class AddDatasetResult(
   def getDistribution_access_url = this.datasetURL;
 
   def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
+  def getVirtuoso_store_manifest_status = this.virtuosoStoreManifestResponseStatusText;
 
   def getCKANStorePackageStatus = this.ckanStorePackageStatus;
   def getCKAN_store_package_status = this.ckanStorePackageStatus;
