@@ -159,7 +159,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         val (addNewResourceStatus, addNewResourceEntity) = ckanClient.createResource(mappingExecutionResultDistribution);
         logger.info("mapping execution result stored on CKAN.")
 
-        mappingExecutionResultDistribution.dctIdentifier = addNewResourceEntity.getJSONObject("result").getString("id");
+        mappingExecutionResultDistribution.ckanResourceId = addNewResourceEntity.getJSONObject("result").getString("id");
         mappingExecutionResultDistribution.dctTitle = s"Annotated Dataset ${mappingExecutionResultDistribution.dctIdentifier}"
         (addNewResourceStatus.getStatusCode, mappingExecutionResultDistribution.dctIdentifier);
       } else {
