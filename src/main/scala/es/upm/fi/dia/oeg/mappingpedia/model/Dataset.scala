@@ -21,7 +21,11 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
   var dcatDistribution:List[Distribution] = Nil;
 
   //for the moment assume that only one distribution for each dataset
-  def getDistribution() = this.dcatDistribution.iterator.next()
+  def getDistribution() = if(dcatDistribution == Nil) {
+    null
+  } else {
+    this.dcatDistribution.iterator.next()
+  }
 
   def addDistribution(distribution: Distribution) = {
     if(this.dcatDistribution == null) {

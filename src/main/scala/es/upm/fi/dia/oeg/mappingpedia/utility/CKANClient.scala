@@ -48,8 +48,11 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
       val builder = MultipartEntityBuilder.create()
         .addTextBody("package_id", packageId)
         .addTextBody("url", distribution.dcatDownloadURL)
-        .addTextBody("description", distribution.dctDescription)
       ;
+
+      if(distribution.dctDescription != null) {
+        builder.addTextBody("description", distribution.dctDescription)
+      }
 
       if(distribution.dcatMediaType != null) {
         builder.addTextBody("mimetype", distribution.dcatMediaType)

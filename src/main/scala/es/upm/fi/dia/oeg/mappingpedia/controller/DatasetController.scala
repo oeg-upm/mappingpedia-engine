@@ -80,9 +80,9 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
     var collectiveErrorMessage:List[String] = Nil;
 
 
-    //STORING DATASET FILE ON GITHUB
+    //STORING DISTRIBUTION FILE ON GITHUB
     val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
-      if(distribution.dcatDownloadURL != null || distribution.distributionFile != null) {
+      if(distribution != null) {
         this.storeDatasetDistributionFileOnGitHub(distribution);
       } else {
         val statusMessage = "No distribution or distribution file has been provided"
@@ -110,7 +110,7 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
       } else { // if the user does not provide any manifest file
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
           //MANIFEST FILE GENERATION
-          val generatedFile = DatasetController.generateManifestFile(distribution);
+          val generatedFile = DatasetController.generateManifestFile(dataset);
           generatedFile
         } else {
           null
@@ -170,11 +170,12 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
         logger.info("storing dataset on CKAN ...")
         val addNewPackageResponse:HttpResponse[JsonNode] = ckanClient.addNewPackage(dataset);
 
-        val (addResourceStatus, addResourceEntity) = if(distribution.dcatDownloadURL != null || distribution.distributionFile != null) {
-          ckanClient.createResource(distribution);
-        } else {
-          (null, null)
-        }
+        val (addResourceStatus, addResourceEntity) =
+          if(distribution != null) {
+            ckanClient.createResource(distribution);
+          } else {
+            (null, null)
+          }
 
         if(addResourceStatus != null) {
           if (addResourceStatus.getStatusCode < 200 || addResourceStatus.getStatusCode >= 300) {
@@ -242,22 +243,28 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
     //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;
     val addDatasetFileGitHubResponseStatus:Integer =
       if(addDatasetFileGitHubResponse == null) {
-      null
-    }  else {
-      addDatasetFileGitHubResponse.getStatus
-    }
+        null
+      }  else {
+        addDatasetFileGitHubResponse.getStatus
+      }
 
     val addDatasetFileGitHubResponseStatusText =
       if(addDatasetFileGitHubResponse == null) {
+        null
+      }  else {
+        addDatasetFileGitHubResponse.getStatusText
+      }
+
+    val addManifestFileGitHubResponseStatus:Integer = if(addManifestFileGitHubResponse == null) {
       null
-    }  else {
-      addDatasetFileGitHubResponse.getStatusText
+    } else {
+      addManifestFileGitHubResponse.getStatus
     }
 
-    val (addManifestFileGitHubResponseStatus:Integer, addManifestFileGitHubResponseStatusText) = if(addManifestFileGitHubResponse == null) {
-      (null, null)
+    val addManifestFileGitHubResponseStatusText = if(addManifestFileGitHubResponse == null) {
+      null
     } else {
-      (addManifestFileGitHubResponse.getStatus, addManifestFileGitHubResponse.getStatusText)
+      addManifestFileGitHubResponse.getStatusText
     }
 
     val addDatasetResult:AddDatasetResult = new AddDatasetResult(
@@ -315,41 +322,23 @@ object DatasetController {
     }
   }
 
-  def generateManifestFile(distribution: Distribution) = {
-    val dataset = distribution.dataset;
-    val organization = dataset.dctPublisher;
-
-    var distributionAccessURL = distribution.dcatAccessURL
-    if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
-      distributionAccessURL = "<" + distributionAccessURL;
-    }
-    if(distributionAccessURL != null && !distributionAccessURL.endsWith(">")) {
-      distributionAccessURL = distributionAccessURL + ">";
-    }
-    var distributionDownloadURL = distribution.dcatDownloadURL
-    if(distributionDownloadURL != null && !distributionDownloadURL.startsWith("<")) {
-      distributionDownloadURL = "<" + distributionDownloadURL;
-    }
-    if(distributionDownloadURL != null && !distributionDownloadURL.endsWith(">")) {
-      distributionDownloadURL = distributionDownloadURL + ">";
-    }
-
+  def generateManifestFile(dataset: Dataset) = {
     logger.info("Generating manifest file ...")
     try {
-      val templateFiles = List(
+      val organization = dataset.dctPublisher;
+      val datasetDistribution = dataset.getDistribution();
+
+      val templateFilesWithoutDistribution = List(
         "templates/metadata-namespaces-template.ttl"
         , "templates/metadata-dataset-template.ttl"
       );
-
-      val templateFilesWithDistribution = if(distribution.dcatDownloadURL != null || distribution.distributionFile != null) {
-        "templates/metadata-distributions-template.ttl" :: templateFiles
+      val templateFilesWithDistribution = if(datasetDistribution != null) {
+        templateFilesWithoutDistribution :+ "templates/metadata-distributions-template.ttl"
       } else {
-        templateFiles
+        templateFilesWithoutDistribution
       }
 
-      val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
-
-      val mapValues:Map[String,String] = Map(
+      val mapValuesWithoutDistribution:Map[String,String] = Map(
         "$datasetID" -> dataset.dctIdentifier
         , "$datasetTitle" -> dataset.dctTitle
         , "$datasetKeywords" -> dataset.dcatKeyword
@@ -357,14 +346,40 @@ object DatasetController {
         , "$datasetLanguage" -> dataset.dctLanguage
         , "$datasetIssued" -> dataset.dctIssued
         , "$datasetModified" -> dataset.dctModified
-        , "$distributionID" -> dataset.dctIdentifier
-        , "$distributionAccessURL" -> distributionAccessURL
-        , "$distributionDownloadURL" -> distributionDownloadURL
-        , "$distributionMediaType" -> distribution.dcatMediaType
+        , "$distributionID" -> datasetDistribution.dctIdentifier
       );
 
-      val filename = "metadata-dataset.ttl";
-      val manifestFile = MappingPediaEngine.generateManifestFile(mapValues, templateFilesWithDistribution, filename, dataset.dctIdentifier);
+      val mapValuesWithDistribution:Map[String,String] = if(datasetDistribution != null) {
+        var distributionAccessURL = datasetDistribution.dcatAccessURL
+        if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
+          distributionAccessURL = "<" + distributionAccessURL;
+        }
+        if(distributionAccessURL != null && !distributionAccessURL.endsWith(">")) {
+          distributionAccessURL = distributionAccessURL + ">";
+        }
+        var distributionDownloadURL = datasetDistribution.dcatDownloadURL
+        if(distributionDownloadURL != null && !distributionDownloadURL.startsWith("<")) {
+          distributionDownloadURL = "<" + distributionDownloadURL;
+        }
+        if(distributionDownloadURL != null && !distributionDownloadURL.endsWith(">")) {
+          distributionDownloadURL = distributionDownloadURL + ">";
+        }
+        mapValuesWithoutDistribution + (
+          "$distributionAccessURL" -> distributionAccessURL
+          , "$distributionDownloadURL" -> distributionDownloadURL
+          , "$distributionMediaType" -> datasetDistribution.dcatMediaType
+        )
+      } else {
+        mapValuesWithoutDistribution
+      }
+
+      val filename = if(datasetDistribution == null) {
+        "metadata-dataset.ttl"
+      } else {
+        s"metadata-distribution-${datasetDistribution.dctIdentifier}.ttl"
+      };
+      val manifestFile = MappingPediaEngine.generateManifestFile(
+        mapValuesWithDistribution, templateFilesWithDistribution, filename, dataset.dctIdentifier);
       logger.info("Manifest file generated.")
       manifestFile;
     } catch {
