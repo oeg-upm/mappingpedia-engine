@@ -1,3 +1,5 @@
+mpids:dataset-$datasetID dcat:distribution mpidd:distribution-$distributionID .
+
 mpidd:distribution-$distributionID a dcat:Distribution;
     dcat:mediaType "$distributionMediaType" ;
     dcat:accessURL $distributionAccessURL ;

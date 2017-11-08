@@ -382,9 +382,9 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets/{organizationID}", method= RequestMethod.POST)
-    public AddDatasetResult uploadNewDataset(
+    public AddDatasetResult addNewDataset(
             @PathVariable("organizationID") String organizationID
-            , @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
+            , @RequestParam(value="datasetFile", required = false) MultipartFile distributionFileRef
             , @RequestParam(value="datasetTitle", required = false) String datasetTitle
             , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
             , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
@@ -413,15 +413,16 @@ public class MappingPediaController {
 
         Distribution distribution = new Distribution(dataset);
         if(distributionAccessURL == null) {
-            distribution.dcatAccessURL_$eq(distributionDownloadURL);
+                distribution.dcatAccessURL_$eq(distributionDownloadURL);
         } else {
             distribution.dcatAccessURL_$eq(distributionAccessURL);
         }
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+
         distribution.dcatMediaType_$eq(distributionMediaType);
-        if(datasetFileRef != null) {
+        if(distributionFileRef != null) {
             distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
-                    datasetFileRef , dataset.dctIdentifier()));
+                    distributionFileRef , dataset.dctIdentifier()));
         }
 
         if(distributionDescription == null) {
@@ -437,11 +438,11 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
-    public AddDatasetResult addNewDataset(
+    public AddDatasetResult addNewDistribution(
             @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
-            , @RequestParam(value="datasetFile", required = false) MultipartFile datasetFileRef
+            , @RequestParam(value="datasetFile", required = false) MultipartFile distributionFileRef
             , @RequestParam(value="datasetTitle") String datasetTitle
             , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
             , @RequestParam(value="datasetPublisher") String datasetPublisher
@@ -474,9 +475,9 @@ public class MappingPediaController {
         }
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
-        if(datasetFileRef != null) {
+        if(distributionFileRef != null) {
             distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
-                    datasetFileRef , dataset.dctIdentifier()));
+                    distributionFileRef , dataset.dctIdentifier()));
         }
         dataset.addDistribution(distribution);
 
