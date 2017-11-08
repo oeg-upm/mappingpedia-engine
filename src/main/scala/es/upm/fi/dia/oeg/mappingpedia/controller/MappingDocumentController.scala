@@ -49,7 +49,7 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
     response
   }
 
-  def uploadNewMapping(dataset: Dataset, manifestFileRef: MultipartFile
+  def addNewMappingDocument(dataset: Dataset, manifestFileRef: MultipartFile
                        , replaceMappingBaseURI: String, generateManifestFile: String
                        , mappingDocument: MappingDocument
                       ): AddMappingDocumentResult = {

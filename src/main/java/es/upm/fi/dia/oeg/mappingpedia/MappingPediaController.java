@@ -160,15 +160,16 @@ public class MappingPediaController {
 
 
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
-    public ExecuteMappingResult executeMapping2(
-            @RequestParam("mappingURL") String mappingURL
-            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
-            , @RequestParam("datasetDistributionURL") String datasetDistributionURL
-            , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
+    public ExecuteMappingResult executeMappingWithoutPathVariables(
+            @RequestParam(value="organizationId", required = false) String organizationId
+            , @RequestParam(value="datasetId", required = false) String datasetId
+            , @RequestParam("datasetDistributionURL") String distributionDownloadURL
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
-            , @RequestParam(value="organizationId", required = false) String organizationId
-            , @RequestParam(value="datasetId", required = false) String datasetId
+            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
+            , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
+
+            , @RequestParam("mappingURL") String mappingURL
     )
     {
         logger.info("POST /executions2");
@@ -187,7 +188,7 @@ public class MappingPediaController {
             dataset = new Dataset(organization, datasetId);
         }
         Distribution distribution = new Distribution(dataset);
-        distribution.dcatDownloadURL_$eq(datasetDistributionURL);
+        distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         if(fieldSeparator != null) {
             distribution.cvsFieldSeparator_$eq(fieldSeparator);
         }
@@ -226,7 +227,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/executions/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
-    public ExecuteMappingResult executeMapping1(
+    public ExecuteMappingResult executeMappingWithPathVariables(
             @PathVariable("organizationId") String organizationId
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
@@ -234,6 +235,7 @@ public class MappingPediaController {
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
             , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
+            , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
 
     )
     {
@@ -278,7 +280,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}", method= RequestMethod.POST)
-    public AddMappingDocumentResult uploadNewMapping(
+    public AddMappingDocumentResult addNewMappingDocumentWithoutDatasetId(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileRef
@@ -312,13 +314,13 @@ public class MappingPediaController {
             mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
         }
 
-        return mappingDocumentController.uploadNewMapping(dataset, manifestFileRef
+        return mappingDocumentController.addNewMappingDocument(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }
 
     @RequestMapping(value = "/mappings/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddMappingDocumentResult uploadNewMapping(
+    public AddMappingDocumentResult addNewMappingDocumentWithDatasetID(
             @PathVariable("organizationID") String organizationID
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
@@ -353,7 +355,7 @@ public class MappingPediaController {
         mappingDocument.setDownloadURL(mappingDocumentDownloadURL);
 
 
-        return mappingDocumentController.uploadNewMapping(dataset, manifestFileRef
+        return mappingDocumentController.addNewMappingDocument(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );
     }

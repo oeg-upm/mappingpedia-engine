@@ -10,7 +10,7 @@ import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 
 //based on dcat:Disctribution https://www.w3.org/TR/vocab-dcat/#class-distribution
 //see also ckan:Resource  http://docs.ckan.org/en/ckan-1.7.4/domain-model-resource.html
-class Distribution (val dataset: Dataset, val dctIdentifier:String = null){
+class Distribution (val dataset: Dataset, val dctIdentifier:String){
   def this(dataset: Dataset) {
     this(dataset, UUID.randomUUID.toString)
   }
