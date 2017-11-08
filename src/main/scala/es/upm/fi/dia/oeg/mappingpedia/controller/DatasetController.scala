@@ -350,7 +350,6 @@ object DatasetController {
         , "$datasetLanguage" -> dataset.dctLanguage
         , "$datasetIssued" -> dataset.dctIssued
         , "$datasetModified" -> dataset.dctModified
-        , "$distributionID" -> datasetDistribution.dctIdentifier
       );
 
       val mapValuesWithDistribution:Map[String,String] = if(datasetDistribution != null) {
@@ -372,6 +371,7 @@ object DatasetController {
           "$distributionAccessURL" -> distributionAccessURL
           , "$distributionDownloadURL" -> distributionDownloadURL
           , "$distributionMediaType" -> datasetDistribution.dcatMediaType
+          , "$distributionID" -> datasetDistribution.dctIdentifier
         )
       } else {
         mapValuesWithoutDistribution
