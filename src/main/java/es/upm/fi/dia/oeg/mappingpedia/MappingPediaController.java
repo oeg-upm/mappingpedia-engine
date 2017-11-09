@@ -163,7 +163,7 @@ public class MappingPediaController {
     public ExecuteMappingResult executeMappingWithoutPathVariables(
             @RequestParam(value="organizationId", required = false) String organizationId
             , @RequestParam(value="datasetId", required = false) String datasetId
-            , @RequestParam("datasetDistributionURL") String distributionDownloadURL
+            , @RequestParam(value="datasetDistributionURL", required = false) String distributionDownloadURL
 
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
@@ -245,14 +245,15 @@ public class MappingPediaController {
             @PathVariable("organizationId") String organizationId
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
-            , @RequestParam(value="datasetFile") String datasetFile
+            , @RequestParam(value="datasetFile", required = false) String datasetFile
 
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
             , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
 
-            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="distributionMediaType", required = false
+            , defaultValue="text/csv") String distributionMediaType
 
             , @RequestParam(value="dbUserName", required = false) String dbUserName
             , @RequestParam(value="dbPassword", required = false) String dbPassword
@@ -268,6 +269,10 @@ public class MappingPediaController {
         Distribution distribution = new Distribution(dataset);
         distribution.dcatMediaType_$eq(distributionMediaType);
         distribution.dcatDownloadURL_$eq(datasetFile);
+        if(fieldSeparator != null) {
+            distribution.cvsFieldSeparator_$eq(fieldSeparator);
+        }
+        dataset.addDistribution(distribution);
 
         //String githubRepo = MappingPediaEngine.mappingpediaProperties().githubRepoContents()
         //String mappingBlobURL = githubRepo + "/blob/master/" + organizationId + "/" + datasetId + "/" + mappingFilename;
