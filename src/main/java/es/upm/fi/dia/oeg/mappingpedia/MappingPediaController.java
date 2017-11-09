@@ -170,6 +170,13 @@ public class MappingPediaController {
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
 
             , @RequestParam("mappingURL") String mappingURL
+
+            , @RequestParam(value="dbUserName", required = false) String dbUserName
+            , @RequestParam(value="dbPassword", required = false) String dbPassword
+            , @RequestParam(value="dbName", required = false) String dbName
+            , @RequestParam(value="jdbc_url", required = false) String jdbc_url
+            , @RequestParam(value="databaseDriver", required = false) String databaseDriver
+            , @RequestParam(value="databaseType", required = false) String databaseType
     )
     {
         logger.info("POST /executions2");
@@ -206,7 +213,10 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true
+                    , dbUserName, dbPassword
+                    , dbName, jdbc_url
+                    , databaseDriver, databaseType);
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
@@ -237,6 +247,12 @@ public class MappingPediaController {
             , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
 
+            , @RequestParam(value="dbUserName", required = false) String dbUserName
+            , @RequestParam(value="dbPassword", required = false) String dbPassword
+            , @RequestParam(value="dbName", required = false) String dbName
+            , @RequestParam(value="jdbc_url", required = false) String jdbc_url
+            , @RequestParam(value="databaseDriver", required = false) String databaseDriver
+            , @RequestParam(value="databaseType", required = false) String databaseType
     )
     {
         logger.info("POST /executions/{organizationId}/{datasetId}/{mappingFilename}");
@@ -258,7 +274,11 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true);
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true
+                    , dbUserName, dbPassword
+                    , dbName, jdbc_url
+                    , databaseDriver, databaseType
+            );
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();

@@ -15,7 +15,7 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logg
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
+import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory, MorphRDBProperties, MorphRDBRunnerFactory}
 
 import scala.collection.JavaConversions._
 
@@ -29,6 +29,10 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
                       , queryFileName:String
                       , pOutputFilename: String
                       , pStoreToCKAN:Boolean
+
+                      , dbUserName:String, dbPassword:String
+                      , dbName:String, jdbc_url:String
+                      , databaseDriver:String, databaseType:String
                     ) : ExecuteMappingResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
@@ -79,7 +83,21 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     //EXECUTING MAPPING
     try {
       if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
-        MappingExecutionController.executeR2RMLMapping(md, dataset, outputFilepath, queryFileName);
+        if(datasetDistribution.dcatMediaType == null) {
+          datasetDistribution.dcatMediaType = "text/csv"
+        }
+        logger.info(s"datasetDistribution.dcatMediaType = ${datasetDistribution.dcatMediaType}")
+
+        if("text/csv".equalsIgnoreCase(datasetDistribution.dcatMediaType)) {
+          MappingExecutionController.executeR2RMLMappingWithCSV(md, dataset, outputFilepath, queryFileName);
+        } else {
+          MappingExecutionController.executeR2RMLMappingWithRDB(md, dataset, outputFilepath, queryFileName
+            , dbUserName:String, dbPassword:String
+            , dbName:String, jdbc_url:String
+            , databaseDriver:String, databaseType:String
+
+          );
+        }
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
         MappingExecutionController.executeRMLMapping(md, dataset, outputFilepath);
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
@@ -291,7 +309,11 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
           mappingExecution.outputFileName = outputFilename;
 
           //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-          val executionResult = this.executeMapping(md, dataset, queryFile, outputFilename, false);
+          val executionResult = this.executeMapping(md, dataset, queryFile, outputFilename, false
+            , null, null
+            , null, null
+            , null, null
+          );
           //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
           executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
@@ -375,8 +397,37 @@ object MappingExecutionController {
   */
 
 
+  def executeR2RMLMappingWithRDB(md:MappingDocument, dataset: Dataset
+                                 , outputFilepath:String, queryFileName:String
+                                , dbUserName:String, dbPassword:String
+                                , dbName:String, jdbc_url:String
+                                , databaseDriver:String, databaseType:String
 
-  def executeR2RMLMapping(md:MappingDocument, dataset: Dataset, outputFilepath:String, queryFileName:String) = {
+                                ) = {
+    logger.info("Executing R2RML mapping ...")
+    val distribution = dataset.getDistribution();
+    val randomUUID = UUID.randomUUID.toString
+    val databaseName =  s"executions/${md.dctIdentifier}/${randomUUID}"
+    logger.info(s"databaseName = $databaseName")
+
+    val properties: MorphRDBProperties = new MorphRDBProperties
+    properties.setNoOfDatabase(1)
+    properties.setDatabaseUser(dbUserName)
+    properties.setDatabasePassword(dbPassword)
+    properties.setDatabaseName(dbName)
+    properties.setDatabaseURL(jdbc_url)
+    properties.setDatabaseDriver(databaseDriver)
+    properties.setDatabaseType(databaseType)
+    properties.setMappingDocumentFilePath(md.getDownloadURL())
+    properties.setOutputFilePath(outputFilepath)
+
+
+    val runnerFactory: MorphRDBRunnerFactory = new MorphRDBRunnerFactory
+    val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
+    runner.run
+  }
+
+  def executeR2RMLMappingWithCSV(md:MappingDocument, dataset: Dataset, outputFilepath:String, queryFileName:String) = {
     logger.info("Executing R2RML mapping ...")
     val distribution = dataset.getDistribution();
     val randomUUID = UUID.randomUUID.toString
