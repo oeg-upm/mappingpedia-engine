@@ -164,6 +164,8 @@ public class MappingPediaController {
             @RequestParam(value="organizationId", required = false) String organizationId
             , @RequestParam(value="datasetId", required = false) String datasetId
             , @RequestParam("datasetDistributionURL") String distributionDownloadURL
+            , @RequestParam("distributionMediaType") String distributionMediaType
+
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
             , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
@@ -199,6 +201,7 @@ public class MappingPediaController {
         if(fieldSeparator != null) {
             distribution.cvsFieldSeparator_$eq(fieldSeparator);
         }
+        distribution.dcatMediaType_$eq(distributionMediaType);
         dataset.addDistribution(distribution);
 
 
@@ -242,6 +245,8 @@ public class MappingPediaController {
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
             , @RequestParam(value="datasetFile") String datasetFile
+            , @RequestParam("distributionMediaType") String distributionMediaType
+
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
             , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
@@ -259,6 +264,7 @@ public class MappingPediaController {
         Organization organization = new Organization(organizationId);
         Dataset dataset = new Dataset(organization, datasetId);
         Distribution distribution = new Distribution(dataset);
+        distribution.dcatMediaType_$eq(distributionMediaType);
         distribution.dcatDownloadURL_$eq(datasetFile);
 
         //String githubRepo = MappingPediaEngine.mappingpediaProperties().githubRepoContents()
