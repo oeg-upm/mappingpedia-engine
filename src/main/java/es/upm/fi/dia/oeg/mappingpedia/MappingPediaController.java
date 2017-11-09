@@ -172,7 +172,7 @@ public class MappingPediaController {
 
             , @RequestParam("mappingURL") String mappingURL
 
-            , @RequestParam("distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
 
             , @RequestParam(value="dbUserName", required = false) String dbUserName
             , @RequestParam(value="dbPassword", required = false) String dbPassword
@@ -252,7 +252,7 @@ public class MappingPediaController {
             , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
 
-            , @RequestParam("distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
 
             , @RequestParam(value="dbUserName", required = false) String dbUserName
             , @RequestParam(value="dbPassword", required = false) String dbPassword
