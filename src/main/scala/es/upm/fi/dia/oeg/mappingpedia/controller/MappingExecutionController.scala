@@ -198,7 +198,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
     //STORING MANIFEST ON GITHUB
     val addManifestFileGitHubResponse:HttpResponse[JsonNode] = try {
-      this.storeManifestFileOnGitHub(manifestFile, dataset);
+      this.storeManifestFileOnGitHub(manifestFile, dataset, md);
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -374,11 +374,11 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     }
   }
 
-  def storeManifestFileOnGitHub(manifestFile:File, dataset:Dataset) = {
+  def storeManifestFileOnGitHub(manifestFile:File, dataset:Dataset, mappingDocument: MappingDocument) = {
     val organization = dataset.dctPublisher;
 
     logger.info("storing manifest file on github ...")
-    val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+    val addNewManifestCommitMessage = s"Add manifest file for the execution of mapping document: ${mappingDocument.dctIdentifier}"
     val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
       , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
     logger.info("manifest file stored on github ...")

@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.annotation.MultipartConfig;
 
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
+import es.upm.fi.dia.oeg.mappingpedia.controller.DistributionController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController;
 import es.upm.fi.dia.oeg.mappingpedia.model.*;
@@ -38,6 +39,7 @@ public class MappingPediaController {
     private CKANClient ckanClient = MappingPediaEngine.ckanClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
+    private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
     private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient);
     private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient);
 
@@ -480,7 +482,59 @@ public class MappingPediaController {
         return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
+    //LEGACY ENDPOINT
     @RequestMapping(value = "/datasets/{organizationID}/{datasetID}", method= RequestMethod.POST)
+    public AddDatasetResult addNewDataset(
+            @PathVariable("organizationID") String organizationID
+            , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+            , @RequestParam(value="datasetFile", required = false) MultipartFile distributionFileRef
+            , @RequestParam(value="datasetTitle", required = false) String distributionTitle
+            , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
+            , @RequestParam(value="datasetPublisher", required = false) String datasetPublisher
+            , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
+            , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
+            , @RequestParam(value="distributionDownloadURL", required = false) String distributionDownloadURL
+            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
+            , @PathVariable("datasetID") String datasetID
+            , @RequestParam(value="datasetDescription", required = false) String distributionDescription
+    )
+    {
+        logger.info("[POST] /datasets/{organizationID}/{datasetID}");
+        Organization organization = new Organization(organizationID);
+
+        Dataset dataset = new Dataset(organization, datasetID);
+        dataset.dcatKeyword_$eq(datasetKeywords);
+        dataset.dctLanguage_$eq(datasetLanguage);
+
+        Distribution distribution = new Distribution(dataset);
+        if(distributionTitle == null) {
+            distribution.dctTitle_$eq(distribution.dctIdentifier());
+        } else {
+            distribution.dctTitle_$eq(distributionTitle);
+        }
+        if(distributionDescription == null) {
+            distribution.dctDescription_$eq(distribution.dctIdentifier());
+        } else {
+            distribution.dctDescription_$eq(distributionDescription);
+        }
+        if(distributionAccessURL == null) {
+            distribution.dcatAccessURL_$eq(distributionDownloadURL);
+        } else {
+            distribution.dcatAccessURL_$eq(distributionAccessURL);
+        }
+        distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+        distribution.dcatMediaType_$eq(distributionMediaType);
+        if(distributionFileRef != null) {
+            distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
+                    distributionFileRef , dataset.dctIdentifier()));
+        }
+        dataset.addDistribution(distribution);
+
+        return this.distributionController.addDistribution(distribution, manifestFileRef, generateManifestFile);
+    }
+
+    @RequestMapping(value = "/distributions/{organizationID}/{datasetID}", method= RequestMethod.POST)
     public AddDatasetResult addNewDistribution(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
@@ -510,7 +564,11 @@ public class MappingPediaController {
         } else {
             distribution.dctTitle_$eq(distributionTitle);
         }
-        distribution.dctDescription_$eq(distributionDescription);
+        if(distributionDescription == null) {
+            distribution.dctDescription_$eq(distribution.dctIdentifier());
+        } else {
+            distribution.dctDescription_$eq(distributionDescription);
+        }
         if(distributionAccessURL == null) {
             distribution.dcatAccessURL_$eq(distributionDownloadURL);
         } else {
@@ -524,7 +582,7 @@ public class MappingPediaController {
         }
         dataset.addDistribution(distribution);
 
-        return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
+        return this.distributionController.addDistribution(distribution, manifestFileRef, generateManifestFile);
     }
 
     @RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)

@@ -2,49 +2,78 @@ package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.io.File
 import java.net.HttpURLConnection
-import java.util.Date
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
-import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
-import org.slf4j.{Logger, LoggerFactory}
-import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
-import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility.logger
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
-import org.apache.http.client.methods.CloseableHttpResponse
-import org.apache.http.util.EntityUtils
-import org.json.JSONObject
+import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
 
-class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtility)  {
+class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubUtility) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  val distributionController = new DistributionController(ckanClient, githubClient);
 
-
-
-  def storeManifestFileOnGitHub(file:File, dataset:Dataset) = {
+  def storeManifestFileOnGitHub(file:File, distribution:Distribution) = {
+    val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
-    logger.info("storing manifest file for a dataset on github ...")
+    logger.info("storing manifest file for a distribution on github ...")
+    val addNewManifestCommitMessage = s"Add manifest file for dataset: ${dataset.dctIdentifier} distribution: ${distribution.dctIdentifier}"
     val manifestFileName = file.getName
     val datasetId = dataset.dctIdentifier;
     val organizationId = organization.dctIdentifier;
-    val addNewManifestCommitMessage = s"Add manifest file for dataset: $datasetId"
 
     val githubResponse = githubClient.encodeAndPutFile(organizationId
       , datasetId, manifestFileName, addNewManifestCommitMessage, file)
-    logger.info(s"Manifest file for dataset $datasetId stored on github ...")
+    logger.info("manifest file stored on github ...")
     githubResponse
   }
 
-  def addDataset(dataset:Dataset, manifestFileRef:MultipartFile, generateManifestFile:String
+  def storeDatasetDistributionFileOnGitHub(distribution: Distribution) = {
+    val dataset = distribution.dataset;
+    val organization = dataset.dctPublisher;
+
+    val (filename:String, fileContent:String) =
+      MappingPediaUtility.getFileNameAndContent(distribution.distributionFile, distribution.dcatDownloadURL, distribution.encoding);
+    val base64EncodedContent = GitHubUtility.encodeToBase64(fileContent)
+
+
+    logger.info("storing a new dataset and its distribution file on github ...")
+    //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
+    val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
+    val githubResponse = githubClient.putEncodedContent(organization.dctIdentifier
+      , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64EncodedContent)
+    logger.info("New dataset file stored on github ...")
+
+    if(githubResponse != null) {
+      val responseStatus = githubResponse.getStatus;
+      if (HttpURLConnection.HTTP_OK == responseStatus || HttpURLConnection.HTTP_CREATED == responseStatus) {
+        logger.info("Dataset stored on GitHub")
+        if(distribution.dcatAccessURL == null) {
+          distribution.dcatAccessURL =
+            githubResponse.getBody.getObject.getJSONObject("content").getString("url")
+          logger.info(s"distribution.dcatAccessURL = ${distribution.dcatAccessURL}")
+        }
+        if(distribution.dcatDownloadURL == null) {
+          distribution.dcatDownloadURL =
+            githubResponse.getBody.getObject.getJSONObject("content").getString("download_url")
+          logger.info(s"distribution.dcatDownloadURL = ${distribution.dcatDownloadURL}")
+        }
+      } else {
+        val errorMessage = "Error when storing dataset on GitHub: " + responseStatus
+        throw new Exception(errorMessage);
+      }
+    }
+
+    githubResponse;
+  }
+
+  def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile, generateManifestFile:String
                 ) : AddDatasetResult = {
 
-    val organization: Organization = dataset.dctPublisher;
-    val distribution = dataset.getDistribution();
+    //val dataset = distribution.dataset
+    val organization: Organization = distribution.dataset.dctPublisher;
     var errorOccured = false;
     var collectiveErrorMessage:List[String] = Nil;
 
@@ -52,7 +81,7 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
     //STORING DISTRIBUTION FILE ON GITHUB
     val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
       if(distribution != null) {
-        distributionController.storeDatasetDistributionFileOnGitHub(distribution);
+        this.storeDatasetDistributionFileOnGitHub(distribution);
       } else {
         val statusMessage = "No distribution or distribution file has been provided"
         logger.info(statusMessage);
@@ -73,13 +102,13 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
     val manifestFile:File = try {
       if (manifestFileRef != null) {//if the user provides a manifest file
         logger.info("Generating manifest file ... (manifestFileRef is not null)")
-        val generatedFile = MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
+        val generatedFile = MappingPediaUtility.multipartFileToFile(manifestFileRef, distribution.dataset.dctIdentifier)
         logger.info("Manifest file generated. (manifestFileRef is not null)")
         generatedFile
       } else { // if the user does not provide any manifest file
         if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
           //MANIFEST FILE GENERATION
-          val generatedFile = DatasetController.generateManifestFile(dataset);
+          val generatedFile = DistributionController.generateManifestFile(distribution);
           generatedFile
         } else {
           null
@@ -98,7 +127,7 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
 
     //STORING MANIFEST ON GITHUB
     val addManifestFileGitHubResponse:HttpResponse[JsonNode] = try {
-      this.storeManifestFileOnGitHub(manifestFile, dataset);
+      this.storeManifestFileOnGitHub(manifestFile, distribution);
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -134,11 +163,10 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
 
 
     //STORING DATASET & RESOURCE ON CKAN
-    val (ckanAddPackageResponse:HttpResponse[JsonNode], ckanAddResourceResponse) = try {
+    val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
-        logger.info("storing dataset on CKAN ...")
-        val addNewPackageResponse:HttpResponse[JsonNode] = ckanClient.addNewPackage(dataset);
 
+        logger.info("storing distribution on CKAN ...")
         val (addResourceStatus, addResourceEntity) =
           if(distribution != null) {
             ckanClient.createResource(distribution);
@@ -154,7 +182,7 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
           logger.info("dataset stored on CKAN.")
         }
 
-        (addNewPackageResponse, (addResourceStatus, addResourceEntity))
+        (addResourceStatus, addResourceEntity)
       } else {
         (null, null)
       }
@@ -187,13 +215,6 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
       addManifestFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
 
-    val ckanAddPackageResponseStatusCode:Integer = {
-      if(ckanAddPackageResponse == null) {
-        null
-      } else {
-        ckanAddPackageResponse.getStatus
-      }
-    }
     val ckanAddResourceResponseStatusCode:Integer = {
       if(ckanAddResourceResponse._1 == null) {
         null
@@ -249,11 +270,11 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
 
       , addManifestVirtuosoResponse
 
-      , ckanAddPackageResponseStatusCode
+      , null
       , ckanAddResourceResponseStatusCode
       , ckanResourceId
 
-      , dataset.dctIdentifier
+      , distribution.dataset.dctIdentifier
     )
     addDatasetResult
 
@@ -266,94 +287,54 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
   }
 }
 
-object DatasetController {
+object DistributionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  /*
-  val ckanUtility = new CKANUtility(
-    MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
-  val githubClient = MappingPediaEngine.githubClient;
-  */
 
+  def generateManifestFile(distribution: Distribution) = {
+    logger.info("Generating distribution manifest file ...")
+    val dataset = distribution.dataset;
 
-
-
-
-
-  def storeManifestOnVirtuoso(manifestFile:File) = {
-    if(manifestFile != null) {
-      logger.info("storing the manifest triples of a dataset on virtuoso ...")
-      logger.debug("manifestFile = " + manifestFile);
-      MappingPediaEngine.virtuosoClient.store(manifestFile)
-      logger.info("manifest triples stored on virtuoso.")
-      "OK";
-    } else {
-      "No manifest file specified/generated!";
-    }
-  }
-
-  def generateManifestFile(dataset: Dataset) = {
-    logger.info("Generating dataset manifest file ...")
     try {
       val organization = dataset.dctPublisher;
-      val datasetDistribution = dataset.getDistribution();
 
-      val templateFilesWithoutDistribution = List(
+      val templateFiles = List(
         "templates/metadata-namespaces-template.ttl"
-        , "templates/metadata-dataset-template.ttl"
-      );
-      val templateFilesWithDistribution = if(datasetDistribution != null) {
-        templateFilesWithoutDistribution :+ "templates/metadata-distributions-template.ttl"
-      } else {
-        templateFilesWithoutDistribution
-      }
-
-      val mapValuesWithoutDistribution:Map[String,String] = Map(
-        "$datasetID" -> dataset.dctIdentifier
-        , "$datasetTitle" -> dataset.dctTitle
-        , "$datasetDescription" -> dataset.dctDescription
-        , "$datasetKeywords" -> dataset.dcatKeyword
-        , "$publisherId" -> organization.dctIdentifier
-        , "$datasetLanguage" -> dataset.dctLanguage
-        , "$datasetIssued" -> dataset.dctIssued
-        , "$datasetModified" -> dataset.dctModified
+        , "templates/metadata-distributions-template.ttl"
       );
 
-      val mapValuesWithDistribution:Map[String,String] = if(datasetDistribution != null) {
-        var distributionAccessURL = datasetDistribution.dcatAccessURL
+
+      val mapValuesWithDistribution:Map[String,String] = {
+        var distributionAccessURL = distribution.dcatAccessURL
         if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
           distributionAccessURL = "<" + distributionAccessURL;
         }
         if(distributionAccessURL != null && !distributionAccessURL.endsWith(">")) {
           distributionAccessURL = distributionAccessURL + ">";
         }
-        var distributionDownloadURL = datasetDistribution.dcatDownloadURL
+        var distributionDownloadURL = distribution.dcatDownloadURL
         if(distributionDownloadURL != null && !distributionDownloadURL.startsWith("<")) {
           distributionDownloadURL = "<" + distributionDownloadURL;
         }
         if(distributionDownloadURL != null && !distributionDownloadURL.endsWith(">")) {
           distributionDownloadURL = distributionDownloadURL + ">";
         }
-        mapValuesWithoutDistribution + (
-          "$distributionID" -> datasetDistribution.dctIdentifier
-          , "$distributionTitle" -> datasetDistribution.dctTitle
-          , "$distributionDescription" -> datasetDistribution.dctDescription
-          , "$distributionIssued" -> datasetDistribution.dctIssued
-          , "$distributionModified" -> datasetDistribution.dctModified
+        Map(
+          "$datasetID" -> distribution.dataset.dctIdentifier
+          , "$distributionTitle" -> distribution.dctTitle
+          , "$distributionDescription" -> distribution.dctDescription
           , "$distributionAccessURL" -> distributionAccessURL
           , "$distributionDownloadURL" -> distributionDownloadURL
-          , "$distributionMediaType" -> datasetDistribution.dcatMediaType
+          , "$distributionMediaType" -> distribution.dcatMediaType
+          , "$distributionID" -> distribution.dctIdentifier
+          , "$distributionIssued" -> distribution.dctIssued
+          , "$distributionModified" -> distribution.dctModified
         )
-      } else {
-        mapValuesWithoutDistribution
       }
 
-      val filename = if(datasetDistribution == null) {
-        "metadata-dataset.ttl"
-      } else {
-        s"metadata-distribution-${datasetDistribution.dctIdentifier}.ttl"
-      };
+      val filename = s"metadata-distribution-${distribution.dctIdentifier}.ttl"
+
       val manifestFile = MappingPediaEngine.generateManifestFile(
-        mapValuesWithDistribution, templateFilesWithDistribution, filename, dataset.dctIdentifier);
+        mapValuesWithDistribution, templateFiles, filename, dataset.dctIdentifier);
       logger.info("Manifest file generated.")
       manifestFile;
     } catch {
@@ -364,8 +345,4 @@ object DatasetController {
       }
     }
   }
-
-
-
-
 }

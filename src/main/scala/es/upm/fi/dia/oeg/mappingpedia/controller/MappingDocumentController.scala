@@ -142,7 +142,7 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
     val addNewManifestResponse = try {
       if (manifestFile != null) {
         logger.info("Storing manifest file on GitHub ...")
-        val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+        val addNewManifestCommitMessage = s"Add a new manifest file for mapping document: ${mappingDocument.dctIdentifier}"
         val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
           , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = githubResponse.getStatus
@@ -344,7 +344,7 @@ object MappingDocumentController {
 
 
   def generateManifestFile(mappingDocument: MappingDocument, dataset: Dataset) = {
-    logger.info("Generating manifest file ...")
+    logger.info("Generating mapping document manifest file ...")
     val templateFiles = List(
       MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
       , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
