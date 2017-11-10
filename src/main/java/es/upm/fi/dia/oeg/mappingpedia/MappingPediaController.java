@@ -443,7 +443,11 @@ public class MappingPediaController {
         } else {
             dataset.dctTitle_$eq(datasetTitle);
         }
-        dataset.dctDescription_$eq(datasetDescription);
+        if(datasetDescription == null) {
+            dataset.dctDescription_$eq(dataset.dctIdentifier());
+        } else {
+            dataset.dctDescription_$eq(datasetDescription);
+        }
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
@@ -497,8 +501,6 @@ public class MappingPediaController {
         Organization organization = new Organization(organizationID);
 
         Dataset dataset = new Dataset(organization, datasetID);
-
-
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
