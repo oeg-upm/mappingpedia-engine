@@ -165,14 +165,17 @@ public class MappingPediaController {
     public ExecuteMappingResult executeMappingWithoutPathVariables(
             @RequestParam(value="organizationId", required = false) String organizationId
             , @RequestParam(value="datasetId", required = false) String datasetId
-            , @RequestParam(value="datasetDistributionURL", required = false) String distributionDownloadURL
+            , @RequestParam(value="datasetDistributionURL", required = false) String datasetDistributionURL
+            , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
+            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
 
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
             , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
 
-            , @RequestParam("mappingURL") String mappingURL
+            , @RequestParam(value="mappingURL", required = false) String mappingURL
+            , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
 
             , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
 
@@ -200,7 +203,13 @@ public class MappingPediaController {
             dataset = new Dataset(organization, datasetId);
         }
         Distribution distribution = new Distribution(dataset);
-        distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+        if(distributionDownloadURL != null) {
+            distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+        } else {
+            distribution.dcatDownloadURL_$eq(datasetDistributionURL);
+        }
+        distribution.dcatAccessURL_$eq(distributionAccessURL);
+
         if(fieldSeparator != null) {
             distribution.cvsFieldSeparator_$eq(fieldSeparator);
         }
@@ -210,7 +219,12 @@ public class MappingPediaController {
 
         MappingDocument md = new MappingDocument();
         md.mappingLanguage_$eq(mappingLanguage);
-        md.setDownloadURL(mappingURL);
+        if(mappingDocumentDownloadURL != null) {
+            md.setDownloadURL(mappingDocumentDownloadURL);
+        } else {
+            md.setDownloadURL(mappingURL);
+        }
+
 
         MappingExecution mappingExecution = new MappingExecution(md, dataset);
         mappingExecution.setStoreToCKAN("true");
@@ -248,8 +262,8 @@ public class MappingPediaController {
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
             , @RequestParam(value="datasetFile", required = false) String datasetFile
-            , @RequestParam(value="distribution_access_url", required = false) String datasetDistributionAccessURL
-            , @RequestParam(value="distribution_download_url", required = false) String datasetDistributionDownloadURL
+            , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
+            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
 
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
@@ -272,15 +286,15 @@ public class MappingPediaController {
         Dataset dataset = new Dataset(organization, datasetId);
         Distribution distribution = new Distribution(dataset);
         distribution.dcatMediaType_$eq(distributionMediaType);
-        if(datasetDistributionAccessURL != null) {
-            distribution.dcatAccessURL_$eq(datasetDistributionAccessURL);
+        if(distributionAccessURL != null) {
+            distribution.dcatAccessURL_$eq(distributionAccessURL);
         } else {
             distribution.dcatAccessURL_$eq(datasetFile);
         }
-        if(datasetDistributionDownloadURL != null) {
-            distribution.dcatDownloadURL_$eq(datasetDistributionDownloadURL);
+        if(distributionDownloadURL != null) {
+            distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         } else {
-            distribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(datasetDistributionAccessURL));
+            distribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
         }
 
         if(fieldSeparator != null) {
