@@ -247,7 +247,9 @@ public class MappingPediaController {
             @PathVariable("organizationId") String organizationId
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
-            , @RequestParam(value="datasetFile", required = false) String datasetDistributionAccessURL
+            , @RequestParam(value="datasetFile", required = false) String datasetFile
+            , @RequestParam(value="distribution_access_url", required = false) String datasetDistributionAccessURL
+            , @RequestParam(value="distribution_download_url", required = false) String datasetDistributionDownloadURL
 
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
@@ -270,9 +272,17 @@ public class MappingPediaController {
         Dataset dataset = new Dataset(organization, datasetId);
         Distribution distribution = new Distribution(dataset);
         distribution.dcatMediaType_$eq(distributionMediaType);
-        distribution.dcatAccessURL_$eq(datasetDistributionAccessURL);
-        String datasetDistributionDownloadURL = this.githubClient.getDownloadURL(datasetDistributionAccessURL);
-        distribution.dcatDownloadURL_$eq(datasetDistributionDownloadURL);
+        if(datasetDistributionAccessURL != null) {
+            distribution.dcatAccessURL_$eq(datasetDistributionAccessURL);
+        } else {
+            distribution.dcatAccessURL_$eq(datasetFile);
+        }
+        if(datasetDistributionDownloadURL != null) {
+            distribution.dcatDownloadURL_$eq(datasetDistributionDownloadURL);
+        } else {
+            distribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(datasetDistributionAccessURL));
+        }
+
         if(fieldSeparator != null) {
             distribution.cvsFieldSeparator_$eq(fieldSeparator);
         }

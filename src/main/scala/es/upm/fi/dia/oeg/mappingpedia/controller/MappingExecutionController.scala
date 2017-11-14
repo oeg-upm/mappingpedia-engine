@@ -242,7 +242,8 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
 
     new ExecuteMappingResult(
       responseStatus, responseStatusText
-      , datasetDistributionDownloadURL, mdDownloadURL
+      , datasetDistributionDownloadURL
+      , mdDownloadURL
       , queryFileName
       , mappingExecutionResultURL, mappingExecutionResultDownloadURL
       , ckanResponseStatusCode
