@@ -429,16 +429,23 @@ object MappingExecutionController {
 
   def executeR2RMLMappingWithCSV(md:MappingDocument, dataset: Dataset, outputFilepath:String, queryFileName:String) = {
     logger.info("Executing R2RML mapping ...")
+    val mappingDocumentDownloadURL = md.getDownloadURL();
+    logger.info(s"mappingDocumentDownloadURL = $mappingDocumentDownloadURL");
+
     val distribution = dataset.getDistribution();
+    val datasetDistributionDownloadURL = distribution.dcatDownloadURL;
+    logger.info(s"datasetDistributionDownloadURL = $datasetDistributionDownloadURL");
+
+
     val randomUUID = UUID.randomUUID.toString
     val databaseName =  s"executions/${md.dctIdentifier}/${randomUUID}"
     logger.info(s"databaseName = $databaseName")
 
     val properties: MorphCSVProperties = new MorphCSVProperties
     properties.setDatabaseName(databaseName)
-    properties.setMappingDocumentFilePath(md.getDownloadURL())
+    properties.setMappingDocumentFilePath(mappingDocumentDownloadURL)
     properties.setOutputFilePath(outputFilepath);
-    properties.setCSVFile(distribution.dcatDownloadURL);
+    properties.setCSVFile(datasetDistributionDownloadURL);
     properties.setQueryFilePath(queryFileName);
     if (distribution.cvsFieldSeparator != null) {
       properties.fieldSeparator = Some(distribution.cvsFieldSeparator);

@@ -247,7 +247,7 @@ public class MappingPediaController {
             @PathVariable("organizationId") String organizationId
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
-            , @RequestParam(value="datasetFile", required = false) String datasetFile
+            , @RequestParam(value="datasetFile", required = false) String datasetDistributionAccessURL
 
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
@@ -270,7 +270,9 @@ public class MappingPediaController {
         Dataset dataset = new Dataset(organization, datasetId);
         Distribution distribution = new Distribution(dataset);
         distribution.dcatMediaType_$eq(distributionMediaType);
-        distribution.dcatDownloadURL_$eq(datasetFile);
+        distribution.dcatAccessURL_$eq(datasetDistributionAccessURL);
+        String datasetDistributionDownloadURL = this.githubClient.getDownloadURL(datasetDistributionAccessURL);
+        distribution.dcatDownloadURL_$eq(datasetDistributionDownloadURL);
         if(fieldSeparator != null) {
             distribution.cvsFieldSeparator_$eq(fieldSeparator);
         }
