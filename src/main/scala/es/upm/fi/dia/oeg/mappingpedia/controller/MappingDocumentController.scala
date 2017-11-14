@@ -74,11 +74,12 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
     }
-    val mappingDocumentGitHubURL = if (mappingFileGitHubResponse == null) {
+    val mappingDocumentAccessURL = if (mappingFileGitHubResponse == null) {
       ""
     } else {
       mappingFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
+    val mappingDocumentDownloadURL = this.githubClient.getDownloadURL(mappingDocumentAccessURL)
 
 
     //MANIFEST FILE
@@ -171,11 +172,12 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         null
       }
     }
-    val manifestGitHubURL = if (addNewManifestResponse == null) {
+    val manifestAccessURL = if (addNewManifestResponse == null) {
       null
     } else {
       addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
+    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
 
     val (responseStatus, responseStatusText) = if (errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -186,9 +188,8 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
 
     val addMappingResult:AddMappingDocumentResult = new AddMappingDocumentResult(
       responseStatus, responseStatusText
-      , mappingDocumentGitHubURL
-      , manifestGitHubURL
-
+      , mappingDocumentAccessURL, mappingDocumentDownloadURL
+      , manifestAccessURL, manifestDownloadURL
       , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
     )
     addMappingResult
