@@ -33,18 +33,18 @@ class AddDatasetResult(
   def getDistribution_access_url = this.distributionAccessURL;
   def getDistribution_download_url = this.distributionDownloadURL
 
-  def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
+  //def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
   def getVirtuoso_store_manifest_status = this.virtuosoStoreManifestResponseStatusText;
 
-  def getCKANStorePackageStatus = this.ckanStorePackageStatus;
+  //def getCKANStorePackageStatus = this.ckanStorePackageStatus;
   def getCKAN_store_package_status = this.ckanStorePackageStatus;
 
-  def getCKANStoreResourceStatus = this.ckanStoreResourceStatus
+  //def getCKANStoreResourceStatus = this.ckanStoreResourceStatus
   def getCKAN_store_resource_status = this.ckanStoreResourceStatus
 
   def getDatasetId = this.datasetID;
   def getDataset_id = this.datasetID;
 
-  def getDistributionId = this.ckanResourceId;
+  //def getDistributionId = this.ckanResourceId;
   def getDistribution_id = this.ckanResourceId;
 }
