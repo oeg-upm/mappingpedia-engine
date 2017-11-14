@@ -1,10 +1,11 @@
 package es.upm.fi.dia.oeg.mappingpedia.utility
 
 import java.io.{File, FileInputStream}
+import java.net.HttpURLConnection
 
 import com.google.common.base.Charsets
 import com.google.common.io.BaseEncoding
-import com.mashape.unirest.http.Unirest
+import com.mashape.unirest.http.{HttpResponse, JsonNode, Unirest}
 import es.upm.fi.dia.oeg.mappingpedia.model.Dataset
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine, MappingPediaProperties}
@@ -19,6 +20,31 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
   //val githubRepository:String = MappingPediaEngine.mappingpediaProperties.githubRepository;
   //val githubUsername:String = MappingPediaEngine.mappingpediaProperties.githubUser;
   //val githubAccessToken:String = MappingPediaEngine.mappingpediaProperties.githubAccessToken;
+
+  def getDownloadURL(accessURL:String) = {
+    val downloadURL = try {
+      Unirest.get(accessURL).asJson().getBody.getObject.getString("download_url");
+    } catch {
+      case e:Exception => accessURL
+    }
+    downloadURL
+  }
+
+  def getDownloadURL(githubResponse:HttpResponse[JsonNode]) : String = {
+    if(githubResponse != null) {
+      val responseStatus = githubResponse.getStatus
+
+      if (HttpURLConnection.HTTP_CREATED == responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
+        val accessURL = githubResponse.getBody.getObject.getJSONObject("content").getString("url");
+        val downloadURL = this.getDownloadURL(accessURL);
+        downloadURL
+      } else {
+        null
+      }
+    } else {
+      null
+    }
+  }
 
   def getFile(organizationId:String, datasetId:String, filename:String) = {
     //val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/mappingpedia-testuser/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c.ttl";

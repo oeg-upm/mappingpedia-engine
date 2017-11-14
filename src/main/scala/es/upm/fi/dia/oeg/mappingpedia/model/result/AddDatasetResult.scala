@@ -2,11 +2,13 @@ package es.upm.fi.dia.oeg.mappingpedia.model.result
 
 class AddDatasetResult(
                         val errorCode:Integer, val status:String
-                        , val manifestURL:String
+                        , val manifestAccessURL:String
+                        , val manifestDownloadURL:String
                         , val storeManifestResponseStatus:Integer
                         , val storeManifestResponseStatusText:String
 
-                        , val datasetURL:String
+                        , val distributionAccessURL:String
+                        , val distributionDownloadURL:String
                         , val storeDatasetResponseStatus:Integer
                         , val storeDatasetResponseStatusText:String
 
@@ -23,11 +25,13 @@ class AddDatasetResult(
   def getErrorCode = this.errorCode
   def getStatus_code = this.errorCode
 
-  def getManifestURL = this.manifestURL;
-  def getManifest_access_url = this.manifestURL;
+  def getManifestURL = this.manifestAccessURL;
+  def getManifest_access_url = this.manifestAccessURL;
+  def getManifest_download_url = this.manifestDownloadURL;
 
-  def getDatasetURL = this.datasetURL;
-  def getDistribution_access_url = this.datasetURL;
+  def getDatasetURL = this.distributionAccessURL;
+  def getDistribution_access_url = this.distributionAccessURL;
+  def getDistribution_download_url = this.distributionDownloadURL
 
   def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
   def getVirtuoso_store_manifest_status = this.virtuosoStoreManifestResponseStatusText;

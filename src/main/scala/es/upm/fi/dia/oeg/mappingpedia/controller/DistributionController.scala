@@ -203,17 +203,19 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
-    val datasetURL = if(addDatasetFileGitHubResponse == null) {
+    val distributionAccessURL = if(addDatasetFileGitHubResponse == null) {
       null
     } else {
       addDatasetFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
+    val distributionDownloadURL = this.githubClient.getDownloadURL(distributionAccessURL);
 
-    val manifestURL = if(addManifestFileGitHubResponse == null) {
+    val manifestAccessURL = if(addManifestFileGitHubResponse == null) {
       null
     } else {
       addManifestFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
+    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
 
     val ckanAddResourceResponseStatusCode:Integer = {
       if(ckanAddResourceResponse._1 == null) {
@@ -260,11 +262,11 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     val addDatasetResult:AddDatasetResult = new AddDatasetResult(
       responseStatus, responseStatusText
 
-      , manifestURL
+      , manifestAccessURL, manifestDownloadURL
       , addManifestFileGitHubResponseStatus
       , addManifestFileGitHubResponseStatusText
 
-      , datasetURL
+      , distributionAccessURL, distributionDownloadURL
       , addDatasetFileGitHubResponseStatus
       , addDatasetFileGitHubResponseStatusText
 
