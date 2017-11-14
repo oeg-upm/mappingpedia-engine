@@ -186,7 +186,7 @@ object GitHubUtility {
   def generateDownloadURL(organizationId:String, datasetId:String, fileName:String) = {
     val githubRepository = MappingPediaEngine.mappingpediaProperties.githubRepository;
 
-    val downloadURL:String = s"${MappingPediaConstant.GITHUB_RAW_URL_PREFIX}/$githubRepository/master/$organizationId/$datasetId/$fileName";
+    val downloadURL:String = s"${MappingPediaConstant.GITHUB_RAW_URL_PREFIX}$githubRepository/master/$organizationId/$datasetId/$fileName";
     logger.info(s"downloadURL = " + downloadURL);
     downloadURL
   }
