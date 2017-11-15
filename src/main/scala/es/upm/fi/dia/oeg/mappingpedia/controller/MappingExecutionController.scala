@@ -132,38 +132,42 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         null
       }
     }
-    val (mappingExecutionResultURL, mappingExecutionResultDownloadURL) = if(githubResponse != null) {
-      val responseStatus: Int = githubResponse.getStatus
-      logger.info("responseStatus = " + responseStatus)
-      val responseStatusText: String = githubResponse.getStatusText
-      logger.info("responseStatusText = " + responseStatusText)
 
-      if (HttpURLConnection.HTTP_CREATED == responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
-        val url: String = githubResponse.getBody.getObject.getJSONObject("content").getString("url");
-        val downloadURL = try {
-          val response = Unirest.get(url).asJson();
-          response.getBody.getObject.getString("download_url");
-        } catch {
-          case e:Exception => url
-        }
-        (url, downloadURL)
+    val mappingExecutionResultURL = if(githubResponse != null) {
+      if (HttpURLConnection.HTTP_CREATED == githubResponse.getStatus || HttpURLConnection.HTTP_OK == githubResponse.getStatus) {
+        githubResponse.getBody.getObject.getJSONObject("content").getString("url");
       } else {
         errorOccured = true;
-        val errorMessage = "Error storing mapping execution result on GitHub: " + responseStatus
+        val errorMessage = "Error storing mapping execution result on GitHub: " + githubResponse.getStatus
         logger.error(errorMessage)
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        (null, null)
+        null
       }
     } else {
-      (null, null)
+      errorOccured = true;
+      val errorMessage = "Error storing mapping execution result on GitHub"
+      logger.error(errorMessage)
+      collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+      null
     }
-    logger.info(s"mappingExecutionResultURL = $mappingExecutionResultURL")
+
+    val mappingExecutionResultDownloadURL = if(mappingExecutionResultURL != null) {
+      try {
+        val response = Unirest.get(mappingExecutionResultURL).asJson();
+        response.getBody.getObject.getString("download_url");
+      } catch {
+        case e:Exception => mappingExecutionResultURL
+      }
+    } else {
+      null
+    }
+
     logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL")
 
 
     val mappingExecutionResultDistribution = new Distribution(dataset)
     //STORING MAPPING EXECUTION RESULT ON CKAN
-    val (ckanResponseStatusCode:Integer, mappingExecutionResultId:String) = try {
+    val ckanResponseStatusCode:Int = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
         logger.info("storing mapping execution result on CKAN ...")
         mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
@@ -179,9 +183,9 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
 
         mappingExecutionResultDistribution.ckanResourceId = addNewResourceEntity.getJSONObject("result").getString("id");
         mappingExecutionResultDistribution.dctTitle = s"Annotated Dataset ${mappingExecutionResultDistribution.dctIdentifier}"
-        (addNewResourceStatus.getStatusCode, mappingExecutionResultDistribution.dctIdentifier);
+        addNewResourceStatus.getStatusCode
       } else {
-        (HttpURLConnection.HTTP_OK, null);
+        HttpURLConnection.HTTP_OK
       }
     }
     catch {
@@ -191,6 +195,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         val errorMessage = "Error storing mapping execution result on CKAN: " + e.getMessage
         logger.error(errorMessage)
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        val httpInternalError:Int = HttpURLConnection.HTTP_INTERNAL_ERROR
         HttpURLConnection.HTTP_INTERNAL_ERROR
       }
     }
@@ -240,6 +245,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
+
     new ExecuteMappingResult(
       responseStatus, responseStatusText
       , datasetDistributionDownloadURL
@@ -247,7 +253,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       , queryFileName
       , mappingExecutionResultURL, mappingExecutionResultDownloadURL
       , ckanResponseStatusCode
-      , mappingExecutionResultId
+      , mappingExecutionResultDistribution.dctIdentifier
       , manifestURL
     )
 

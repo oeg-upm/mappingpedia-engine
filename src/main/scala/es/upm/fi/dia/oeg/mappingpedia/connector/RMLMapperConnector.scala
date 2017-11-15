@@ -71,6 +71,9 @@ class RMLMapperConnector() {
     logger.info("datasetFile.getAbsolutePath = " + datasetFile.getAbsolutePath)
 
     val args: Array[String] = Array("-m", mappingURL, "-o", outputFilepath);
+    logger.info(s"mappingURL = $mappingURL")
+    logger.info(s"outputFilepath = $outputFilepath")
+
     try {
       be.ugent.mmlab.rml.main.Main.main(args);
     }
