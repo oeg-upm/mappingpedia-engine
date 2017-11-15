@@ -34,14 +34,19 @@ class MappingDocument(val dctIdentifier:String) {
   var dataset:String = null; // it is a hack by Freddy
   var distributionAccessURL:String = null;
 
-  def setDownloadURL(pMappingDocumentURL:String) = {
-    downloadURL = if(pMappingDocumentURL != null && pMappingDocumentURL.startsWith("<") && pMappingDocumentURL.endsWith(">")) {
-      pMappingDocumentURL.substring(1, pMappingDocumentURL.length-1)
+  def setDownloadURL(pDownloadURL:String) = {
+    downloadURL = if(pDownloadURL != null && pDownloadURL.startsWith("<") && pDownloadURL.endsWith(">")) {
+      pDownloadURL.substring(1, pDownloadURL.length-1)
     } else {
-      pMappingDocumentURL
+      pDownloadURL
     }
   }
 
+  def getDownloadURL() = {
+    this.downloadURL
+  }
+
+  /*
   def getDownloadURL() = {
     if (downloadURL != null) {
       downloadURL
@@ -59,6 +64,7 @@ class MappingDocument(val dctIdentifier:String) {
       }
     }
   }
+  */
 
   def getId = this.dctIdentifier;
   def getTitle = this.dctTitle;

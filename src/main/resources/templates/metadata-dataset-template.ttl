@@ -1,10 +1,13 @@
 mpv:Dataset rdfs:subClassOf dcat:Dataset .
 mpids:dataset-$datasetID a mpv:Dataset ;
-    mpv:datasetIdentifier "dataset-$datasetID" ;
     dcterms:title "$datasetTitle" ;
-    dcat:keyword "$datasetKeywords" ;
+    dcterms:description "$datasetDescription" ;
     dcterms:issued "$datasetIssued"^^xsd:dateTime;
     dcterms:modified "$datasetModified"^^xsd:dateTime;
+    dcterms:identifier "$datasetID" ;
+    dcat:keyword "$datasetKeywords" ;
+    #dcterms:language <http://id.loc.gov/vocabulary/iso639-1/en> ;
+    mpv:datasetIdentifier "dataset-$datasetID" ;
     #mpv:publisherId mpi:user-1 ;
     #mpv:datasetLanguage <http://id.loc.gov/vocabulary/iso639-1/en> ;
 .

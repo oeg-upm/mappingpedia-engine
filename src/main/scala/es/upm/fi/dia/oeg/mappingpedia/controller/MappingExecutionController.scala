@@ -15,7 +15,7 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logg
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory}
+import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory, MorphRDBProperties, MorphRDBRunnerFactory}
 
 import scala.collection.JavaConversions._
 
@@ -29,6 +29,10 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
                       , queryFileName:String
                       , pOutputFilename: String
                       , pStoreToCKAN:Boolean
+
+                      , dbUserName:String, dbPassword:String
+                      , dbName:String, jdbc_url:String
+                      , databaseDriver:String, databaseType:String
                     ) : ExecuteMappingResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
@@ -79,7 +83,21 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     //EXECUTING MAPPING
     try {
       if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
-        MappingExecutionController.executeR2RMLMapping(md, dataset, outputFilepath, queryFileName);
+        if(datasetDistribution.dcatMediaType == null) {
+          datasetDistribution.dcatMediaType = "text/csv"
+        }
+        logger.info(s"datasetDistribution.dcatMediaType = ${datasetDistribution.dcatMediaType}")
+
+        if("text/csv".equalsIgnoreCase(datasetDistribution.dcatMediaType)) {
+          MappingExecutionController.executeR2RMLMappingWithCSV(md, dataset, outputFilepath, queryFileName);
+        } else {
+          MappingExecutionController.executeR2RMLMappingWithRDB(md, dataset, outputFilepath, queryFileName
+            , dbUserName:String, dbPassword:String
+            , dbName:String, jdbc_url:String
+            , databaseDriver:String, databaseType:String
+
+          );
+        }
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
         MappingExecutionController.executeRMLMapping(md, dataset, outputFilepath);
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
@@ -114,38 +132,42 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         null
       }
     }
-    val (mappingExecutionResultURL, mappingExecutionResultDownloadURL) = if(githubResponse != null) {
-      val responseStatus: Int = githubResponse.getStatus
-      logger.info("responseStatus = " + responseStatus)
-      val responseStatusText: String = githubResponse.getStatusText
-      logger.info("responseStatusText = " + responseStatusText)
 
-      if (HttpURLConnection.HTTP_CREATED == responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
-        val url: String = githubResponse.getBody.getObject.getJSONObject("content").getString("url");
-        val downloadURL = try {
-          val response = Unirest.get(url).asJson();
-          response.getBody.getObject.getString("download_url");
-        } catch {
-          case e:Exception => url
-        }
-        (url, downloadURL)
+    val mappingExecutionResultURL = if(githubResponse != null) {
+      if (HttpURLConnection.HTTP_CREATED == githubResponse.getStatus || HttpURLConnection.HTTP_OK == githubResponse.getStatus) {
+        githubResponse.getBody.getObject.getJSONObject("content").getString("url");
       } else {
         errorOccured = true;
-        val errorMessage = "Error storing mapping execution result on GitHub: " + responseStatus
+        val errorMessage = "Error storing mapping execution result on GitHub: " + githubResponse.getStatus
         logger.error(errorMessage)
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        (null, null)
+        null
       }
     } else {
-      (null, null)
+      errorOccured = true;
+      val errorMessage = "Error storing mapping execution result on GitHub"
+      logger.error(errorMessage)
+      collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+      null
     }
-    logger.info(s"mappingExecutionResultURL = $mappingExecutionResultURL")
+
+    val mappingExecutionResultDownloadURL = if(mappingExecutionResultURL != null) {
+      try {
+        val response = Unirest.get(mappingExecutionResultURL).asJson();
+        response.getBody.getObject.getString("download_url");
+      } catch {
+        case e:Exception => mappingExecutionResultURL
+      }
+    } else {
+      null
+    }
+
     logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL")
 
 
     val mappingExecutionResultDistribution = new Distribution(dataset)
-    //STORING MAPPING EXECUTION RESULT ON CKAN
-    val (ckanResponseStatusCode:Integer, mappingExecutionResultId:String) = try {
+    //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
+    val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
         logger.info("storing mapping execution result on CKAN ...")
         mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
@@ -156,14 +178,15 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
         //            , resourceMediaType, resourceFileRef, resourceDownloadURL)
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
-        val (addNewResourceStatus, addNewResourceEntity) = ckanClient.createResource(mappingExecutionResultDistribution);
-        logger.info("mapping execution result stored on CKAN.")
+        ckanClient.createResource(mappingExecutionResultDistribution);
 
+        /*
         mappingExecutionResultDistribution.ckanResourceId = addNewResourceEntity.getJSONObject("result").getString("id");
         mappingExecutionResultDistribution.dctTitle = s"Annotated Dataset ${mappingExecutionResultDistribution.dctIdentifier}"
-        (addNewResourceStatus.getStatusCode, mappingExecutionResultDistribution.dctIdentifier);
+        addNewResourceStatus.getStatusCode
+        */
       } else {
-        (HttpURLConnection.HTTP_OK, null);
+        null
       }
     }
     catch {
@@ -173,14 +196,21 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         val errorMessage = "Error storing mapping execution result on CKAN: " + e.getMessage
         logger.error(errorMessage)
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        HttpURLConnection.HTTP_INTERNAL_ERROR
+        null
+      }
+    }
+    val ckanAddResourceResponseStatusCode:Integer = {
+      if(ckanAddResourceResponse == null) {
+        null
+      } else {
+        ckanAddResourceResponse.getStatusLine.getStatusCode
       }
     }
 
     val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
     //STORING MANIFEST ON GITHUB
     val addManifestFileGitHubResponse:HttpResponse[JsonNode] = try {
-      this.storeManifestFileOnGitHub(manifestFile, dataset);
+      this.storeManifestFileOnGitHub(manifestFile, dataset, md);
     } catch {
       case e: Exception => {
         errorOccured = true;
@@ -222,13 +252,15 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
+
     new ExecuteMappingResult(
       responseStatus, responseStatusText
-      , datasetDistributionDownloadURL, mdDownloadURL
+      , datasetDistributionDownloadURL
+      , mdDownloadURL
       , queryFileName
       , mappingExecutionResultURL, mappingExecutionResultDownloadURL
-      , ckanResponseStatusCode
-      , mappingExecutionResultId
+      , ckanAddResourceResponseStatusCode
+      , mappingExecutionResultDistribution.dctIdentifier
       , manifestURL
     )
 
@@ -291,7 +323,11 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
           mappingExecution.outputFileName = outputFilename;
 
           //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-          val executionResult = this.executeMapping(md, dataset, queryFile, outputFilename, false);
+          val executionResult = this.executeMapping(md, dataset, queryFile, outputFilename, false
+            , null, null
+            , null, null
+            , null, null
+          );
           //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
           executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
@@ -352,11 +388,11 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     }
   }
 
-  def storeManifestFileOnGitHub(manifestFile:File, dataset:Dataset) = {
+  def storeManifestFileOnGitHub(manifestFile:File, dataset:Dataset, mappingDocument: MappingDocument) = {
     val organization = dataset.dctPublisher;
 
     logger.info("storing manifest file on github ...")
-    val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+    val addNewManifestCommitMessage = s"Add manifest file for the execution of mapping document: ${mappingDocument.dctIdentifier}"
     val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
       , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
     logger.info("manifest file stored on github ...")
@@ -375,19 +411,55 @@ object MappingExecutionController {
   */
 
 
+  def executeR2RMLMappingWithRDB(md:MappingDocument, dataset: Dataset
+                                 , outputFilepath:String, queryFileName:String
+                                , dbUserName:String, dbPassword:String
+                                , dbName:String, jdbc_url:String
+                                , databaseDriver:String, databaseType:String
 
-  def executeR2RMLMapping(md:MappingDocument, dataset: Dataset, outputFilepath:String, queryFileName:String) = {
+                                ) = {
     logger.info("Executing R2RML mapping ...")
     val distribution = dataset.getDistribution();
     val randomUUID = UUID.randomUUID.toString
     val databaseName =  s"executions/${md.dctIdentifier}/${randomUUID}"
     logger.info(s"databaseName = $databaseName")
 
+    val properties: MorphRDBProperties = new MorphRDBProperties
+    properties.setNoOfDatabase(1)
+    properties.setDatabaseUser(dbUserName)
+    properties.setDatabasePassword(dbPassword)
+    properties.setDatabaseName(dbName)
+    properties.setDatabaseURL(jdbc_url)
+    properties.setDatabaseDriver(databaseDriver)
+    properties.setDatabaseType(databaseType)
+    properties.setMappingDocumentFilePath(md.getDownloadURL())
+    properties.setOutputFilePath(outputFilepath)
+
+
+    val runnerFactory: MorphRDBRunnerFactory = new MorphRDBRunnerFactory
+    val runner: MorphBaseRunner = runnerFactory.createRunner(properties)
+    runner.run
+  }
+
+  def executeR2RMLMappingWithCSV(md:MappingDocument, dataset: Dataset, outputFilepath:String, queryFileName:String) = {
+    logger.info("Executing R2RML mapping ...")
+    val mappingDocumentDownloadURL = md.getDownloadURL();
+    logger.info(s"mappingDocumentDownloadURL = $mappingDocumentDownloadURL");
+
+    val distribution = dataset.getDistribution();
+    val datasetDistributionDownloadURL = distribution.dcatDownloadURL;
+    logger.info(s"datasetDistributionDownloadURL = $datasetDistributionDownloadURL");
+
+
+    val randomUUID = UUID.randomUUID.toString
+    val databaseName =  s"executions/${md.dctIdentifier}/${randomUUID}"
+    logger.info(s"databaseName = $databaseName")
+
     val properties: MorphCSVProperties = new MorphCSVProperties
     properties.setDatabaseName(databaseName)
-    properties.setMappingDocumentFilePath(md.getDownloadURL())
+    properties.setMappingDocumentFilePath(mappingDocumentDownloadURL)
     properties.setOutputFilePath(outputFilepath);
-    properties.setCSVFile(distribution.dcatDownloadURL);
+    properties.setCSVFile(datasetDistributionDownloadURL);
     properties.setQueryFilePath(queryFileName);
     if (distribution.cvsFieldSeparator != null) {
       properties.fieldSeparator = Some(distribution.cvsFieldSeparator);

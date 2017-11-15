@@ -1,7 +1,11 @@
 mpids:dataset-$datasetID dcat:distribution mpidd:distribution-$distributionID .
 
 mpidd:distribution-$distributionID a dcat:Distribution;
-    dcat:mediaType "$distributionMediaType" ;
+    dcterms:title "$distributionTitle" ;
+    dcterms:description "$distributionDescription" ;
+    dcterms:issued "$distributionIssued"^^xsd:dateTime;
+    dcterms:modified "$distributionModified"^^xsd:dateTime;
     dcat:accessURL $distributionAccessURL ;
     dcat:downloadURL $distributionDownloadURL ;
+    dcat:mediaType "$distributionMediaType" ;
 .

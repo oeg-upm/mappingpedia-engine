@@ -1,10 +1,12 @@
 package es.upm.fi.dia.oeg.mappingpedia.utility
 
 import java.io.{File, FileInputStream}
+import java.net.HttpURLConnection
 
 import com.google.common.base.Charsets
 import com.google.common.io.BaseEncoding
-import com.mashape.unirest.http.Unirest
+import com.mashape.unirest.http.{HttpResponse, JsonNode, Unirest}
+import es.upm.fi.dia.oeg.mappingpedia.model.Dataset
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine, MappingPediaProperties}
 import org.json.JSONObject
@@ -19,16 +21,41 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
   //val githubUsername:String = MappingPediaEngine.mappingpediaProperties.githubUser;
   //val githubAccessToken:String = MappingPediaEngine.mappingpediaProperties.githubAccessToken;
 
-  def getFile(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String) = {
+  def getDownloadURL(accessURL:String) = {
+    val downloadURL = try {
+      Unirest.get(accessURL).asJson().getBody.getObject.getString("download_url");
+    } catch {
+      case e:Exception => accessURL
+    }
+    downloadURL
+  }
+
+  def getDownloadURL(githubResponse:HttpResponse[JsonNode]) : String = {
+    if(githubResponse != null) {
+      val responseStatus = githubResponse.getStatus
+
+      if (HttpURLConnection.HTTP_CREATED == responseStatus || HttpURLConnection.HTTP_OK == responseStatus) {
+        val accessURL = githubResponse.getBody.getObject.getJSONObject("content").getString("url");
+        val downloadURL = this.getDownloadURL(accessURL);
+        downloadURL
+      } else {
+        null
+      }
+    } else {
+      null
+    }
+  }
+
+  def getFile(organizationId:String, datasetId:String, filename:String) = {
     //val uri = "https://api.github.com/repos/oeg-upm/mappingpedia-contents/contents/mappingpedia-testuser/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c/95c80c25-7bff-44de-b7c0-3a4f3ebcb30c.ttl";
     //val response = Unirest.get(uri).asJson();
 
     //val uri = MappingPediaEngine.mappingpediaProperties.githubRepoContents + "/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
-    val uri = MappingPediaConstant.GITHUB_ACCESS_URL_PREFIX + "/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
+    val uri = MappingPediaConstant.GITHUB_ACCESS_URL_PREFIX + "/{organizationId}/{datasetId}/{filename}";
     val response = Unirest.get(uri)
-      .routeParam("mappingpediaUsername", mappingpediaUsername)
-      .routeParam("mappingDirectory", mappingDirectory)
-      .routeParam("mappingFilename", mappingFilename)
+      .routeParam("organizationId", organizationId)
+      .routeParam("datasetId", datasetId)
+      .routeParam("filename", filename)
       .basicAuth(githubUsername, githubAccessToken)
       //.header("Content-Type", "application/json")
       //.body(jsonObj)
@@ -38,9 +65,9 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
     response;
   }
 
-  def getSHA(organizationID:String, datasetID:String, mappingDocumentFileName:String) : String = {
+  def getSHA(organizationID:String, datasetID:String, filename:String) : String = {
     val githubRepository = MappingPediaEngine.mappingpediaProperties.githubRepository;
-    val uri = MappingPediaConstant.GITHUB_ACCESS_URL_PREFIX + s"${githubRepository}/contents/${organizationID}/${datasetID}/${mappingDocumentFileName}";
+    val uri = MappingPediaConstant.GITHUB_ACCESS_URL_PREFIX + s"${githubRepository}/contents/${organizationID}/${datasetID}/${filename}";
 
     try {
       val response = Unirest.get(uri)
@@ -62,7 +89,7 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
 
   }
 
-  def putEncodedContent(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
+  def putEncodedContent(organizationId:String, datasetId:String, filename:String
                         , message:String, base64EncodedContent:String
                        ) = {
     val jsonObj = new JSONObject();
@@ -70,7 +97,7 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
     jsonObj.put("content", base64EncodedContent);
 
     try {
-      val sha = this.getSHA(mappingpediaUsername, mappingDirectory, mappingFilename);
+      val sha = this.getSHA(organizationId, datasetId, filename);
       jsonObj.put("sha", sha);
     } catch {
       case e:Exception => {
@@ -79,7 +106,7 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
 
     //val uri = MappingPediaEngine.mappingpediaProperties.githubRepoContents + "/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
     val githubRepository = MappingPediaEngine.mappingpediaProperties.githubRepository;
-    val uri = MappingPediaConstant.GITHUB_ACCESS_URL_PREFIX + s"${githubRepository}/contents/${mappingpediaUsername}/${mappingDirectory}/${mappingFilename}";
+    val uri = MappingPediaConstant.GITHUB_ACCESS_URL_PREFIX + s"${githubRepository}/contents/${organizationId}/${datasetId}/${filename}";
     logger.info(s"hitting github url $uri");
     val response = Unirest.put(uri)
       //.routeParam("githubRepository", githubRepository)
@@ -99,9 +126,9 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
     response.getBody.getObject.getString("sha");
   }
 
-  def encodeAndPutFile(mappingpediaUsername:String, directory:String, filename:String, message:String, file:File) = {
+  def encodeAndPutFile(organizationId:String, datasetId:String, filename:String, message:String, file:File) = {
     val base64EncodedContent = GitHubUtility.encodeToBase64(file);
-    this.putEncodedContent(mappingpediaUsername, directory, filename, message, base64EncodedContent)
+    this.putEncodedContent(organizationId, datasetId, filename, message, base64EncodedContent)
   }
 
 }
@@ -159,9 +186,10 @@ object GitHubUtility {
   def generateDownloadURL(organizationId:String, datasetId:String, fileName:String) = {
     val githubRepository = MappingPediaEngine.mappingpediaProperties.githubRepository;
 
-    val downloadURL:String = s"${MappingPediaConstant.GITHUB_RAW_URL_PREFIX}/$githubRepository/master/$organizationId/$datasetId/$fileName";
+    val downloadURL:String = s"${MappingPediaConstant.GITHUB_RAW_URL_PREFIX}$githubRepository/master/$organizationId/$datasetId/$fileName";
     logger.info(s"downloadURL = " + downloadURL);
     downloadURL
   }
+
 
 }

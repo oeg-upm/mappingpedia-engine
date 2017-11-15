@@ -74,11 +74,12 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
     }
-    val mappingDocumentGitHubURL = if (mappingFileGitHubResponse == null) {
+    val mappingDocumentAccessURL = if (mappingFileGitHubResponse == null) {
       ""
     } else {
       mappingFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
+    val mappingDocumentDownloadURL = this.githubClient.getDownloadURL(mappingDocumentAccessURL)
 
 
     //MANIFEST FILE
@@ -142,7 +143,7 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
     val addNewManifestResponse = try {
       if (manifestFile != null) {
         logger.info("Storing manifest file on GitHub ...")
-        val addNewManifestCommitMessage = "Add a new manifest file by mappingpedia-engine"
+        val addNewManifestCommitMessage = s"Add a new manifest file for mapping document: ${mappingDocument.dctIdentifier}"
         val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
           , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = githubResponse.getStatus
@@ -171,11 +172,12 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         null
       }
     }
-    val manifestGitHubURL = if (addNewManifestResponse == null) {
+    val manifestAccessURL = if (addNewManifestResponse == null) {
       null
     } else {
       addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
+    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
 
     val (responseStatus, responseStatusText) = if (errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -186,9 +188,8 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
 
     val addMappingResult:AddMappingDocumentResult = new AddMappingDocumentResult(
       responseStatus, responseStatusText
-      , mappingDocumentGitHubURL
-      , manifestGitHubURL
-
+      , mappingDocumentAccessURL, mappingDocumentDownloadURL
+      , manifestAccessURL, manifestDownloadURL
       , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
     )
     addMappingResult
@@ -344,7 +345,7 @@ object MappingDocumentController {
 
 
   def generateManifestFile(mappingDocument: MappingDocument, dataset: Dataset) = {
-    logger.info("Generating manifest file ...")
+    logger.info("Generating mapping document manifest file ...")
     val templateFiles = List(
       MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
       , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
