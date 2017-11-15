@@ -64,6 +64,9 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
       val mpEntity = builder.build();
       httpPostRequest.setEntity(mpEntity)
       val response = httpClient.execute(httpPostRequest)
+      response
+
+      /*
       val responseStatus = response.getStatusLine;
 
       if (response.getStatusLine.getStatusCode < 200 || response.getStatusLine.getStatusCode >= 300)
@@ -74,6 +77,7 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
       val responseEntity = new JSONObject(entity);
       //logger.info(s"responseEntity = " + responseEntity)
       (responseStatus, responseEntity);
+      */
 
     } catch {
       case e: Exception => {

@@ -133,6 +133,50 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
     }
 
 
+    //STORING DATASET AS PACKAGE ON CKAN
+    val ckanAddPackageResponse:HttpResponse[JsonNode] = try {
+      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
+        logger.info("storing dataset as a package on CKAN ...")
+        ckanClient.addNewPackage(dataset);
+      } else {
+        null
+      }
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error storing the dataset as a package on CKAN: " + e.getMessage
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
+
+    //STORING DISTRIBUTION FILE AS RESOURCE ON CKAN
+    val ckanAddResourceResponse = try {
+      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
+        logger.info("storing distribution file as a package on CKAN ...")
+
+          if(distribution != null) {
+            ckanClient.createResource(distribution);
+          } else {
+            null
+          }
+      } else {
+        null
+      }
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error storing distribution file as a resource on CKAN: " + e.getMessage
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
+
+    /*
     //STORING DATASET & RESOURCE ON CKAN
     val (ckanAddPackageResponse:HttpResponse[JsonNode], ckanAddResourceResponse) = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
@@ -168,6 +212,7 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
         null
       }
     }
+    */
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -197,18 +242,20 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
       }
     }
     val ckanAddResourceResponseStatusCode:Integer = {
-      if(ckanAddResourceResponse._1 == null) {
+      if(ckanAddResourceResponse == null) {
         null
       } else {
-        ckanAddResourceResponse._1.getStatusCode;
+        ckanAddResourceResponse.getStatusLine.getStatusCode
       }
     }
     val ckanResourceId:String = {
-      if(ckanAddResourceResponse._2 == null) {
+      if(ckanAddResourceResponse == null) {
         null
       } else {
-        val resourceId = ckanAddResourceResponse._2.getJSONObject("result").getString("id");
-        resourceId
+        val httpEntity  = ckanAddResourceResponse.getEntity
+        val entity = EntityUtils.toString(httpEntity)
+        val responseEntity = new JSONObject(entity);
+        responseEntity.getJSONObject("result").getString("id");
       }
     }
     //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;

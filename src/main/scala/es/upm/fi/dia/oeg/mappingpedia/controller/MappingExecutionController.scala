@@ -166,8 +166,8 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
 
 
     val mappingExecutionResultDistribution = new Distribution(dataset)
-    //STORING MAPPING EXECUTION RESULT ON CKAN
-    val ckanResponseStatusCode:Int = try {
+    //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
+    val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
         logger.info("storing mapping execution result on CKAN ...")
         mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
@@ -178,14 +178,15 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
         //            , resourceMediaType, resourceFileRef, resourceDownloadURL)
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
-        val (addNewResourceStatus, addNewResourceEntity) = ckanClient.createResource(mappingExecutionResultDistribution);
-        logger.info("mapping execution result stored on CKAN.")
+        ckanClient.createResource(mappingExecutionResultDistribution);
 
+        /*
         mappingExecutionResultDistribution.ckanResourceId = addNewResourceEntity.getJSONObject("result").getString("id");
         mappingExecutionResultDistribution.dctTitle = s"Annotated Dataset ${mappingExecutionResultDistribution.dctIdentifier}"
         addNewResourceStatus.getStatusCode
+        */
       } else {
-        HttpURLConnection.HTTP_OK
+        null
       }
     }
     catch {
@@ -195,8 +196,14 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         val errorMessage = "Error storing mapping execution result on CKAN: " + e.getMessage
         logger.error(errorMessage)
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        val httpInternalError:Int = HttpURLConnection.HTTP_INTERNAL_ERROR
-        HttpURLConnection.HTTP_INTERNAL_ERROR
+        null
+      }
+    }
+    val ckanAddResourceResponseStatusCode:Integer = {
+      if(ckanAddResourceResponse == null) {
+        null
+      } else {
+        ckanAddResourceResponse.getStatusLine.getStatusCode
       }
     }
 
@@ -252,7 +259,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       , mdDownloadURL
       , queryFileName
       , mappingExecutionResultURL, mappingExecutionResultDownloadURL
-      , ckanResponseStatusCode
+      , ckanAddResourceResponseStatusCode
       , mappingExecutionResultDistribution.dctIdentifier
       , manifestURL
     )

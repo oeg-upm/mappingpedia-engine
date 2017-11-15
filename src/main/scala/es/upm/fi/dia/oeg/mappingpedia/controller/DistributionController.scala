@@ -8,6 +8,8 @@ import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
 import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
+import org.apache.http.util.EntityUtils
+import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
 
@@ -162,6 +164,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     }
 
 
+    /*
     //STORING DATASET & RESOURCE ON CKAN
     val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
@@ -196,6 +199,31 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
         null
       }
     }
+    */
+
+    //STORING DISTRIBUTION FILE AS RESOURCE ON CKAN
+    val ckanAddResourceResponse = try {
+      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
+        logger.info("storing distribution file as a package on CKAN ...")
+
+        if(distribution != null) {
+          ckanClient.createResource(distribution);
+        } else {
+          null
+        }
+      } else {
+        null
+      }
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error storing distribution file as a resource on CKAN: " + e.getMessage
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -218,20 +246,23 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
 
     val ckanAddResourceResponseStatusCode:Integer = {
-      if(ckanAddResourceResponse._1 == null) {
+      if(ckanAddResourceResponse == null) {
         null
       } else {
-        ckanAddResourceResponse._1.getStatusCode;
+        ckanAddResourceResponse.getStatusLine.getStatusCode
       }
     }
     val ckanResourceId:String = {
-      if(ckanAddResourceResponse._2 == null) {
+      if(ckanAddResourceResponse == null) {
         null
       } else {
-        val resourceId = ckanAddResourceResponse._2.getJSONObject("result").getString("id");
-        resourceId
+        val httpEntity  = ckanAddResourceResponse.getEntity
+        val entity = EntityUtils.toString(httpEntity)
+        val responseEntity = new JSONObject(entity);
+        responseEntity.getJSONObject("result").getString("id");
       }
     }
+
     //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;
     val addDatasetFileGitHubResponseStatus:Integer =
       if(addDatasetFileGitHubResponse == null) {
