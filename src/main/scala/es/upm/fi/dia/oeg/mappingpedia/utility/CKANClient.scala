@@ -87,7 +87,10 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
       }
 
       // log error
-    } finally if (httpClient != null) httpClient.close()
+    } finally {
+      //if (httpClient != null) httpClient.close()
+    }
+
 
   }
 
