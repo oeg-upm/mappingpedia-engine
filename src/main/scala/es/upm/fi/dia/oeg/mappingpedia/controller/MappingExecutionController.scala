@@ -240,11 +240,8 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       }
     }
 
-    val manifestURL = if(addManifestFileGitHubResponse == null) {
-      null
-    } else {
-      addManifestFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
+    val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
+    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -261,7 +258,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       , mappingExecutionResultURL, mappingExecutionResultDownloadURL
       , ckanAddResourceResponseStatusCode
       , mappingExecutionResultDistribution.dctIdentifier
-      , manifestURL
+      , manifestAccessURL, manifestDownloadURL
     )
 
     /*

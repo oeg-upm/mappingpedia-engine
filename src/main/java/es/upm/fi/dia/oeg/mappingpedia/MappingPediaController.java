@@ -249,7 +249,7 @@ public class MappingPediaController {
                     , null, null
                     , null
                     , null
-                    , null
+                    , null, null
             );
             return executeMappingResult;
         }
@@ -332,7 +332,7 @@ public class MappingPediaController {
                     , null, null
                     , null
                     , null
-                    , null
+                    , null, null
             );
             return executeMappingResult;
         }
