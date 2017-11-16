@@ -2,7 +2,7 @@ package es.upm.fi.dia.oeg.mappingpedia.model.result
 
 class AddMappingDocumentResult(
                          val errorCode:Integer, val status:String
-                         , val mappingDocumentAccessURL:String , val mappingDocumentDownloadURL:String
+                         , val mappingDocumentAccessURL:String , val mappingDocumentDownloadURL:String, val mappingDocumentSHA:String
                          , val manifestAccessURL:String, val manifestDownloadURL:String
 
                          , val virtuosoStoreManifestStatus:String, val virtuosoStoreMappingStatus:String
@@ -17,6 +17,7 @@ class AddMappingDocumentResult(
   def getMappingURL = this.mappingDocumentAccessURL;
   def getMapping_document_access_url= this.mappingDocumentAccessURL;
   def getMapping_document_download_url= this.mappingDocumentDownloadURL;
+  def getMapping_document_sha= this.mappingDocumentSHA;
 
   def getManifestURL = this.manifestAccessURL;
   def getManifest_access_url = this.manifestAccessURL;

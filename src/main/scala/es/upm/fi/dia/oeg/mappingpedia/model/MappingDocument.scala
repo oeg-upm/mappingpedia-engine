@@ -30,6 +30,7 @@ class MappingDocument(val dctIdentifier:String) {
   var distributionFieldSeparator:Option[String] = None;
   //var multipartFile: MultipartFile = null;
   var mappingDocumentFile:File = null;
+  var sha:String = null;
 
   var dataset:String = null; // it is a hack by Freddy
   var distributionAccessURL:String = null;

@@ -74,12 +74,9 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
     }
-    val mappingDocumentAccessURL = if (mappingFileGitHubResponse == null) {
-      ""
-    } else {
-      mappingFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
+    val mappingDocumentAccessURL = this.githubClient.getAccessURL(mappingFileGitHubResponse)
     val mappingDocumentDownloadURL = this.githubClient.getDownloadURL(mappingDocumentAccessURL)
+    mappingDocument.sha = this.githubClient.getSHA(mappingDocumentAccessURL);
 
 
     //MANIFEST FILE
@@ -188,7 +185,7 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
 
     val addMappingResult:AddMappingDocumentResult = new AddMappingDocumentResult(
       responseStatus, responseStatusText
-      , mappingDocumentAccessURL, mappingDocumentDownloadURL
+      , mappingDocumentAccessURL, mappingDocumentDownloadURL, mappingDocument.sha
       , manifestAccessURL, manifestDownloadURL
       , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
     )
@@ -364,6 +361,7 @@ object MappingDocumentController {
       , "$mappingDocumentFilePath" -> mappingDocument.getDownloadURL()
       , "$datasetID" -> dataset.dctIdentifier
       , "$mappingLanguage" -> mappingDocument.mappingLanguage
+      , "$sha" -> mappingDocument.sha
 
       //, "$datasetTitle" -> datasetTitle
       //, "$datasetKeywords" -> datasetKeywords
