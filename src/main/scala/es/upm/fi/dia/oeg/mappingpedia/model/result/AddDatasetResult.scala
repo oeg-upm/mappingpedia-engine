@@ -9,7 +9,6 @@ class AddDatasetResult(val errorCode:Integer, val status:String, val dataset:Dat
                         , val ckanStorePackageStatus:Integer, val ckanStoreResourceStatus:Integer
                       ) {
 
-  val distribution = dataset.getDistribution();
 
   def getStatus= this.status
   def getErrorCode = this.errorCode
@@ -19,12 +18,6 @@ class AddDatasetResult(val errorCode:Integer, val status:String, val dataset:Dat
   def getManifest_access_url = dataset.manifestAccessURL
   def getManifest_download_url = dataset.manifestDownloadURL
 
-  def getDatasetURL = distribution.dcatAccessURL;
-  def getDistribution_access_url = distribution.dcatAccessURL
-  def getDistribution_download_url = distribution.dcatDownloadURL
-  def getDistribution_manifest_access_url = distribution.manifestAccessURL
-  def getDistribution_manifest_download_url = distribution.manifestDownloadURL
-  def getDistribution_sha = distribution.sha
 
   //def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
   def getVirtuoso_store_manifest_status = this.virtuosoStoreManifestResponseStatusText;
@@ -38,6 +31,12 @@ class AddDatasetResult(val errorCode:Integer, val status:String, val dataset:Dat
   def getDatasetId = dataset.dctIdentifier
   def getDataset_id = dataset.dctIdentifier
 
-  //def getDistributionId = this.ckanResourceId;
-  def getDistribution_id = distribution.ckanResourceId
+  val distribution = dataset.getDistribution();
+  def getDatasetURL = if(distribution == null ) { null } else { distribution.dcatAccessURL; }
+  def getDistribution_access_url = if(distribution == null ) { null } else { distribution.dcatAccessURL }
+  def getDistribution_download_url = if(distribution == null ) { null } else { distribution.dcatDownloadURL }
+  def getDistribution_manifest_access_url = if(distribution == null ) { null } else { distribution.manifestAccessURL }
+  def getDistribution_manifest_download_url = if(distribution == null ) { null } else { distribution.manifestDownloadURL }
+  def getDistribution_sha = if(distribution == null ) { null } else { distribution.sha }
+  def getDistribution_id = if(distribution == null ) { null } else { distribution.ckanResourceId}
 }
