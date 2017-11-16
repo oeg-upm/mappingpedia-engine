@@ -42,11 +42,12 @@ class MappingDocument(val dctIdentifier:String) {
     }
   }
 
+  /*
   def getDownloadURL() = {
     this.downloadURL
   }
+  */
 
-  /*
   def getDownloadURL() = {
     if (downloadURL != null) {
       downloadURL
@@ -64,7 +65,6 @@ class MappingDocument(val dctIdentifier:String) {
       }
     }
   }
-  */
 
   def getId = this.dctIdentifier;
   def getTitle = this.dctTitle;

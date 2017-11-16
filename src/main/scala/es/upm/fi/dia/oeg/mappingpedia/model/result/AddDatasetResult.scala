@@ -9,6 +9,7 @@ class AddDatasetResult(
 
                         , val distributionAccessURL:String
                         , val distributionDownloadURL:String
+                        , val distributionSHA:String
                         , val storeDatasetResponseStatus:Integer
                         , val storeDatasetResponseStatusText:String
 
@@ -32,6 +33,7 @@ class AddDatasetResult(
   def getDatasetURL = this.distributionAccessURL;
   def getDistribution_access_url = this.distributionAccessURL;
   def getDistribution_download_url = this.distributionDownloadURL
+  def getDistribution_sha = this.distributionSHA
 
   //def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
   def getVirtuoso_store_manifest_status = this.virtuosoStoreManifestResponseStatusText;

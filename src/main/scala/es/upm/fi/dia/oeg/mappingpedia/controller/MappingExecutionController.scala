@@ -286,10 +286,8 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     //new ListResult(subclassesInList.size, subclassesInList);
     val queryFile:String = null;
 
-    val mappingDocuments:Iterable[MappingDocument] = subclassesURIs.flatMap(subclassURI => {
-      val mappingDocumentsByClassURI =
+    val mappingDocuments = subclassesURIs.flatMap(subclassURI => {
         MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults();
-      mappingDocumentsByClassURI
     }).asInstanceOf[Iterable[MappingDocument]];
 
     var executedMappings:List[(String, String)]= Nil;
@@ -304,9 +302,9 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       }
       val outputFilename = UUID.randomUUID.toString + ".nt"
       val mappingDocumentDownloadURL = md.getDownloadURL();
-      logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
+
       val mdDistributionAccessURL = md.distributionAccessURL;
-      logger.info("mdDistributionAccessURL = " + mdDistributionAccessURL);
+
 
       if(mappingDocumentDownloadURL != null && mdDistributionAccessURL != null) {
         if(executedMappings.contains((mappingDocumentDownloadURL,mdDistributionAccessURL))) {

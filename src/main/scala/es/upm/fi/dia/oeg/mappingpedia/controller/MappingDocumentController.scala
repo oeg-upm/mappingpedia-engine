@@ -228,7 +228,10 @@ object MappingDocumentController {
         md.distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
         md.mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
-        md.accessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
+        val mdDownloadURL = MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null);
+        md.setDownloadURL(mdDownloadURL);
+        logger.info("mdDownloadURL = " + mdDownloadURL);
+        logger.info("mdDistributionAccessURL = " + md.distributionAccessURL);
 
         results = md :: results;
       }

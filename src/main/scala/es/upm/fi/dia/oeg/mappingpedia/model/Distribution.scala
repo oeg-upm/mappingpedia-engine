@@ -35,6 +35,7 @@ class Distribution (val dataset: Dataset, val dctIdentifier:String){
   var distributionFile:File = null;
   var encoding:String="UTF-8";
   var ckanResourceId:String = null;
+  var sha:String = null;
 
 
 }

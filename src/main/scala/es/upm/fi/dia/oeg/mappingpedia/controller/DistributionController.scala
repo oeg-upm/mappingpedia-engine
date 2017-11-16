@@ -41,9 +41,9 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     val base64EncodedContent = GitHubUtility.encodeToBase64(fileContent)
 
 
-    logger.info("storing a new dataset and its distribution file on github ...")
+    logger.info("storing a distribution file on github ...")
     //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
-    val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
+    val addNewDatasetCommitMessage = s"Add a new distribution file to dataset ${dataset.dctIdentifier}"
     val githubResponse = githubClient.putEncodedContent(organization.dctIdentifier
       , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64EncodedContent)
     logger.info("New dataset file stored on github ...")
@@ -81,7 +81,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
 
 
     //STORING DISTRIBUTION FILE ON GITHUB
-    val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
+    val addDistributionFileGitHubResponse:HttpResponse[JsonNode] = try {
       if(distribution != null) {
         this.storeDatasetDistributionFileOnGitHub(distribution);
       } else {
@@ -99,6 +99,20 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
         null
       }
     }
+    val distributionAccessURL = if(addDistributionFileGitHubResponse == null) {
+      null
+    } else {
+      this.githubClient.getAccessURL(addDistributionFileGitHubResponse)
+    }
+    val distributionDownloadURL = this.githubClient.getDownloadURL(distributionAccessURL);
+    if(distributionDownloadURL != null) {
+      distribution.sha = this.githubClient.getSHA(distributionAccessURL);
+    }
+    val addDatasetFileGitHubResponseStatus:Integer = if(addDistributionFileGitHubResponse == null) { null }
+    else { addDistributionFileGitHubResponse.getStatus }
+
+    val addDatasetFileGitHubResponseStatusText = if(addDistributionFileGitHubResponse == null) { null }
+    else { addDistributionFileGitHubResponse.getStatusText }
 
     //MANIFEST FILE
     val manifestFile:File = try {
@@ -231,13 +245,6 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
-    val distributionAccessURL = if(addDatasetFileGitHubResponse == null) {
-      null
-    } else {
-      addDatasetFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
-    val distributionDownloadURL = this.githubClient.getDownloadURL(distributionAccessURL);
-
     val manifestAccessURL = if(addManifestFileGitHubResponse == null) {
       null
     } else {
@@ -263,20 +270,6 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       }
     }
 
-    //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;
-    val addDatasetFileGitHubResponseStatus:Integer =
-      if(addDatasetFileGitHubResponse == null) {
-        null
-      }  else {
-        addDatasetFileGitHubResponse.getStatus
-      }
-
-    val addDatasetFileGitHubResponseStatusText =
-      if(addDatasetFileGitHubResponse == null) {
-        null
-      }  else {
-        addDatasetFileGitHubResponse.getStatusText
-      }
 
     val addManifestFileGitHubResponseStatus:Integer = if(addManifestFileGitHubResponse == null) {
       null
@@ -297,7 +290,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       , addManifestFileGitHubResponseStatus
       , addManifestFileGitHubResponseStatusText
 
-      , distributionAccessURL, distributionDownloadURL
+      , distributionAccessURL, distributionDownloadURL, distribution.sha
       , addDatasetFileGitHubResponseStatus
       , addDatasetFileGitHubResponseStatusText
 
@@ -361,6 +354,7 @@ object DistributionController {
           , "$distributionID" -> distribution.dctIdentifier
           , "$distributionIssued" -> distribution.dctIssued
           , "$distributionModified" -> distribution.dctModified
+          , "$sha" -> distribution.sha
         )
       }
 
