@@ -20,6 +20,9 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
   var dctLanguage:String = null;
   var dcatDistribution:List[Distribution] = Nil;
 
+  var manifestAccessURL:String = null;
+  var manifestDownloadURL:String = null;
+
   //for the moment assume that only one distribution for each dataset
   def getDistribution() = if(dcatDistribution == Nil) {
     null

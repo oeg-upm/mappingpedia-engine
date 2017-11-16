@@ -74,9 +74,9 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
     }
-    val mappingDocumentAccessURL = this.githubClient.getAccessURL(mappingFileGitHubResponse)
-    val mappingDocumentDownloadURL = this.githubClient.getDownloadURL(mappingDocumentAccessURL)
-    mappingDocument.sha = this.githubClient.getSHA(mappingDocumentAccessURL);
+    mappingDocument.accessURL = this.githubClient.getAccessURL(mappingFileGitHubResponse)
+    mappingDocument.setDownloadURL(this.githubClient.getDownloadURL(mappingDocument.accessURL))
+    mappingDocument.sha = this.githubClient.getSHA(mappingDocument.accessURL);
 
 
     //MANIFEST FILE
@@ -169,12 +169,12 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         null
       }
     }
-    val manifestAccessURL = if (addNewManifestResponse == null) {
+    mappingDocument.manifestAccessURL = if (addNewManifestResponse == null) {
       null
     } else {
       addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
-    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
+    mappingDocument.manifestDownloadURL = this.githubClient.getDownloadURL(mappingDocument.manifestAccessURL);
 
     val (responseStatus, responseStatusText) = if (errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -185,8 +185,9 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
 
     val addMappingResult:AddMappingDocumentResult = new AddMappingDocumentResult(
       responseStatus, responseStatusText
-      , mappingDocumentAccessURL, mappingDocumentDownloadURL, mappingDocument.sha
-      , manifestAccessURL, manifestDownloadURL
+      //, mappingDocumentAccessURL, mappingDocumentDownloadURL, mappingDocument.sha
+      , mappingDocument
+      //, manifestAccessURL, manifestDownloadURL
       , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
     )
     addMappingResult

@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile
 class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubUtility) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  def storeManifestFileOnGitHub(file:File, distribution:Distribution) = {
+  def storeManifestFileOnGitHub(file:File, distribution:Distribution) : HttpResponse[JsonNode] = {
     val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
@@ -154,6 +154,8 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
         null
       }
     }
+    distribution.manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse)
+    distribution.manifestDownloadURL = this.githubClient.getDownloadURL(distribution.manifestAccessURL);
 
     //STORING MANIFEST ON VIRTUOSO
     val addManifestVirtuosoResponse:String = try {
@@ -245,12 +247,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
-    val manifestAccessURL = if(addManifestFileGitHubResponse == null) {
-      null
-    } else {
-      addManifestFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
-    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
+
 
     val ckanAddResourceResponseStatusCode:Integer = {
       if(ckanAddResourceResponse == null) {
@@ -259,7 +256,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
         ckanAddResourceResponse.getStatusLine.getStatusCode
       }
     }
-    val ckanResourceId:String = {
+    distribution.ckanResourceId = {
       if(ckanAddResourceResponse == null) {
         null
       } else {
@@ -306,18 +303,18 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     addDatasetResult
     */
 
-    val addDistributionResult:AddDistributionResult = new AddDistributionResult(
-      responseStatus, responseStatusText
+    val addDistributionResult:AddDistributionResult = new AddDistributionResult(responseStatus, responseStatusText
+      , distribution
 
-      , manifestAccessURL, manifestDownloadURL
+      //, manifestAccessURL, manifestDownloadURL
       , addManifestFileGitHubResponseStatus, addManifestFileGitHubResponseStatusText
 
-      , distributionAccessURL, distributionDownloadURL, distribution.sha
+      //, distributionAccessURL, distributionDownloadURL, distribution.sha
       , addDatasetFileGitHubResponseStatus, addDatasetFileGitHubResponseStatusText
 
       , addManifestVirtuosoResponse
 
-      , ckanAddResourceResponseStatusCode, ckanResourceId
+      , ckanAddResourceResponseStatusCode
     )
     addDistributionResult
 

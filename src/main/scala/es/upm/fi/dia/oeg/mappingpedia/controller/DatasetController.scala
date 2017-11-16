@@ -43,7 +43,7 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
   def addDataset(dataset:Dataset, manifestFileRef:MultipartFile, generateManifestFile:String
                 ) : AddDatasetResult = {
 
-    val organization: Organization = dataset.dctPublisher;
+    //val organization: Organization = dataset.dctPublisher;
     val distribution = dataset.getDistribution();
     var errorOccured = false;
     var collectiveErrorMessage:List[String] = Nil;
@@ -100,10 +100,6 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
     } else {
       null
     }
-    val distributionAccessURL = if(addDistributionResult != null) { addDistributionResult.distributionAccessURL } else { null }
-    val distributionDownloadURL = if(addDistributionResult != null) { addDistributionResult.distributionDownloadURL } else { null }
-    val distributionSHA= if(addDistributionResult != null) { addDistributionResult.distributionSHA } else { null }
-    val distributionManifestDownloadURL = if(addDistributionResult != null) { addDistributionResult.manifestDownloadURL } else { null }
     val distributionGithubStoreDistributionResponseStatus = if(addDistributionResult != null) { addDistributionResult.githubStoreDistributionResponseStatus } else { null }
     val distributionGithubStoreDistributionResponseStatusText = if(addDistributionResult != null) { addDistributionResult.githubStoreDistributionResponseStatusText } else { null }
 
@@ -260,12 +256,10 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
 
 
 
-    val manifestAccessURL = if(addManifestFileGitHubResponse == null) {
-      null
-    } else {
-      this.githubClient.getAccessURL(addManifestFileGitHubResponse)
-    }
-    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
+    dataset.manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse)
+    dataset.manifestDownloadURL = this.githubClient.getDownloadURL(dataset.manifestAccessURL);
+    logger.info(s"dataset.manifestAccessURL = ${dataset.manifestAccessURL}")
+    logger.info(s"dataset.manifestDownloadURL = ${dataset.manifestDownloadURL}")
 
     val ckanAddPackageResponseStatusCode:Integer = {
       if(ckanAddPackageResponse == null) {
@@ -275,7 +269,7 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
       }
     }
     val ckanAddResourceResponseStatusCode:Integer = if(addDistributionResult == null) { null } else { addDistributionResult.ckanStoreResourceStatus }
-    val ckanResourceId:String = if(addDistributionResult == null) { null } else {addDistributionResult.ckanResourceId }
+    //distribution.ckanResourceId = if(addDistributionResult == null) { null } else {addDistributionResult.getDistribution_id }
     //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;
 
 
@@ -291,21 +285,12 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
       addManifestFileGitHubResponse.getStatusText
     }
 
-    val addDatasetResult:AddDatasetResult = new AddDatasetResult(
-      responseStatus, responseStatusText
-
-      , manifestAccessURL, manifestDownloadURL
+    val addDatasetResult:AddDatasetResult = new AddDatasetResult(responseStatus, responseStatusText
+      , dataset
       , addManifestFileGitHubResponseStatus, addManifestFileGitHubResponseStatusText
-
-      , distributionAccessURL, distributionDownloadURL
-      , distributionSHA, distributionManifestDownloadURL
       , distributionGithubStoreDistributionResponseStatus, distributionGithubStoreDistributionResponseStatusText
-
       , addManifestVirtuosoResponse
-
-      , ckanAddPackageResponseStatusCode, ckanAddResourceResponseStatusCode, ckanResourceId
-
-      , dataset.dctIdentifier
+      , ckanAddPackageResponseStatusCode, ckanAddResourceResponseStatusCode
     )
     addDatasetResult
 

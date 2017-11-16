@@ -35,6 +35,9 @@ class MappingDocument(val dctIdentifier:String) {
   var dataset:String = null; // it is a hack by Freddy
   var distributionAccessURL:String = null;
 
+  var manifestAccessURL:String = null;
+  var manifestDownloadURL:String = null;
+
   def setDownloadURL(pDownloadURL:String) = {
     downloadURL = if(pDownloadURL != null && pDownloadURL.startsWith("<") && pDownloadURL.endsWith(">")) {
       pDownloadURL.substring(1, pDownloadURL.length-1)
