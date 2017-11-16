@@ -119,28 +119,29 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
 
   def putEncodedContent(organizationId:String, datasetId:String, filename:String
                         , message:String, base64EncodedContent:String
-                       ) = {
+                       ) : HttpResponse[JsonNode] = {
+    val filePath = s"${organizationId}/${datasetId}/${filename}";
+    this.putEncodedContent(filePath, message, base64EncodedContent);
+  }
+
+  def putEncodedContent(filePath:String, message:String, base64EncodedContent:String) : HttpResponse[JsonNode] = {
+    val githubRepository = MappingPediaEngine.mappingpediaProperties.githubRepository;
+    val uri = MappingPediaConstant.GITHUB_ACCESS_URL_PREFIX + s"${githubRepository}/contents/${filePath}";
+
     val jsonObj = new JSONObject();
     jsonObj.put("message", message);
     jsonObj.put("content", base64EncodedContent);
 
     try {
-      val sha = this.getSHA(organizationId, datasetId, filename);
+      val sha = this.getSHA(uri);
       jsonObj.put("sha", sha);
     } catch {
       case e:Exception => {
       }
     }
 
-    //val uri = MappingPediaEngine.mappingpediaProperties.githubRepoContents + "/contents/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}";
-    val githubRepository = MappingPediaEngine.mappingpediaProperties.githubRepository;
-    val uri = MappingPediaConstant.GITHUB_ACCESS_URL_PREFIX + s"${githubRepository}/contents/${organizationId}/${datasetId}/${filename}";
     logger.info(s"hitting github url $uri");
     val response = Unirest.put(uri)
-      //.routeParam("githubRepository", githubRepository)
-      //.routeParam("mappingpediaUsername", mappingpediaUsername)
-      //.routeParam("mappingDirectory", mappingDirectory)
-      //.routeParam("mappingFilename", mappingFilename)
       .basicAuth(githubUsername, githubAccessToken)
       .body(jsonObj)
       .asJson();
@@ -157,6 +158,11 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
   def encodeAndPutFile(organizationId:String, datasetId:String, filename:String, message:String, file:File) = {
     val base64EncodedContent = GitHubUtility.encodeToBase64(file);
     this.putEncodedContent(organizationId, datasetId, filename, message, base64EncodedContent)
+  }
+
+  def encodeAndPutFile(filePath:String, message:String, file:File) = {
+    val base64EncodedContent = GitHubUtility.encodeToBase64(file);
+    this.putEncodedContent(filePath, message, base64EncodedContent)
   }
 
 }

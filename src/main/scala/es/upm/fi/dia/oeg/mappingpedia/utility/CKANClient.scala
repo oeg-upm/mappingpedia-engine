@@ -28,7 +28,6 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
 
   def createResource(distribution: Distribution) = {
     val dataset = distribution.dataset;
-    logger.info(s"dataset = $dataset")
 
     val packageId = dataset.dctIdentifier;
     logger.info(s"packageId = $packageId")

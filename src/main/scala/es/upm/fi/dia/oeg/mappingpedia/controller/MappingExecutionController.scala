@@ -76,7 +76,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     } else {
       pOutputFilename;
     }
-    val outputFilepath = s"$mappingExecutionDirectory/$outputFileName"
+    val outputFilepath:String = s"$mappingExecutionDirectory/$outputFileName"
     logger.info(s"outputFilepath = $outputFilepath");
     val outputFile: File = new File(outputFilepath)
 
@@ -119,7 +119,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
 
     //STORING MAPPING EXECUTION RESULT ON GITHUB
     val githubResponse = try {
-      val response = githubClient.encodeAndPutFile("executions", mappingExecutionDirectory, outputFileName
+      val response = githubClient.encodeAndPutFile(outputFilepath
         , "add mapping execution result by mappingpedia engine", outputFile);
       response
     } catch {
