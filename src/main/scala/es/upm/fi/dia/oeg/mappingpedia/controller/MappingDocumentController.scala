@@ -209,13 +209,14 @@ object MappingDocumentController {
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
 
-    logger.info("Executing query=\n" + queryString)
+
 
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     var results: List[MappingDocument] = List.empty;
     try {
       val rs = qexec.execSelect
       while (rs.hasNext) {
+        logger.info("Obtaining result from executing query=\n" + queryString)
         val qs = rs.nextSolution
         val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
         val md = new MappingDocument(id);
@@ -224,12 +225,14 @@ object MappingDocumentController {
         //md.filePath = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
         md.dctCreator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
         md.distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
+        md.distributionSHA= MappingPediaUtility.getStringOrElse(qs, "distributionSHA", null);
         md.mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
+        md.sha = MappingPediaUtility.getStringOrElse(qs, "mdSHA", null);
         val mdDownloadURL = MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null);
         md.setDownloadURL(mdDownloadURL);
-        //logger.info("mdDownloadURL = " + mdDownloadURL);
-        //logger.info("mdDistributionAccessURL = " + md.distributionAccessURL);
+        logger.info(s"md.distributionSHA = ${md.distributionSHA}");
+        logger.info(s"md.sha = ${md.sha}");
 
         results = md :: results;
       }

@@ -187,7 +187,9 @@ class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtilit
     val addManifestVirtuosoResponse:String = try {
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         if(manifestFile != null) {
-          DatasetController.storeManifestOnVirtuoso(manifestFile, dataset);
+          logger.info(s"storing manifest triples of the dataset ${dataset.dctIdentifier} on virtuoso ...")
+          MappingPediaEngine.virtuosoClient.store(manifestFile)
+          "OK"
         } else {
           "No manifest has been generated/provided";
         }
@@ -315,11 +317,10 @@ object DatasetController {
 
 
 
-
-  def storeManifestOnVirtuoso(manifestFile:File, dataset: Dataset) = {
+/*
+  def storeManifestOnVirtuoso(manifestFile:File, message:String) = {
     if(manifestFile != null) {
       logger.info(s"storing manifest triples of the dataset ${dataset.dctIdentifier} on virtuoso ...")
-      logger.debug("manifestFile = " + manifestFile);
       MappingPediaEngine.virtuosoClient.store(manifestFile)
       logger.info("manifest triples stored on virtuoso.")
       "OK";
@@ -327,6 +328,7 @@ object DatasetController {
       "No manifest file specified/generated!";
     }
   }
+*/
 
   def generateManifestFile(dataset: Dataset) = {
     logger.info(s"Generating manifest file for dataset ${dataset.dctIdentifier} ...")

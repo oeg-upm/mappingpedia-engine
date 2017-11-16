@@ -3,7 +3,7 @@ prefix rr: <http://www.w3.org/ns/r2rml#>
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
 
-SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?distributionAccessURL ?mdDownloadURL ?dateSubmitted
+SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?distributionAccessURL ?mdDownloadURL ?dateSubmitted ?distributionSHA ?mdSHA
 FROM <$graphURL>
 WHERE {
    {
@@ -20,12 +20,14 @@ WHERE {
    }
    ?md a mpv:R2RMLMappingDocument .
    ?md mpv:hasTriplesMaps ?tm .
+   ?md mpv:sha ?mdSHA .
    OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
-   OPTIONAL {
+   #OPTIONAL {
       ?md mpv:hasDataset ?dataset .
       ?dataset dcat:distribution ?distribution .
       ?distribution dcat:accessURL ?distributionAccessURL .
-   }
+      ?distribution mpv:sha ?distributionSHA .
+   #}
    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
    OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
    OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }

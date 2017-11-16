@@ -161,7 +161,9 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     val addManifestVirtuosoResponse:String = try {
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         if(manifestFile != null) {
-          DatasetController.storeManifestOnVirtuoso(manifestFile, distribution.dataset);
+          logger.info(s"storing manifest triples of the distribution ${distribution.dctIdentifier} on virtuoso ...")
+          MappingPediaEngine.virtuosoClient.store(manifestFile)
+          "OK"
         } else {
           "No manifest has been generated/provided";
         }
