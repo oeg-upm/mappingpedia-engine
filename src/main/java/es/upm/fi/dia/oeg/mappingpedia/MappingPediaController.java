@@ -521,9 +521,9 @@ public class MappingPediaController {
         return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
-    //LEGACY ENDPOINT
+    //LEGACY ENDPOINT, use /distributions/{organizationID}/{datasetID} instead
     @RequestMapping(value = "/datasets/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddDatasetResult addNewDataset(
+    public AddDistributionResult addNewDataset(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
@@ -574,7 +574,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/distributions/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddDatasetResult addNewDistribution(
+    public AddDistributionResult addNewDistribution(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile

@@ -5,7 +5,7 @@ import java.net.HttpURLConnection
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
-import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, AddDistributionResult}
 import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
 import org.apache.http.util.EntityUtils
@@ -20,7 +20,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
-    logger.info("storing manifest file for a distribution on github ...")
+    logger.info(s"storing manifest file for dataset: ${dataset.dctIdentifier} distribution: ${distribution.dctIdentifier} on github ...")
     val addNewManifestCommitMessage = s"Add manifest file for dataset: ${dataset.dctIdentifier} distribution: ${distribution.dctIdentifier}"
     val manifestFileName = file.getName
     val datasetId = dataset.dctIdentifier;
@@ -72,7 +72,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
   }
 
   def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile, generateManifestFile:String
-                ) : AddDatasetResult = {
+                ) : AddDistributionResult = {
 
     //val dataset = distribution.dataset
     val organization: Organization = distribution.dataset.dctPublisher;
@@ -159,7 +159,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     val addManifestVirtuosoResponse:String = try {
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         if(manifestFile != null) {
-          DatasetController.storeManifestOnVirtuoso(manifestFile);
+          DatasetController.storeManifestOnVirtuoso(manifestFile, distribution.dataset);
         } else {
           "No manifest has been generated/provided";
         }
@@ -283,6 +283,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       addManifestFileGitHubResponse.getStatusText
     }
 
+    /*
     val addDatasetResult:AddDatasetResult = new AddDatasetResult(
       responseStatus, responseStatusText
 
@@ -303,6 +304,23 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       , distribution.dataset.dctIdentifier
     )
     addDatasetResult
+    */
+
+    val addDistributionResult:AddDistributionResult = new AddDistributionResult(
+      responseStatus, responseStatusText
+
+      , manifestAccessURL, manifestDownloadURL
+      , addManifestFileGitHubResponseStatus, addManifestFileGitHubResponseStatusText
+
+      , distributionAccessURL, distributionDownloadURL, distribution.sha
+      , addDatasetFileGitHubResponseStatus, addDatasetFileGitHubResponseStatusText
+
+      , addManifestVirtuosoResponse
+
+      , ckanAddResourceResponseStatusCode, ckanResourceId
+    )
+    addDistributionResult
+
 
     /*
     val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null

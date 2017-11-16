@@ -2,22 +2,16 @@ package es.upm.fi.dia.oeg.mappingpedia.model.result
 
 class AddDatasetResult(
                         val errorCode:Integer, val status:String
-                        , val manifestAccessURL:String
-                        , val manifestDownloadURL:String
-                        , val storeManifestResponseStatus:Integer
-                        , val storeManifestResponseStatusText:String
+                        , val manifestAccessURL:String, val manifestDownloadURL:String
+                        , val storeManifestResponseStatus:Integer, val storeManifestResponseStatusText:String
 
-                        , val distributionAccessURL:String
-                        , val distributionDownloadURL:String
-                        , val distributionSHA:String
-                        , val storeDatasetResponseStatus:Integer
-                        , val storeDatasetResponseStatusText:String
+                        , val distributionAccessURL:String, val distributionDownloadURL:String
+                        , val distributionSHA:String, val distributionManifestDownloadURL:String
+                        , val storeDatasetResponseStatus:Integer, val storeDatasetResponseStatusText:String
 
                         , val virtuosoStoreManifestResponseStatusText:String
 
-                        , val ckanStorePackageStatus:Integer
-                        , val ckanStoreResourceStatus:Integer
-                        , val ckanResourceId:String
+                        , val ckanStorePackageStatus:Integer, val ckanStoreResourceStatus:Integer, val ckanResourceId:String
 
                         , datasetID:String
                       ) {
@@ -33,6 +27,7 @@ class AddDatasetResult(
   def getDatasetURL = this.distributionAccessURL;
   def getDistribution_access_url = this.distributionAccessURL;
   def getDistribution_download_url = this.distributionDownloadURL
+  def getDistribution_manifest_download_url = this.distributionManifestDownloadURL
   def getDistribution_sha = this.distributionSHA
 
   //def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
