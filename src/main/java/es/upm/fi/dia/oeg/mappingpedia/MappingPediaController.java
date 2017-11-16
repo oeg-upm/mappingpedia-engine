@@ -131,7 +131,7 @@ public class MappingPediaController {
     public ListResult getTriplesMaps() {
         logger.info("/triplesMaps ...");
         ListResult listResult = MappingPediaEngine.getAllTriplesMaps();
-        logger.info("listResult = " + listResult);
+        //logger.info("listResult = " + listResult);
 
         return listResult;
     }
@@ -148,15 +148,23 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-    public ListResult getMappingDocuments(@RequestParam(value="searchType", defaultValue = "0") String searchType,
+    public ListResult getAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,
                                           @RequestParam(value="searchTerm", required = false) String searchTerm
     ) {
         logger.info("/ogd/annotations(GET) ...");
         logger.info("searchType = " + searchType);
         logger.info("searchTerm = " + searchTerm);
-        ListResult listResult = MappingDocumentController.findMappingDocuments(searchType, searchTerm);
-        logger.info("listResult = " + listResult);
-        return listResult;
+        if("subclass".equalsIgnoreCase(searchType)) {
+            logger.info("get all mapping documents by mapped class and its subclasses ...");
+            ListResult listResult = MappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm);
+            //logger.info("listResult = " + listResult);
+            return listResult;
+        } else {
+            ListResult listResult = MappingDocumentController.findMappingDocuments(searchType, searchTerm);
+            //logger.info("listResult = " + listResult);
+            return listResult;
+        }
+
     }
 
 
@@ -658,7 +666,7 @@ public class MappingPediaController {
         logger.info("GET /ogd/utility/subclasses ...");
         logger.info("aClass = " + aClass);
         ListResult result = MappingPediaEngine.getSchemaOrgSubclassesDetail(aClass, outputType, inputType) ;
-        logger.info("result = " + result);
+        //logger.info("result = " + result);
         return result;
     }
 
@@ -671,7 +679,7 @@ public class MappingPediaController {
         logger.info("GET /ogd/utility/subclassesSummary ...");
         logger.info("aClass = " + aClass);
         ListResult result = MappingPediaEngine.getSubclassesLocalNames(aClass, outputType, inputType) ;
-        logger.info("result = " + result);
+        //logger.info("result = " + result);
         return result;
     }
 

@@ -14,7 +14,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, Li
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
-
+import scala.collection.JavaConversions._
 import scala.io.Source
 
 class MappingDocumentController(val githubClient:GitHubUtility) {
@@ -228,8 +228,8 @@ object MappingDocumentController {
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
         val mdDownloadURL = MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null);
         md.setDownloadURL(mdDownloadURL);
-        logger.info("mdDownloadURL = " + mdDownloadURL);
-        logger.info("mdDistributionAccessURL = " + md.distributionAccessURL);
+        //logger.info("mdDownloadURL = " + mdDownloadURL);
+        //logger.info("mdDistributionAccessURL = " + md.distributionAccessURL);
 
         results = md :: results;
       }
@@ -265,6 +265,21 @@ object MappingDocumentController {
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
     MappingDocumentController.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByMappedSubClass(aClass: String): ListResult = {
+    val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
+      aClass, MappingPediaEngine.ontologyModel, "0", "0"); //TODO REFACTOR THIS!
+    logger.info(s"subclassesListResult = subclassesListResult")
+
+    val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
+      result => result.asInstanceOf[OntologyClass].getURI).toList.distinct
+    val mappingDocuments = subclassesURIs.flatMap(subclassURI => {
+      MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults();
+    }).asInstanceOf[Iterable[MappingDocument]];
+
+    val listResult = new ListResult(mappingDocuments.size, mappingDocuments)
+    listResult
   }
 
   def findMappingDocumentsByDatasetId(datasetId: String): ListResult = {
@@ -338,7 +353,7 @@ object MappingDocumentController {
       val listResult = MappingDocumentController.findAllMappingDocuments
       listResult
     }
-    logger.info("result = " + result)
+    //logger.info("result = " + result)
 
     result;
   }
