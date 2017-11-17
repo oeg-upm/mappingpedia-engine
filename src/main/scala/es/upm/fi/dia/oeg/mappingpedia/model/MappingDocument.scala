@@ -35,6 +35,7 @@ class MappingDocument(val dctIdentifier:String) {
   // TODO it is a hack by Freddy, refactor this
   var dataset:String = null;
   var distributionAccessURL:String = null;
+  var distributionDownloadURL:String = null;
   var distributionSHA:String = null;
 
   var manifestAccessURL:String = null;

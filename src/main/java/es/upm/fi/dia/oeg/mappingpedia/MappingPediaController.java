@@ -241,7 +241,8 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
+                    , true, true, true
                     , dbUserName, dbPassword
                     , dbName, jdbc_url
                     , databaseDriver, databaseType);
@@ -323,7 +324,8 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
+                    , true, true, true
                     , dbUserName, dbPassword
                     , dbName, jdbc_url
                     , databaseDriver, databaseType

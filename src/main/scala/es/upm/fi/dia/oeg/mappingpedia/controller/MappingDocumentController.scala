@@ -218,13 +218,14 @@ object MappingDocumentController {
       while (rs.hasNext) {
         logger.info("Obtaining result from executing query=\n" + queryString)
         val qs = rs.nextSolution
-        val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
-        val md = new MappingDocument(id);
+        val mdID= qs.get("mdID").toString;
+        val md = new MappingDocument(mdID);
         md.dctTitle = MappingPediaUtility.getStringOrElse(qs, "title", null);
         md.dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
         //md.filePath = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
         md.dctCreator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
         md.distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
+        md.distributionDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null);
         md.distributionSHA= MappingPediaUtility.getStringOrElse(qs, "distributionSHA", null);
         md.mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
@@ -257,7 +258,7 @@ object MappingDocumentController {
   }
 
   def findMappingDocumentsByMappedClass(mappedClass: String): ListResult = {
-    logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
+    //logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
     val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
 
     val mapValues: Map[String, String] = Map(

@@ -1,7 +1,7 @@
 mpv:R2RMLMappingDocument rdfs:subClassOf dcterms:BibliographicResource .
 mpimd:mappingDocument-$mappingDocumentID a mpv:R2RMLMappingDocument ;
     mpv:mappingDocumentIdentifier "mappingDocument-$mappingDocumentID" ;
-    dcterms:identifier "mappingDocument-$mappingDocumentID" ;
+    dcterms:identifier "$mappingDocumentID" ;
     mpv:mappingDocumentTitle "$mappingDocumentTitle" ;
     dcterms:title "$mappingDocumentTitle" ;
     mpv:mappingDocumentDateSubmitted "$mappingDocumentDateTimeSubmitted"^^xsd:dateTime;

@@ -113,7 +113,7 @@ object MappingPediaEngine {
 
 
 	def generateStringFromTemplateFile(map: Map[String, String], templateFilePath:String) : String = {
-		logger.info(s"Generating string from template file: $templateFilePath ...")
+		//logger.info(s"Generating string from template file: $templateFilePath ...")
 		try {
 
 			//var lines: String = Source.fromResource(templateFilePath).getLines.mkString("\n");
@@ -141,7 +141,7 @@ object MappingPediaEngine {
 			logger.info("lines3 = " + lines3)
 			*/
 
-			logger.info(s"String from template file $templateFilePath generated.")
+			//logger.info(s"String from template file $templateFilePath generated.")
 			generatedLines;
 		} catch {
 			case e:Exception => {

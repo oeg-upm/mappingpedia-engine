@@ -6,7 +6,7 @@ import java.util.{Date, UUID}
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode, Unirest}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
-import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, GeneralResult, ListResult}
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, ExecutionMappingResultSummary, GeneralResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
@@ -28,7 +28,10 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
                       , dataset:Dataset
                       , queryFileName:String
                       , pOutputFilename: String
+
                       , pStoreToCKAN:Boolean
+                      , pStoreToGithub:Boolean
+                      , pStoreToVirtuoso:Boolean
 
                       , dbUserName:String, dbPassword:String
                       , dbName:String, jdbc_url:String
@@ -118,20 +121,25 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     }
 
     //STORING MAPPING EXECUTION RESULT ON GITHUB
-    val githubResponse = try {
-      val response = githubClient.encodeAndPutFile(outputFilepath
-        , "add mapping execution result by mappingpedia engine", outputFile);
-      response
-    } catch {
-      case e: Exception => {
-        e.printStackTrace()
-        errorOccured = true;
-        val errorMessage = "Error storing mapping execution result on GitHub: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
+    val githubResponse = if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
+      try {
+        val response = githubClient.encodeAndPutFile(outputFilepath
+          , "add mapping execution result by mappingpedia engine", outputFile);
+        response
+      } catch {
+        case e: Exception => {
+          e.printStackTrace()
+          errorOccured = true;
+          val errorMessage = "Error storing mapping execution result on GitHub: " + e.getMessage
+          logger.error(errorMessage)
+          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+          null
+        }
       }
+    } else {
+      null
     }
+
 
     val mappingExecutionResultURL = if(githubResponse != null) {
       if (HttpURLConnection.HTTP_CREATED == githubResponse.getStatus || HttpURLConnection.HTTP_OK == githubResponse.getStatus) {
@@ -144,10 +152,6 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         null
       }
     } else {
-      errorOccured = true;
-      val errorMessage = "Error storing mapping execution result on GitHub"
-      logger.error(errorMessage)
-      collectiveErrorMessage = errorMessage :: collectiveErrorMessage
       null
     }
 
@@ -208,23 +212,30 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     }
 
     val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
+
     //STORING MANIFEST ON GITHUB
-    val addManifestFileGitHubResponse:HttpResponse[JsonNode] = try {
-      this.storeManifestFileOnGitHub(manifestFile, dataset, md);
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+    val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
+      if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
+        try {
+          this.storeManifestFileOnGitHub(manifestFile, dataset, md);
+        } catch {
+          case e: Exception => {
+            errorOccured = true;
+            e.printStackTrace()
+            val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
+            logger.error(errorMessage)
+            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+            null
+          }
+        }
+      } else {
         null
       }
-    }
+
 
     //STORING MANIFEST FILE AS TRIPLES ON VIRTUOSO
     val addManifestVirtuosoResponse:String = try {
-      if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
+      if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled && pStoreToVirtuoso) {
         MappingExecutionController.storeManifestOnVirtuoso(manifestFile);
       } else {
         "Storing to Virtuoso is not enabled!";
@@ -234,7 +245,9 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         errorOccured = true;
         e.printStackTrace()
         val errorMessage = "error storing manifest file of a mapping execution result on Virtuoso: " + e.getMessage
+        val manifestFileInString = scala.io.Source.fromFile(manifestFile).getLines.reduceLeft(_+_)
         logger.error(errorMessage);
+        logger.error(s"manifestFileInString = $manifestFileInString");
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         e.getMessage
       }
@@ -270,6 +283,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
   }
 
   def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
+    /*
     val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
       aClass, MappingPediaEngine.ontologyModel, outputType, inputType);
     logger.info(s"subclassesListResult = subclassesListResult")
@@ -286,11 +300,16 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     val mappingDocuments = subclassesURIs.flatMap(subclassURI => {
         MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults();
     }).asInstanceOf[Iterable[MappingDocument]];
+    */
 
-    var executedMappings:List[(String, String)]= Nil;
+    val mappingDocuments = MappingDocumentController.findMappingDocumentsByMappedSubClass(aClass).results
 
-    val executionResults:Iterable[Execution] = mappingDocuments.flatMap(mappingDocument => {
+    var executedMappingDocuments:List[(String, String)]= Nil;
+
+    val executionResults:Iterable[ExecutionMappingResultSummary] = mappingDocuments.flatMap(mappingDocument => {
       val md = mappingDocument.asInstanceOf[MappingDocument];
+      val mdSHA = md.sha;
+
       val mappingLanguage = md.mappingLanguage;
       val distributionFieldSeparator = if(md.distributionFieldSeparator != null && md.distributionFieldSeparator.isDefined) {
         md.distributionFieldSeparator.get
@@ -300,37 +319,42 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       val outputFilename = UUID.randomUUID.toString + ".nt"
       val mappingDocumentDownloadURL = md.getDownloadURL();
 
-      val mdDistributionAccessURL = md.distributionAccessURL;
+      //val mdDistributionAccessURL = md.distributionAccessURL;
+      val mdDistributionDownloadURL = md.distributionDownloadURL;
+
+      val mdDistributionSHA = md.distributionSHA;
 
 
-      if(mappingDocumentDownloadURL != null && mdDistributionAccessURL != null) {
-        if(executedMappings.contains((mappingDocumentDownloadURL,mdDistributionAccessURL))) {
+      if(mdSHA != null && mdDistributionSHA != null) {
+        if(executedMappingDocuments.contains((mdSHA,mdDistributionSHA))) {
           None
         } else {
           val dataset = new Dataset(new Organization());
           val distribution = new Distribution(dataset);
           dataset.addDistribution(distribution);
-          distribution.dcatDownloadURL = mdDistributionAccessURL;
+          distribution.dcatDownloadURL = mdDistributionDownloadURL;
 
           val mappingExecution = new MappingExecution(md, dataset);
           mappingExecution.setStoreToCKAN("false")
-          mappingExecution.queryFilePath = queryFile;
+          mappingExecution.queryFilePath = null;
           mappingExecution.outputFileName = outputFilename;
 
           //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-          val executionResult = this.executeMapping(md, dataset, queryFile, outputFilename, false
+          val executionResult = this.executeMapping(md, dataset, mappingExecution.queryFilePath, outputFilename
+            , false, true, false
             , null, null
             , null, null
             , null, null
           );
           //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
-          executedMappings = (mappingDocumentDownloadURL,mdDistributionAccessURL) :: executedMappings;
+          executedMappingDocuments = (mappingDocumentDownloadURL,mdDistributionDownloadURL) :: executedMappingDocuments;
 
-          val executionResultURL = executionResult.mappingExecutionResultDownloadURL;
+          val executionResultAccessURL = executionResult.getMapping_execution_result_access_url()
+          val executionResultDownloadURL = executionResult.getMapping_execution_result_download_url
           //executionResultURL;
 
-          Some(new Execution(mappingDocumentDownloadURL, mdDistributionAccessURL, executionResultURL, executionResultURL))
+          Some(new ExecutionMappingResultSummary(md, distribution, executionResultAccessURL, executionResultDownloadURL))
           //mappingDocumentURL + " -- " + datasetDistributionURL
         }
       } else {
