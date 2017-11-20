@@ -207,6 +207,7 @@ object MappingDocumentController {
   //val githubClient = MappingPediaEngine.githubClient;
 
   def findMappingDocuments(queryString: String): ListResult = {
+    logger.info(s"queryString = $queryString");
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
 

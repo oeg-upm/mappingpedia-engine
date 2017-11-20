@@ -142,7 +142,7 @@ public class MappingPediaController {
         return listResult;
     }
 
-    @RequestMapping(value="/mappings/findMappingDocumentsByDatasetId", method= RequestMethod.GET)
+    @RequestMapping(value="/mappings", method= RequestMethod.GET)
     public ListResult findMappingDocumentsByDatasetId(
             @RequestParam(value="datasetId", defaultValue = "") String datasetId
     ) {
