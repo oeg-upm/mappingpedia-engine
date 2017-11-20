@@ -9,10 +9,11 @@ import es.upm.fi.dia.oeg.mappingpedia.model.OntologyClass
 object MappingPediaUtilityTest {
   val app:Application = new Application;
 
-  val model = MappingPediaUtility.loadSchemaOrgOntology();
+  val model = JenaClient.loadSchemaOrgOntology("tree.jsonld", "JSON-LD");
+  val jenaClient = new JenaClient(model)
 
   val aClass = "MedicalBusiness"
-  val subclasses = MappingPediaUtility.getSubclassesLocalNames(aClass, model, "0", "0");
+  val subclasses = jenaClient.getSubclassesLocalNames(aClass, model);
   println("subclasses = " + subclasses)
 
 }

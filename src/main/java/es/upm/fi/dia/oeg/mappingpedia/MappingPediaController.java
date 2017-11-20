@@ -18,8 +18,10 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
 import es.upm.fi.dia.oeg.mappingpedia.utility.CKANClient;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.JenaClient;
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
 import org.apache.commons.io.FileUtils;
+import org.apache.jena.ontology.OntModel;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -35,8 +37,12 @@ public class MappingPediaController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
 
+
+    private OntModel ontModel = MappingPediaEngine.ontologyModel();
+
     private GitHubUtility githubClient = MappingPediaEngine.githubClient();
     private CKANClient ckanClient = MappingPediaEngine.ckanClient();
+    private JenaClient jenaClient = MappingPediaEngine.jenaClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
@@ -156,7 +162,7 @@ public class MappingPediaController {
         logger.info("searchTerm = " + searchTerm);
         if("subclass".equalsIgnoreCase(searchType)) {
             logger.info("get all mapping documents by mapped class and its subclasses ...");
-            ListResult listResult = MappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm);
+            ListResult listResult = MappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm, jenaClient);
             //logger.info("listResult = " + listResult);
             return listResult;
         } else {
@@ -660,27 +666,31 @@ public class MappingPediaController {
 
     @RequestMapping(value="/ogd/utility/subclasses", method= RequestMethod.GET)
     public ListResult getSubclassesDetail(
-            @RequestParam(value="aClass") String aClass,
-            @RequestParam(value="outputType", defaultValue = "0") String outputType,
-            @RequestParam(value="inputType", defaultValue = "0") String inputType
+            @RequestParam(value="aClass") String aClass
     ) {
         logger.info("GET /ogd/utility/subclasses ...");
         logger.info("aClass = " + aClass);
-        ListResult result = MappingPediaEngine.getSchemaOrgSubclassesDetail(aClass, outputType, inputType) ;
+        ListResult result = MappingPediaEngine.getSchemaOrgSubclassesDetail(aClass) ;
         //logger.info("result = " + result);
         return result;
     }
 
     @RequestMapping(value="/ogd/utility/subclassesSummary", method= RequestMethod.GET)
     public ListResult getSubclassesSummary(
-            @RequestParam(value="aClass") String aClass,
-            @RequestParam(value="outputType", defaultValue = "0") String outputType,
-            @RequestParam(value="inputType", defaultValue = "0") String inputType
+            @RequestParam(value="aClass") String aClass
     ) {
         logger.info("GET /ogd/utility/subclassesSummary ...");
         logger.info("aClass = " + aClass);
-        ListResult result = MappingPediaEngine.getSubclassesLocalNames(aClass, outputType, inputType) ;
+        ListResult result = MappingPediaEngine.getSubclassesLocalNames(aClass) ;
         //logger.info("result = " + result);
+        return result;
+    }
+
+    @RequestMapping(value="/ogd/utility/superclassesSummary", method= RequestMethod.GET)
+    public ListResult getSuperclassesSummary(@RequestParam(value="aClass") String aClass) {
+        logger.info("GET /ogd/utility/superclassesSummary ...");
+        logger.info("aClass = " + aClass);
+        ListResult result = jenaClient.getSuperclasses(aClass, ontModel);
         return result;
     }
 
@@ -693,7 +703,7 @@ public class MappingPediaController {
     ) {
         logger.info("GET /ogd/instances ...");
         logger.info("Getting instances of the class:" + aClass);
-        ListResult result = mappingExecutionController.getInstances(aClass, outputType, inputType) ;
+        ListResult result = mappingExecutionController.getInstances(aClass, jenaClient) ;
         return result;
     }
 

@@ -13,7 +13,7 @@ import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, JenaClient, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory, MorphRDBProperties, MorphRDBRunnerFactory}
 
@@ -280,7 +280,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
 
   }
 
-  def getInstances(aClass:String, outputType:String, inputType:String) : ListResult = {
+  def getInstances(aClass:String, jenaClient:JenaClient) : ListResult = {
     /*
     val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
       aClass, MappingPediaEngine.ontologyModel, outputType, inputType);
@@ -300,7 +300,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     }).asInstanceOf[Iterable[MappingDocument]];
     */
 
-    val mappingDocuments = MappingDocumentController.findMappingDocumentsByMappedSubClass(aClass).results
+    val mappingDocuments = MappingDocumentController.findMappingDocumentsByMappedSubClass(aClass, jenaClient).results
 
     var executedMappingDocuments:List[(String, String)]= Nil;
 
@@ -361,10 +361,6 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
     })
     new ListResult(executionResults.size, executionResults);
 
-  }
-
-  def getInstances(aClass:String) : ListResult = {
-    this.getInstances(aClass, "0", "0")
   }
 
   def generateManifestFile(mappingExecutionResult:Distribution, datasetDistribution: Distribution

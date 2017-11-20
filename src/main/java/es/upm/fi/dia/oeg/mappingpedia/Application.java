@@ -6,10 +6,7 @@ import java.io.InputStream;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.MappingDocument;
-import es.upm.fi.dia.oeg.mappingpedia.utility.CKANClient;
-import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
-import es.upm.fi.dia.oeg.mappingpedia.utility.VirtuosoClient;
+import es.upm.fi.dia.oeg.mappingpedia.utility.*;
 import org.apache.jena.ontology.OntModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,8 +53,11 @@ public class Application {
 				);
 				MappingPediaEngine.virtuosoClient_$eq(virtuosoClient);
 
-				OntModel schemaOntology = MappingPediaUtility.loadSchemaOrgOntology();
+				OntModel schemaOntology = JenaClient.loadSchemaOrgOntology("tree.jsonld", "JSON-LD");
 				MappingPediaEngine.setOntologyModel(schemaOntology);
+				JenaClient jenaClient = new JenaClient(schemaOntology);
+				MappingPediaEngine.jenaClient_$eq(jenaClient);
+
 			}
 
 

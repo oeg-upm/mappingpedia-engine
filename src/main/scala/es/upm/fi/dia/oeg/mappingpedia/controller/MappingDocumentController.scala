@@ -11,9 +11,10 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, JenaClient, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
+
 import scala.collection.JavaConversions._
 import scala.io.Source
 
@@ -271,9 +272,9 @@ object MappingDocumentController {
     MappingDocumentController.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedSubClass(aClass: String): ListResult = {
-    val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
-      aClass, MappingPediaEngine.ontologyModel, "0", "0"); //TODO REFACTOR THIS!
+  def findMappingDocumentsByMappedSubClass(aClass: String, jenaClient: JenaClient): ListResult = {
+    val subclassesListResult = jenaClient.getSubclassesDetail(
+      aClass, MappingPediaEngine.ontologyModel);
     logger.info(s"subclassesListResult = subclassesListResult")
 
     val subclassesURIs:Iterable[String] = subclassesListResult.results.map(

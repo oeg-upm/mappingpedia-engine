@@ -8,7 +8,6 @@ import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
 import es.upm.fi.dia.oeg.mappingpedia.model.OntologyClass
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine, MappingPediaProperties}
 import org.apache.jena.graph.{Node, NodeFactory, Triple}
-import org.apache.jena.ontology.{OntClass, OntModel, OntModelSpec}
 import org.apache.jena.query.QuerySolution
 import org.apache.jena.rdf.model._
 import org.apache.jena.util.FileManager
@@ -17,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile
 
 import scala.collection.JavaConversions._
 import org.apache.commons.io.FileUtils
+import org.apache.jena.ontology.OntClass
 
 import scala.io.Source
 
@@ -26,27 +26,10 @@ import scala.io.Source
 object MappingPediaUtility {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  /*
-  val virtuosoClient = new VirtuosoClient(MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
-    ,MappingPediaEngine.mappingpediaProperties.virtuosoUser
-    , MappingPediaEngine.mappingpediaProperties.virtuosoPwd
-    , MappingPediaEngine.mappingpediaProperties.graphName
-
-  )
-  */
 
 
 
-  def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {
-    val it = resource.listProperties(property);
-    var result: Literal = null;
-    if(it != null && it.hasNext()) {
-      val statement = it.next();
-      val objectNode = statement.getObject();
-      result = objectNode.asLiteral()
-    }
-    return result;
-  }
+
 
   /*
   def getVirtuosoGraph(virtuosoJDBC : String, virtuosoUser : String, virtuosoPwd : String
@@ -61,7 +44,16 @@ object MappingPediaUtility {
   }
   */
 
-
+  def getFirstPropertyObjectValueLiteral(resource:Resource, property:Property): Literal = {
+    val it = resource.listProperties(property);
+    var result: Literal = null;
+    if(it != null && it.hasNext()) {
+      val statement = it.next();
+      val objectNode = statement.getObject();
+      result = objectNode.asLiteral()
+    }
+    return result;
+  }
 
   def collectBlankNodes(triples:List[Triple]) : Set[Node] = {
     val blankNodes:Set[Node] = if(triples.isEmpty) {
@@ -75,6 +67,8 @@ object MappingPediaUtility {
 
     blankNodes;
   }
+
+
 
   def collectBlankNode(tp:Triple) : Set[Node] = {
     val tpSubject = tp.getSubject;
@@ -274,15 +268,6 @@ object MappingPediaUtility {
 
   }
 
-  def loadSchemaOrgOntology() : OntModel = {
-    val ontologyFileName = "tree.jsonld";
-    val ontologyFormat = "JSON-LD";
-    val ontModelSpec = OntModelSpec.RDFS_MEM_TRANS_INF;
-
-    val defaultModel = MappingPediaEngine.virtuosoClient.readModelFromFile(ontologyFileName, ontologyFormat);
-    val rdfsModel = ModelFactory.createOntologyModel(OntModelSpec.RDFS_MEM_TRANS_INF, defaultModel)
-    rdfsModel;
-  }
 
   def getClassesLocalNames(listOfClasses:List[OntClass]) : List[String] = {
     val result = listOfClasses.map(ontClass => ontClass.getLocalName);
@@ -294,60 +279,8 @@ object MappingPediaUtility {
     result;
   }
 
-  def getSubclassesDetail(aClass:String, ontModel:OntModel) : ListResult = {
-    val resource = ontModel.getResource(aClass);
-    val cls = resource.as(classOf[OntClass])
-    this.getSubclassesDetail(cls, ontModel)
-  }
-
-  def getSubclassesDetail(cls:OntClass, ontModel:OntModel) : ListResult = {
-    logger.info("Retrieving subclasses of = " + cls.getURI)
-    val clsSubClasses:List[OntClass] = cls.listSubClasses(false).toList.toList;
-
-    val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
-
-    logger.info("clsSubClasses = " + clsSubClasses.mkString(","))
-
-    val resultHead:OntologyClass = new OntologyClass(cls, clsSuperclasses, clsSubClasses);
-
-    val resultTail:List[OntologyClass] = clsSubClasses.map(clsSubClass => {
-      val tail = new OntologyClass(clsSubClass
-        , clsSubClass.listSuperClasses(false).toList.toList
-        , clsSubClass.listSubClasses(false).toList.toList
-      );
-      tail
-    })
-
-    val result = resultHead :: resultTail;
-
-    val listResult = new ListResult(result.size, result);
-    listResult;
-  }
-
-  def getSubclassesDetail(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult  = {
-    val defaultInputPrefix = if(inputType.equals("0")) {
-      "http://schema.org/";
-    } else {
-      ""
-    }
-
-    this.getSubclassesDetail(defaultInputPrefix + aClass, ontModel);
-  }
-
-  def getSubclassesLocalNames(aClass:String, ontModel:OntModel, outputType:String, inputType:String) : ListResult = {
-    val subclassesDetail= this.getSubclassesDetail(aClass, ontModel, outputType, inputType)
 
 
-    if(subclassesDetail != null) {
-      val subclassesInList:Iterable[String] = subclassesDetail.results.map(
-        result => result.asInstanceOf[OntologyClass].getLocalName).toList.distinct
-      val result = new ListResult(subclassesInList.size, subclassesInList);
-      result
-    } else {
-      null
-    }
-
-  }
 
   def getFileNameAndContent(file: File, downloadURL:String, encoding:String) = {
 
