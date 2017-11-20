@@ -143,12 +143,21 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/mappings", method= RequestMethod.GET)
-    public ListResult findMappingDocumentsByDatasetId(
+    public ListResult getMappingsByDatasetId(
             @RequestParam(value="datasetId", defaultValue = "") String datasetId
     ) {
         logger.info("/findMappingDocumentsByDatasetId...");
         ListResult listResult = MappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
         logger.info("findMappingDocumentsByDatasetId result = " + listResult);
+
+        return listResult;
+    }
+
+    @RequestMapping(value="/datasets", method= RequestMethod.GET)
+    public ListResult getDatasets() {
+        logger.info("/datasets ...");
+        ListResult listResult = DatasetController.findDatasets();
+        logger.info("datasets result = " + listResult);
 
         return listResult;
     }

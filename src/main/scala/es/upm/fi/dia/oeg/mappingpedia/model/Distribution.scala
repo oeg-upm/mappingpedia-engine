@@ -40,4 +40,7 @@ class Distribution (val dataset: Dataset, val dctIdentifier:String){
   var manifestDownloadURL:String = null;
 
 
+  def getId = this.dctIdentifier
+  def getAccess_url = this.dcatAccessURL;
+  def getDownload_url = this.dcatDownloadURL;
 }

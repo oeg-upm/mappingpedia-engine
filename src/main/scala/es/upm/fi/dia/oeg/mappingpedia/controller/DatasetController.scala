@@ -8,9 +8,10 @@ import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
+import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
-import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
@@ -18,6 +19,8 @@ import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.util.EntityUtils
 import org.json.JSONObject
 import org.springframework.web.multipart.MultipartFile
+import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
+import scala.collection.JavaConversions._
 
 class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtility)  {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
@@ -415,6 +418,44 @@ object DatasetController {
   }
 
 
+  def findDatasets(): ListResult = {
+    logger.info("findDatasets")
+    val queryTemplateFile = "templates/findAllDatasets.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    DatasetController.findDatasets(queryString);
+  }
+
+  def findDatasets(queryString: String): ListResult = {
+    logger.info(s"queryString = $queryString");
+    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
 
 
+
+    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+    var results: List[Dataset] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      while (rs.hasNext) {
+        logger.info("Obtaining result from executing query=\n" + queryString)
+        val qs = rs.nextSolution
+        val datasetID = qs.get("datasetID").toString;
+        val dataset = new Dataset(datasetID);
+        val distributionID = qs.get("distributionID").toString;
+        val distribution = new Distribution(dataset, distributionID);
+        distribution.dcatAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null)
+        distribution.dcatDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null)
+
+        results = dataset :: results;
+      }
+    } finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
 }

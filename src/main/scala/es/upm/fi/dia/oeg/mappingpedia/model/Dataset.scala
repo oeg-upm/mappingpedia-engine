@@ -12,6 +12,10 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
     this(dctPublisher, UUID.randomUUID.toString)
   }
 
+  def this(dctIdentifier:String) {
+    this(new Organization(), dctIdentifier)
+  }
+
   var dctTitle:String = null;
   var dctDescription:String = null;
   var dctIssued:String = createdDate;
@@ -39,4 +43,7 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
       }
     }
   }
+
+  def getId = this.dctIdentifier;
+
 }
