@@ -33,10 +33,13 @@ class MappingDocument(val dctIdentifier:String) {
   var sha:String = null;
 
   // TODO it is a hack by Freddy, refactor this
+  /*
   var dataset:String = null;
   var distributionAccessURL:String = null;
   var distributionDownloadURL:String = null;
   var distributionSHA:String = null;
+  */
+  var dataset:Dataset = null;
 
   var manifestAccessURL:String = null;
   var manifestDownloadURL:String = null;
@@ -80,5 +83,5 @@ class MappingDocument(val dctIdentifier:String) {
 
   def getDateSubmitted = this.dctDateSubmitted;
   def getSHA = this.sha
-  def getDistribution_sha = this.distributionSHA
+  //def getDistribution_sha = this.distributionSHA
 }

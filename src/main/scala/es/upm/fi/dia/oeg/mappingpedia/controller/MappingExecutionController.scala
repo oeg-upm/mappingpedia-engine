@@ -319,8 +319,8 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
       val dataset = new Dataset(new Organization());
       val distribution = new Distribution(dataset);
       dataset.addDistribution(distribution);
-      distribution.dcatDownloadURL = md.distributionDownloadURL;
-      distribution.sha = md.distributionSHA
+      distribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
+      distribution.sha = md.dataset.getDistribution().sha
 
 
       if(md.sha != null && distribution.sha != null) {

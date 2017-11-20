@@ -4,7 +4,7 @@ prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
 prefix dcterms: <http://purl.org/dc/elements/1.1/>
 
-SELECT DISTINCT ?md ?mdID ?title ?dataset ?creator ?distribution ?distributionAccessURL ?distributionDownloadURL ?mdDownloadURL ?dateSubmitted ?distributionSHA ?mdSHA
+SELECT DISTINCT *
 FROM <$graphURL>
 WHERE {
     ?md a mpv:R2RMLMappingDocument .
@@ -27,6 +27,7 @@ WHERE {
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
     OPTIONAL {
         ?md mpv:hasDataset ?dataset .
+        ?dataset dcterms:identifier ?datasetId .
         OPTIONAL { ?dataset dcat:distribution ?distribution . }
         OPTIONAL { ?distribution dcat:accessURL ?distributionAccessURL . }
         OPTIONAL { ?distribution dcat:downloadURL ?distributionDownloadURL . }

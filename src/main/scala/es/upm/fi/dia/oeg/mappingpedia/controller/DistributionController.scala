@@ -20,8 +20,9 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
-    logger.info(s"storing manifest file for dataset: ${dataset.dctIdentifier} distribution: ${distribution.dctIdentifier} on github ...")
-    val addNewManifestCommitMessage = s"Add manifest file for dataset: ${dataset.dctIdentifier} distribution: ${distribution.dctIdentifier}"
+
+    logger.info(s"storing manifest file for distribution: ${distribution.dctIdentifier} - dataset: ${dataset.dctIdentifier} on github ...")
+    val addNewManifestCommitMessage = s"Add manifest file for distribution: ${distribution.dctIdentifier} - dataset: ${dataset.dctIdentifier} "
     val manifestFileName = file.getName
     val datasetId = dataset.dctIdentifier;
     val organizationId = organization.dctIdentifier;

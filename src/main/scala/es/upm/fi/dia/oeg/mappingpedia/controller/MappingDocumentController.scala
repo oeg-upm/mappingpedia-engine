@@ -223,12 +223,18 @@ object MappingDocumentController {
         val mdID= qs.get("mdID").toString;
         val md = new MappingDocument(mdID);
         md.dctTitle = MappingPediaUtility.getStringOrElse(qs, "title", null);
-        md.dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
+        val datasetId = MappingPediaUtility.getStringOrElse(qs, "datasetId", null);
+        md.dataset = new Dataset(datasetId)
+        md.dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null);
+        val distribution = new Distribution(md.dataset);
+        distribution.dcatAccessURL= MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
+        distribution.dcatDownloadURL= MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null);
+        distribution.sha = MappingPediaUtility.getStringOrElse(qs, "distributionSHA", null);
+
+        //md.dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
         //md.filePath = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
         md.dctCreator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
-        md.distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
-        md.distributionDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null);
-        md.distributionSHA= MappingPediaUtility.getStringOrElse(qs, "distributionSHA", null);
+
         md.mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
         md.sha = MappingPediaUtility.getStringOrElse(qs, "mdSHA", null);

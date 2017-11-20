@@ -3,9 +3,15 @@ package es.upm.fi.dia.oeg.mappingpedia.model
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 
+import org.slf4j.{Logger, LoggerFactory}
+
+import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
+
 //based on dcat:Dataset
 //see also ckan:Package
 class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val createdDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date())
 
   def this(dctPublisher:Organization) {
@@ -27,12 +33,33 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
   var manifestAccessURL:String = null;
   var manifestDownloadURL:String = null;
 
+  //var mappingDocuments:List[MappingDocument] = Nil;
+
   //for the moment assume that only one distribution for each dataset
   def getDistribution() = if(dcatDistribution == Nil) {
     null
   } else {
     this.dcatDistribution.iterator.next()
   }
+
+  /*
+  def getMapping_documents() = {
+    logger.info(s"this.mappingDocuments.iterator = ${this.mappingDocuments.iterator}")
+
+    this.mappingDocuments.iterator.asJava
+
+  }
+  */
+
+  /*
+  def getMapping_document() = {
+    if(this.mappingDocuments == null || this.mappingDocuments.size == 0) {
+      null
+    } else {
+      this.mappingDocuments.iterator.next()
+    }
+  }
+  */
 
   def addDistribution(distribution: Distribution) = {
     if(this.dcatDistribution == null) {
@@ -46,4 +73,5 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
 
   def getId = this.dctIdentifier;
 
+  def getTitle = this.dctTitle
 }

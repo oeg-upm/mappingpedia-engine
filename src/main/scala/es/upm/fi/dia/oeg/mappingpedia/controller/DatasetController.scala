@@ -446,10 +446,17 @@ object DatasetController {
         val qs = rs.nextSolution
         val datasetID = qs.get("datasetID").toString;
         val dataset = new Dataset(datasetID);
+        dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null)
         val distributionID = qs.get("distributionID").toString;
         val distribution = new Distribution(dataset, distributionID);
         distribution.dcatAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null)
         distribution.dcatDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null)
+
+        val mdID = qs.get("mdID").toString;
+        val md = new MappingDocument(mdID);
+        md.setDownloadURL(MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null))
+        //dataset.mappingDocuments = List(md)
+
 
         results = dataset :: results;
       }

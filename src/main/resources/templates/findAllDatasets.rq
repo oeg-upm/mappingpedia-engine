@@ -8,8 +8,10 @@ SELECT DISTINCT *
 FROM <$graphURL>
 WHERE {
     ?md mpv:hasDataset ?dataset .
+    ?md dcterms:identifier ?mdID .
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
     ?dataset dcterms:identifier ?datasetID .
+    OPTIONAL { ?dataset dcterms:title ?datasetTitle . }
     OPTIONAL { ?dataset dcterms:dateIssued ?dateIssued . }
     ?dataset dcat:distribution ?distribution .
     ?distribution dcterms:identifier ?distributionID .
