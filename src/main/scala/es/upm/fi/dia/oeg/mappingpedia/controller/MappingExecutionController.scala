@@ -33,9 +33,12 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
                       , pStoreToGithub:Boolean
                       , pStoreToVirtuoso:Boolean
 
+                    /*
                       , dbUserName:String, dbPassword:String
                       , dbName:String, jdbc_url:String
                       , databaseDriver:String, databaseType:String
+                      */
+                    , jdbcConnection: JDBCConnection
                     ) : ExecuteMappingResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
@@ -94,12 +97,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         if("text/csv".equalsIgnoreCase(datasetDistribution.dcatMediaType)) {
           MappingExecutionController.executeR2RMLMappingWithCSV(md, dataset, outputFilepath, queryFileName);
         } else {
-          MappingExecutionController.executeR2RMLMappingWithRDB(md, dataset, outputFilepath, queryFileName
-            , dbUserName:String, dbPassword:String
-            , dbName:String, jdbc_url:String
-            , databaseDriver:String, databaseType:String
-
-          );
+          MappingExecutionController.executeR2RMLMappingWithRDB(md, dataset, outputFilepath, queryFileName, jdbcConnection);
         }
       } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
         MappingExecutionController.executeRMLMapping(md, dataset, outputFilepath);
@@ -342,9 +340,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
           //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
           val executionResult = this.executeMapping(md, dataset, mappingExecution.queryFilePath, outputFilename
             , false, true, false
-            , null, null
-            , null, null
-            , null, null
+            , null
           );
           //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
@@ -432,9 +428,12 @@ object MappingExecutionController {
 
   def executeR2RMLMappingWithRDB(md:MappingDocument, dataset: Dataset
                                  , outputFilepath:String, queryFileName:String
+                                /*
                                 , dbUserName:String, dbPassword:String
                                 , dbName:String, jdbc_url:String
                                 , databaseDriver:String, databaseType:String
+                                */
+                                , jdbcConnection: JDBCConnection
 
                                 ) = {
     logger.info("Executing R2RML mapping ...")
@@ -445,12 +444,12 @@ object MappingExecutionController {
 
     val properties: MorphRDBProperties = new MorphRDBProperties
     properties.setNoOfDatabase(1)
-    properties.setDatabaseUser(dbUserName)
-    properties.setDatabasePassword(dbPassword)
-    properties.setDatabaseName(dbName)
-    properties.setDatabaseURL(jdbc_url)
-    properties.setDatabaseDriver(databaseDriver)
-    properties.setDatabaseType(databaseType)
+    properties.setDatabaseUser(jdbcConnection.dbUserName)
+    properties.setDatabasePassword(jdbcConnection.dbPassword)
+    properties.setDatabaseName(jdbcConnection.dbName)
+    properties.setDatabaseURL(jdbcConnection.jdbc_url)
+    properties.setDatabaseDriver(jdbcConnection.databaseDriver)
+    properties.setDatabaseType(jdbcConnection.databaseType)
     properties.setMappingDocumentFilePath(md.getDownloadURL())
     properties.setOutputFilePath(outputFilepath)
 

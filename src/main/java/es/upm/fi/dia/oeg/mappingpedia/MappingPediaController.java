@@ -243,9 +243,7 @@ public class MappingPediaController {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
                     , true, true, true
-                    , dbUserName, dbPassword
-                    , dbName, jdbc_url
-                    , databaseDriver, databaseType);
+                    , null);
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
@@ -324,11 +322,12 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
-                    , true, true, true
-                    , dbUserName, dbPassword
+            JDBCConnection jdbcConnection = new JDBCConnection(dbUserName, dbPassword
                     , dbName, jdbc_url
-                    , databaseDriver, databaseType
+                    , databaseDriver, databaseType);
+
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
+                    , true, true, true, jdbcConnection
             );
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
