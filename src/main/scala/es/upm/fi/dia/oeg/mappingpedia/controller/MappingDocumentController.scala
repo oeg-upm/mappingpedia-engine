@@ -233,8 +233,8 @@ object MappingDocumentController {
         md.sha = MappingPediaUtility.getStringOrElse(qs, "mdSHA", null);
         val mdDownloadURL = MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null);
         md.setDownloadURL(mdDownloadURL);
-        logger.info(s"md.distributionSHA = ${md.distributionSHA}");
-        logger.info(s"md.sha = ${md.sha}");
+        //logger.info(s"md.distributionSHA = ${md.distributionSHA}");
+        //logger.info(s"md.sha = ${md.sha}");
 
         results = md :: results;
       }

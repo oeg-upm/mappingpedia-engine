@@ -306,7 +306,6 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
 
     val executionResults:Iterable[ExecutionMappingResultSummary] = mappingDocuments.flatMap(mappingDocument => {
       val md = mappingDocument.asInstanceOf[MappingDocument];
-      val mdSHA = md.sha;
 
       val mappingLanguage = md.mappingLanguage;
       val distributionFieldSeparator = if(md.distributionFieldSeparator != null && md.distributionFieldSeparator.isDefined) {
@@ -315,22 +314,23 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
         null
       }
       val outputFilename = UUID.randomUUID.toString + ".nt"
-      val mappingDocumentDownloadURL = md.getDownloadURL();
+      //val mappingDocumentDownloadURL = md.getDownloadURL();
 
-      //val mdDistributionAccessURL = md.distributionAccessURL;
-      val mdDistributionDownloadURL = md.distributionDownloadURL;
+      val dataset = new Dataset(new Organization());
+      val distribution = new Distribution(dataset);
+      dataset.addDistribution(distribution);
+      distribution.dcatDownloadURL = md.distributionDownloadURL;
+      distribution.sha = md.distributionSHA
 
-      val mdDistributionSHA = md.distributionSHA;
 
+      if(md.sha != null && distribution.sha != null) {
+        logger.info(s"mdSHA = ${md.sha}");
+        logger.info(s"mdDistributionSHA = ${distribution.sha}");
 
-      if(mdSHA != null && mdDistributionSHA != null) {
-        if(executedMappingDocuments.contains((mdSHA,mdDistributionSHA))) {
+        if(executedMappingDocuments.contains((md.sha,distribution.sha))) {
           None
         } else {
-          val dataset = new Dataset(new Organization());
-          val distribution = new Distribution(dataset);
-          dataset.addDistribution(distribution);
-          distribution.dcatDownloadURL = mdDistributionDownloadURL;
+
 
           val mappingExecution = new MappingExecution(md, dataset);
           mappingExecution.setStoreToCKAN("false")
@@ -344,7 +344,7 @@ class MappingExecutionController(val ckanClient:CKANClient, val githubClient:Git
           );
           //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
-          executedMappingDocuments = (mappingDocumentDownloadURL,mdDistributionDownloadURL) :: executedMappingDocuments;
+          executedMappingDocuments = (md.sha,distribution.sha) :: executedMappingDocuments;
 
           val executionResultAccessURL = executionResult.getMapping_execution_result_access_url()
           val executionResultDownloadURL = executionResult.getMapping_execution_result_download_url

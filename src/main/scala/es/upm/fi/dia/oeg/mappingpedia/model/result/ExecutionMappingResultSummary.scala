@@ -14,5 +14,8 @@ class ExecutionMappingResultSummary(
   def getMapping_document_download_url = mappingDocument.getDownloadURL()
   def getMapping_execution_result_access_url = this.mappingExecutionResultAccessURL
   def getMapping_execution_result_download_url = this.mappingExecutionResultDownloadURL
+  def getMapping_document_sha = mappingDocument.sha;
+  def getDistribution_sha = distribution.sha;
+
 }
 
