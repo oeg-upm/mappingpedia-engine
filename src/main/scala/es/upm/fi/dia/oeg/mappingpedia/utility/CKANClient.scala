@@ -147,6 +147,9 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
     if(dataset.dctDescription != null) {
       jsonObj.put("notes", dataset.dctDescription);
     }
+    if(dataset.dcatKeyword != null) {
+      jsonObj.put("category", dataset.dcatKeyword);
+    }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate
     logger.info(s"Hitting endpoint: $uri");
