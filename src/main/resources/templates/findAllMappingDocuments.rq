@@ -1,19 +1,29 @@
-prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#> 
+prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
+prefix rr: <http://www.w3.org/ns/r2rml#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dcterms: <http://purl.org/dc/elements/1.1/>
 
-SELECT DISTINCT ?md ?title ?dataset ?creator ?distribution ?distributionAccessURL ?mappingDocumentFile ?dateSubmitted
+SELECT DISTINCT *
 FROM <$graphURL>
 WHERE {
-   ?md a mpv:R2RMLMappingDocument .
-   OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
-   OPTIONAL {
-      ?md mpv:hasDataset ?dataset .
-      ?dataset dcat:distribution ?distribution .
-      ?distribution dcat:accessURL ?distributionAccessURL .
-   }
-   OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
-   OPTIONAL { ?md mpv:hasTriplesMaps ?tm . }
-   OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
-   OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
+    ?md a mpv:R2RMLMappingDocument .
+    ?md dcterms:identifier ?mdID .
+    ?md mpv:sha ?mdSHA .
+    OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
+    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
+    OPTIONAL { ?md mpv:hasTriplesMaps ?tm . }
+    OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
+    OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
+    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
+    OPTIONAL {
+        ?md mpv:hasDataset ?dataset .
+        ?dataset dcterms:identifier ?datasetId .
+        ?dataset dcterms:title ?datasetTitle.
+        ?dataset dcat:distribution ?distribution .
+        ?distribution dcat:accessURL ?distributionAccessURL .
+        ?distribution mpv:sha ?distributionSHA .
+    }
+
 }
 ORDER BY ASC(?dateSubmitted)

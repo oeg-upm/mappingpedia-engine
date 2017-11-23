@@ -3,7 +3,8 @@
 #mpimd:mappingExecutionActivity rdfs:subClassOf prov:Activity .
 
 mpimd:mappingExecutionResult-$mappingExecutionResultID a mpv:MappingExecutionResultEntity ;
-    dcterms:identifier "mappingExecutionResult-$mappingExecutionResultID" ;
+    mpv:mappingExecutionResultIdentifier "mappingExecutionResult-$mappingExecutionResultID" ;
+    dcterms:identifier "$mappingExecutionResultID" ;
     dcterms:title "$mappingExecutionResultTitle" ;
     dcterms:description "$mappingExecutionResultDescription" ;
     prov:wasGeneratedBy mpimd:mappingExecutionActivity ;

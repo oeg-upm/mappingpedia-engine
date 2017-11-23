@@ -18,8 +18,10 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
 import es.upm.fi.dia.oeg.mappingpedia.utility.CKANClient;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.JenaClient;
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
 import org.apache.commons.io.FileUtils;
+import org.apache.jena.ontology.OntModel;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -35,8 +37,12 @@ public class MappingPediaController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
 
+
+    private OntModel ontModel = MappingPediaEngine.ontologyModel();
+
     private GitHubUtility githubClient = MappingPediaEngine.githubClient();
     private CKANClient ckanClient = MappingPediaEngine.ckanClient();
+    private JenaClient jenaClient = MappingPediaEngine.jenaClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
@@ -131,13 +137,13 @@ public class MappingPediaController {
     public ListResult getTriplesMaps() {
         logger.info("/triplesMaps ...");
         ListResult listResult = MappingPediaEngine.getAllTriplesMaps();
-        logger.info("listResult = " + listResult);
+        //logger.info("listResult = " + listResult);
 
         return listResult;
     }
 
-    @RequestMapping(value="/mappings/findMappingDocumentsByDatasetId", method= RequestMethod.GET)
-    public ListResult findMappingDocumentsByDatasetId(
+    @RequestMapping(value="/mappings", method= RequestMethod.GET)
+    public ListResult getMappingsByDatasetId(
             @RequestParam(value="datasetId", defaultValue = "") String datasetId
     ) {
         logger.info("/findMappingDocumentsByDatasetId...");
@@ -147,16 +153,33 @@ public class MappingPediaController {
         return listResult;
     }
 
+    @RequestMapping(value="/datasets", method= RequestMethod.GET)
+    public ListResult getDatasets() {
+        logger.info("/datasets ...");
+        ListResult listResult = DatasetController.findDatasets();
+        logger.info("datasets result = " + listResult);
+
+        return listResult;
+    }
+
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-    public ListResult getMappingDocuments(@RequestParam(value="searchType", defaultValue = "0") String searchType,
+    public ListResult getAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,
                                           @RequestParam(value="searchTerm", required = false) String searchTerm
     ) {
         logger.info("/ogd/annotations(GET) ...");
         logger.info("searchType = " + searchType);
         logger.info("searchTerm = " + searchTerm);
-        ListResult listResult = MappingDocumentController.findMappingDocuments(searchType, searchTerm);
-        logger.info("listResult = " + listResult);
-        return listResult;
+        if("subclass".equalsIgnoreCase(searchType)) {
+            logger.info("get all mapping documents by mapped class and its subclasses ...");
+            ListResult listResult = MappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm, jenaClient);
+            //logger.info("listResult = " + listResult);
+            return listResult;
+        } else {
+            ListResult listResult = MappingDocumentController.findMappingDocuments(searchType, searchTerm);
+            //logger.info("listResult = " + listResult);
+            return listResult;
+        }
+
     }
 
 
@@ -233,10 +256,9 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true
-                    , dbUserName, dbPassword
-                    , dbName, jdbc_url
-                    , databaseDriver, databaseType);
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
+                    , true, true, true
+                    , null);
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
@@ -249,7 +271,7 @@ public class MappingPediaController {
                     , null, null
                     , null
                     , null
-                    , null
+                    , null, null
             );
             return executeMappingResult;
         }
@@ -315,10 +337,12 @@ public class MappingPediaController {
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename, true
-                    , dbUserName, dbPassword
+            JDBCConnection jdbcConnection = new JDBCConnection(dbUserName, dbPassword
                     , dbName, jdbc_url
-                    , databaseDriver, databaseType
+                    , databaseDriver, databaseType);
+
+            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
+                    , true, true, true, jdbcConnection
             );
             //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
@@ -332,7 +356,7 @@ public class MappingPediaController {
                     , null, null
                     , null
                     , null
-                    , null
+                    , null, null
             );
             return executeMappingResult;
         }
@@ -521,9 +545,9 @@ public class MappingPediaController {
         return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
     }
 
-    //LEGACY ENDPOINT
+    //LEGACY ENDPOINT, use /distributions/{organizationID}/{datasetID} instead
     @RequestMapping(value = "/datasets/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddDatasetResult addNewDataset(
+    public AddDistributionResult addNewDataset(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
@@ -574,7 +598,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/distributions/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddDatasetResult addNewDistribution(
+    public AddDistributionResult addNewDistribution(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
@@ -651,27 +675,31 @@ public class MappingPediaController {
 
     @RequestMapping(value="/ogd/utility/subclasses", method= RequestMethod.GET)
     public ListResult getSubclassesDetail(
-            @RequestParam(value="aClass") String aClass,
-            @RequestParam(value="outputType", defaultValue = "0") String outputType,
-            @RequestParam(value="inputType", defaultValue = "0") String inputType
+            @RequestParam(value="aClass") String aClass
     ) {
         logger.info("GET /ogd/utility/subclasses ...");
         logger.info("aClass = " + aClass);
-        ListResult result = MappingPediaEngine.getSchemaOrgSubclassesDetail(aClass, outputType, inputType) ;
-        logger.info("result = " + result);
+        ListResult result = MappingPediaEngine.getSchemaOrgSubclassesDetail(aClass) ;
+        //logger.info("result = " + result);
         return result;
     }
 
     @RequestMapping(value="/ogd/utility/subclassesSummary", method= RequestMethod.GET)
     public ListResult getSubclassesSummary(
-            @RequestParam(value="aClass") String aClass,
-            @RequestParam(value="outputType", defaultValue = "0") String outputType,
-            @RequestParam(value="inputType", defaultValue = "0") String inputType
+            @RequestParam(value="aClass") String aClass
     ) {
         logger.info("GET /ogd/utility/subclassesSummary ...");
         logger.info("aClass = " + aClass);
-        ListResult result = MappingPediaEngine.getSubclassesLocalNames(aClass, outputType, inputType) ;
-        logger.info("result = " + result);
+        ListResult result = MappingPediaEngine.getSubclassesLocalNames(aClass) ;
+        //logger.info("result = " + result);
+        return result;
+    }
+
+    @RequestMapping(value="/ogd/utility/superclassesSummary", method= RequestMethod.GET)
+    public ListResult getSuperclassesSummary(@RequestParam(value="aClass") String aClass) {
+        logger.info("GET /ogd/utility/superclassesSummary ...");
+        logger.info("aClass = " + aClass);
+        ListResult result = jenaClient.getSuperclasses(aClass, ontModel);
         return result;
     }
 
@@ -684,7 +712,7 @@ public class MappingPediaController {
     ) {
         logger.info("GET /ogd/instances ...");
         logger.info("Getting instances of the class:" + aClass);
-        ListResult result = mappingExecutionController.getInstances(aClass, outputType, inputType) ;
+        ListResult result = mappingExecutionController.getInstances(aClass, jenaClient) ;
         return result;
     }
 

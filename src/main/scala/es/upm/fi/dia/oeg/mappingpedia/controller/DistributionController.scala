@@ -5,7 +5,7 @@ import java.net.HttpURLConnection
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
-import es.upm.fi.dia.oeg.mappingpedia.model.result.AddDatasetResult
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, AddDistributionResult}
 import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
 import org.apache.http.util.EntityUtils
@@ -16,12 +16,13 @@ import org.springframework.web.multipart.MultipartFile
 class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubUtility) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  def storeManifestFileOnGitHub(file:File, distribution:Distribution) = {
+  def storeManifestFileOnGitHub(file:File, distribution:Distribution) : HttpResponse[JsonNode] = {
     val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
-    logger.info("storing manifest file for a distribution on github ...")
-    val addNewManifestCommitMessage = s"Add manifest file for dataset: ${dataset.dctIdentifier} distribution: ${distribution.dctIdentifier}"
+
+    logger.info(s"storing manifest file for distribution: ${distribution.dctIdentifier} - dataset: ${dataset.dctIdentifier} on github ...")
+    val addNewManifestCommitMessage = s"Add manifest file for distribution: ${distribution.dctIdentifier} - dataset: ${dataset.dctIdentifier} "
     val manifestFileName = file.getName
     val datasetId = dataset.dctIdentifier;
     val organizationId = organization.dctIdentifier;
@@ -41,9 +42,9 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
     val base64EncodedContent = GitHubUtility.encodeToBase64(fileContent)
 
 
-    logger.info("storing a new dataset and its distribution file on github ...")
+    logger.info("storing a distribution file on github ...")
     //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
-    val addNewDatasetCommitMessage = "Add a new dataset file by mappingpedia-engine"
+    val addNewDatasetCommitMessage = s"Add a new distribution file to dataset ${dataset.dctIdentifier}"
     val githubResponse = githubClient.putEncodedContent(organization.dctIdentifier
       , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64EncodedContent)
     logger.info("New dataset file stored on github ...")
@@ -72,7 +73,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
   }
 
   def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile, generateManifestFile:String
-                ) : AddDatasetResult = {
+                ) : AddDistributionResult = {
 
     //val dataset = distribution.dataset
     val organization: Organization = distribution.dataset.dctPublisher;
@@ -81,7 +82,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
 
 
     //STORING DISTRIBUTION FILE ON GITHUB
-    val addDatasetFileGitHubResponse:HttpResponse[JsonNode] = try {
+    val addDistributionFileGitHubResponse:HttpResponse[JsonNode] = try {
       if(distribution != null) {
         this.storeDatasetDistributionFileOnGitHub(distribution);
       } else {
@@ -99,6 +100,20 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
         null
       }
     }
+    val distributionAccessURL = if(addDistributionFileGitHubResponse == null) {
+      null
+    } else {
+      this.githubClient.getAccessURL(addDistributionFileGitHubResponse)
+    }
+    val distributionDownloadURL = this.githubClient.getDownloadURL(distributionAccessURL);
+    if(distributionDownloadURL != null) {
+      distribution.sha = this.githubClient.getSHA(distributionAccessURL);
+    }
+    val addDatasetFileGitHubResponseStatus:Integer = if(addDistributionFileGitHubResponse == null) { null }
+    else { addDistributionFileGitHubResponse.getStatus }
+
+    val addDatasetFileGitHubResponseStatusText = if(addDistributionFileGitHubResponse == null) { null }
+    else { addDistributionFileGitHubResponse.getStatusText }
 
     //MANIFEST FILE
     val manifestFile:File = try {
@@ -140,12 +155,16 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
         null
       }
     }
+    distribution.manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse)
+    distribution.manifestDownloadURL = this.githubClient.getDownloadURL(distribution.manifestAccessURL);
 
     //STORING MANIFEST ON VIRTUOSO
     val addManifestVirtuosoResponse:String = try {
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         if(manifestFile != null) {
-          DatasetController.storeManifestOnVirtuoso(manifestFile);
+          logger.info(s"storing manifest triples of the distribution ${distribution.dctIdentifier} on virtuoso ...")
+          MappingPediaEngine.virtuosoClient.store(manifestFile)
+          "OK"
         } else {
           "No manifest has been generated/provided";
         }
@@ -231,19 +250,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
-    val distributionAccessURL = if(addDatasetFileGitHubResponse == null) {
-      null
-    } else {
-      addDatasetFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
-    val distributionDownloadURL = this.githubClient.getDownloadURL(distributionAccessURL);
 
-    val manifestAccessURL = if(addManifestFileGitHubResponse == null) {
-      null
-    } else {
-      addManifestFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
-    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
 
     val ckanAddResourceResponseStatusCode:Integer = {
       if(ckanAddResourceResponse == null) {
@@ -252,7 +259,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
         ckanAddResourceResponse.getStatusLine.getStatusCode
       }
     }
-    val ckanResourceId:String = {
+    distribution.ckanResourceId = {
       if(ckanAddResourceResponse == null) {
         null
       } else {
@@ -263,20 +270,6 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       }
     }
 
-    //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;
-    val addDatasetFileGitHubResponseStatus:Integer =
-      if(addDatasetFileGitHubResponse == null) {
-        null
-      }  else {
-        addDatasetFileGitHubResponse.getStatus
-      }
-
-    val addDatasetFileGitHubResponseStatusText =
-      if(addDatasetFileGitHubResponse == null) {
-        null
-      }  else {
-        addDatasetFileGitHubResponse.getStatusText
-      }
 
     val addManifestFileGitHubResponseStatus:Integer = if(addManifestFileGitHubResponse == null) {
       null
@@ -290,6 +283,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       addManifestFileGitHubResponse.getStatusText
     }
 
+    /*
     val addDatasetResult:AddDatasetResult = new AddDatasetResult(
       responseStatus, responseStatusText
 
@@ -297,7 +291,7 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       , addManifestFileGitHubResponseStatus
       , addManifestFileGitHubResponseStatusText
 
-      , distributionAccessURL, distributionDownloadURL
+      , distributionAccessURL, distributionDownloadURL, distribution.sha
       , addDatasetFileGitHubResponseStatus
       , addDatasetFileGitHubResponseStatusText
 
@@ -310,6 +304,23 @@ class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubU
       , distribution.dataset.dctIdentifier
     )
     addDatasetResult
+    */
+
+    val addDistributionResult:AddDistributionResult = new AddDistributionResult(responseStatus, responseStatusText
+      , distribution
+
+      //, manifestAccessURL, manifestDownloadURL
+      , addManifestFileGitHubResponseStatus, addManifestFileGitHubResponseStatusText
+
+      //, distributionAccessURL, distributionDownloadURL, distribution.sha
+      , addDatasetFileGitHubResponseStatus, addDatasetFileGitHubResponseStatusText
+
+      , addManifestVirtuosoResponse
+
+      , ckanAddResourceResponseStatusCode
+    )
+    addDistributionResult
+
 
     /*
     val executionResult = new MappingPediaExecutionResult(manifestURL, datasetURL, null
@@ -361,6 +372,7 @@ object DistributionController {
           , "$distributionID" -> distribution.dctIdentifier
           , "$distributionIssued" -> distribution.dctIssued
           , "$distributionModified" -> distribution.dctModified
+          , "$sha" -> distribution.sha
         )
       }
 

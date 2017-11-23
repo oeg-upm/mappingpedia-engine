@@ -9,6 +9,7 @@ class ExecuteMappingResult (
                              , val ckanResponseStatus:Integer
                            , val mappingExecutionResultId:String
                            , val manifestAccessURL:String
+                             , val manifestDownloadURL:String
                            ){
 
   def getDatasetURL() = distributionDownloadURL;
@@ -34,5 +35,6 @@ class ExecuteMappingResult (
 
   def getManifestURL = this.manifestAccessURL
   def getManifest_access_url = this.manifestAccessURL
+  def getManifest_download_url = this.manifestDownloadURL
 
 }

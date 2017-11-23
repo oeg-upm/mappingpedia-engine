@@ -30,9 +30,19 @@ class MappingDocument(val dctIdentifier:String) {
   var distributionFieldSeparator:Option[String] = None;
   //var multipartFile: MultipartFile = null;
   var mappingDocumentFile:File = null;
+  var sha:String = null;
 
-  var dataset:String = null; // it is a hack by Freddy
+  // TODO it is a hack by Freddy, refactor this
+  /*
+  var dataset:String = null;
   var distributionAccessURL:String = null;
+  var distributionDownloadURL:String = null;
+  var distributionSHA:String = null;
+  */
+  var dataset:Dataset = null;
+
+  var manifestAccessURL:String = null;
+  var manifestDownloadURL:String = null;
 
   def setDownloadURL(pDownloadURL:String) = {
     downloadURL = if(pDownloadURL != null && pDownloadURL.startsWith("<") && pDownloadURL.endsWith(">")) {
@@ -42,11 +52,12 @@ class MappingDocument(val dctIdentifier:String) {
     }
   }
 
+  /*
   def getDownloadURL() = {
     this.downloadURL
   }
+  */
 
-  /*
   def getDownloadURL() = {
     if (downloadURL != null) {
       downloadURL
@@ -64,7 +75,6 @@ class MappingDocument(val dctIdentifier:String) {
       }
     }
   }
-  */
 
   def getId = this.dctIdentifier;
   def getTitle = this.dctTitle;
@@ -72,4 +82,6 @@ class MappingDocument(val dctIdentifier:String) {
   def getCreator = this.dctCreator;
 
   def getDateSubmitted = this.dctDateSubmitted;
+  def getSHA = this.sha
+  //def getDistribution_sha = this.distributionSHA
 }

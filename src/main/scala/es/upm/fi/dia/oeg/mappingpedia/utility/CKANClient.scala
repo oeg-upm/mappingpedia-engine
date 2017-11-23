@@ -28,7 +28,6 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
 
   def createResource(distribution: Distribution) = {
     val dataset = distribution.dataset;
-    logger.info(s"dataset = $dataset")
 
     val packageId = dataset.dctIdentifier;
     logger.info(s"packageId = $packageId")
@@ -147,6 +146,9 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
     }
     if(dataset.dctDescription != null) {
       jsonObj.put("notes", dataset.dctDescription);
+    }
+    if(dataset.dcatKeyword != null) {
+      jsonObj.put("category", dataset.dcatKeyword);
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate

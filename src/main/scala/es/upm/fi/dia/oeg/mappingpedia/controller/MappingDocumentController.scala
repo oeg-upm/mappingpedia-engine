@@ -11,10 +11,11 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, JenaClient, MappingPediaUtility}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
 
+import scala.collection.JavaConversions._
 import scala.io.Source
 
 class MappingDocumentController(val githubClient:GitHubUtility) {
@@ -74,12 +75,9 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
     }
-    val mappingDocumentAccessURL = if (mappingFileGitHubResponse == null) {
-      ""
-    } else {
-      mappingFileGitHubResponse.getBody.getObject.getJSONObject("content").getString("url")
-    }
-    val mappingDocumentDownloadURL = this.githubClient.getDownloadURL(mappingDocumentAccessURL)
+    mappingDocument.accessURL = this.githubClient.getAccessURL(mappingFileGitHubResponse)
+    mappingDocument.setDownloadURL(this.githubClient.getDownloadURL(mappingDocument.accessURL))
+    mappingDocument.sha = this.githubClient.getSHA(mappingDocument.accessURL);
 
 
     //MANIFEST FILE
@@ -172,12 +170,12 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
         null
       }
     }
-    val manifestAccessURL = if (addNewManifestResponse == null) {
+    mappingDocument.manifestAccessURL = if (addNewManifestResponse == null) {
       null
     } else {
       addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
-    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL);
+    mappingDocument.manifestDownloadURL = this.githubClient.getDownloadURL(mappingDocument.manifestAccessURL);
 
     val (responseStatus, responseStatusText) = if (errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -188,8 +186,9 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
 
     val addMappingResult:AddMappingDocumentResult = new AddMappingDocumentResult(
       responseStatus, responseStatusText
-      , mappingDocumentAccessURL, mappingDocumentDownloadURL
-      , manifestAccessURL, manifestDownloadURL
+      //, mappingDocumentAccessURL, mappingDocumentDownloadURL, mappingDocument.sha
+      , mappingDocument
+      //, manifestAccessURL, manifestDownloadURL
       , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
     )
     addMappingResult
@@ -208,27 +207,41 @@ object MappingDocumentController {
   //val githubClient = MappingPediaEngine.githubClient;
 
   def findMappingDocuments(queryString: String): ListResult = {
+    logger.info(s"queryString = $queryString");
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
 
-    logger.info("Executing query=\n" + queryString)
+
 
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     var results: List[MappingDocument] = List.empty;
     try {
       val rs = qexec.execSelect
       while (rs.hasNext) {
+        logger.info("Obtaining result from executing query=\n" + queryString)
         val qs = rs.nextSolution
-        val id = MappingPediaUtility.getStringOrElse(qs, "md", null);
-        val md = new MappingDocument(id);
+        val mdID= qs.get("mdID").toString;
+        val md = new MappingDocument(mdID);
         md.dctTitle = MappingPediaUtility.getStringOrElse(qs, "title", null);
-        md.dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
+        val datasetId = MappingPediaUtility.getStringOrElse(qs, "datasetId", null);
+        md.dataset = new Dataset(datasetId)
+        md.dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null);
+        val distribution = new Distribution(md.dataset);
+        distribution.dcatAccessURL= MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
+        distribution.dcatDownloadURL= MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null);
+        distribution.sha = MappingPediaUtility.getStringOrElse(qs, "distributionSHA", null);
+
+        //md.dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
         //md.filePath = MappingPediaUtility.getStringOrElse(qs, "mappingDocumentFile", null);
         md.dctCreator = MappingPediaUtility.getStringOrElse(qs, "creator", null);
-        md.distributionAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
+
         md.mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
-        md.accessURL = MappingPediaUtility.getStringOrElse(qs, "accessURL", null);
+        md.sha = MappingPediaUtility.getStringOrElse(qs, "mdSHA", null);
+        val mdDownloadURL = MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null);
+        md.setDownloadURL(mdDownloadURL);
+        //logger.info(s"md.distributionSHA = ${md.distributionSHA}");
+        //logger.info(s"md.sha = ${md.sha}");
 
         results = md :: results;
       }
@@ -253,7 +266,7 @@ object MappingDocumentController {
   }
 
   def findMappingDocumentsByMappedClass(mappedClass: String): ListResult = {
-    logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
+    //logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
     val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -264,6 +277,21 @@ object MappingDocumentController {
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
     MappingDocumentController.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByMappedSubClass(aClass: String, jenaClient: JenaClient): ListResult = {
+    val subclassesListResult = jenaClient.getSubclassesDetail(
+      aClass, MappingPediaEngine.ontologyModel);
+    logger.info(s"subclassesListResult = subclassesListResult")
+
+    val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
+      result => result.asInstanceOf[OntologyClass].getURI).toList.distinct
+    val mappingDocuments = subclassesURIs.flatMap(subclassURI => {
+      MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults();
+    }).asInstanceOf[Iterable[MappingDocument]];
+
+    val listResult = new ListResult(mappingDocuments.size, mappingDocuments)
+    listResult
   }
 
   def findMappingDocumentsByDatasetId(datasetId: String): ListResult = {
@@ -337,7 +365,7 @@ object MappingDocumentController {
       val listResult = MappingDocumentController.findAllMappingDocuments
       listResult
     }
-    logger.info("result = " + result)
+    //logger.info("result = " + result)
 
     result;
   }
@@ -361,6 +389,7 @@ object MappingDocumentController {
       , "$mappingDocumentFilePath" -> mappingDocument.getDownloadURL()
       , "$datasetID" -> dataset.dctIdentifier
       , "$mappingLanguage" -> mappingDocument.mappingLanguage
+      , "$sha" -> mappingDocument.sha
 
       //, "$datasetTitle" -> datasetTitle
       //, "$datasetKeywords" -> datasetKeywords
