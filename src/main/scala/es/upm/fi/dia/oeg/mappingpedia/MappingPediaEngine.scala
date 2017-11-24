@@ -50,7 +50,7 @@ object MappingPediaEngine {
 	var ontologyModel:OntModel = null;
 	var mappingpediaProperties:MappingPediaProperties = null;
 	var githubClient:GitHubUtility = null;
-	var ckanClient:CKANClient = null;
+	var ckanClient:CKANUtility = null;
 	var virtuosoClient:VirtuosoClient = null;
 	var jenaClient:JenaClient = null;
 
@@ -311,6 +311,9 @@ object MappingPediaEngine {
 	}
 
 	def getSchemaOrgSubclassesDetail(aClass:String) : ListResult = {
+		logger.info(s"jenaClient = $jenaClient")
+		logger.info(s"this.ontologyModel = ${this.ontologyModel}")
+
 		jenaClient.getSubclassesDetail(aClass, this.ontologyModel);
 	}
 

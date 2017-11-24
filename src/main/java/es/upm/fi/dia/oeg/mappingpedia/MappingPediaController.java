@@ -3,7 +3,6 @@ package es.upm.fi.dia.oeg.mappingpedia;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -16,7 +15,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
-import es.upm.fi.dia.oeg.mappingpedia.utility.CKANClient;
+import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
 import es.upm.fi.dia.oeg.mappingpedia.utility.JenaClient;
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
@@ -41,7 +40,7 @@ public class MappingPediaController {
     private OntModel ontModel = MappingPediaEngine.ontologyModel();
 
     private GitHubUtility githubClient = MappingPediaEngine.githubClient();
-    private CKANClient ckanClient = MappingPediaEngine.ckanClient();
+    private CKANUtility ckanClient = MappingPediaEngine.ckanClient();
     private JenaClient jenaClient = MappingPediaEngine.jenaClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
@@ -75,7 +74,7 @@ public class MappingPediaController {
             catalogUrl = MappingPediaEngine.mappingpediaProperties().ckanURL();
         }
         logger.info("GET /ckanDatasetList ...");
-        return CKANClient.getDatasetList(catalogUrl);
+        return CKANUtility.getDatasetList(catalogUrl);
     }
 
     @RequestMapping(value="/virtuosoEnabled", method= RequestMethod.GET)
@@ -117,7 +116,7 @@ public class MappingPediaController {
         String ckanURL = MappingPediaEngine.mappingpediaProperties().ckanURL();
         String ckanKey = MappingPediaEngine.mappingpediaProperties().ckanKey();
 
-        CKANClient ckanClient = new CKANClient(ckanURL, ckanKey);
+        CKANUtility ckanClient = new CKANUtility(ckanURL, ckanKey);
         File file = new File(filePath);
         try {
             if(!file.exists()) {
@@ -474,6 +473,144 @@ public class MappingPediaController {
         logger.info("PUT /mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename}");
         return MappingPediaEngine.updateExistingMapping(mappingpediaUsername, mappingDirectory, mappingFilename
                 , mappingFileRef);
+    }
+
+    @RequestMapping(value = "/datasets_mappings_execute", method= RequestMethod.POST)
+    public AddDatasetMappingExecuteResult addNewDatasetAndMappings(
+            @PathVariable("organizationID") String organizationID
+
+            , @RequestParam(value="dataset_title", required = false) String datasetTitle
+            , @RequestParam(value="dataset_keywords", required = false) String datasetKeywords
+            , @RequestParam(value="dataset_language", required = false) String datasetLanguage
+            , @RequestParam(value="dataset_description", required = false) String datasetDescription
+
+            , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
+            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
+            , @RequestParam(value="distribution_file", required = false) MultipartFile distributionMultipartFile
+            , @RequestParam(value="distribution_media_type", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
+
+            , @RequestParam(value="mapping_document_access_url", required = false) String mappingDocumentAccessURL
+            , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
+            , @RequestParam(value="mapping_document_file", required = false) MultipartFile mappingDocumentMultipartFile
+            , @RequestParam(value="mapping_document_subject", required = false, defaultValue="") String mappingDocumentSubject
+            , @RequestParam(value="mapping_document_title", required = false) String mappingDocumentTitle
+            , @RequestParam(value="mapping_language", required = false, defaultValue="r2rml") String mappingLanguage
+
+            , @RequestParam(value="execute_mapping", required = false, defaultValue="true") String executeMapping
+            , @RequestParam(value="query_file_download_url", required = false) String queryFileDownloadURL
+            , @RequestParam(value="output_file_name", required = false) String outputFilename
+
+            , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+    )
+    {
+        logger.info("[POST] /datasets_mappings_execute");
+
+        Organization organization = new Organization(organizationID);
+
+        Dataset dataset = new Dataset(organization);
+        if(datasetTitle == null) {
+            dataset.dctTitle_$eq(dataset.dctIdentifier());
+        } else {
+            dataset.dctTitle_$eq(datasetTitle);
+        }
+        if(datasetDescription == null) {
+            dataset.dctDescription_$eq(dataset.dctIdentifier());
+        } else {
+            dataset.dctDescription_$eq(datasetDescription);
+        }
+        dataset.dcatKeyword_$eq(datasetKeywords);
+        dataset.dctLanguage_$eq(datasetLanguage);
+
+        if(distributionDownloadURL != null ||  distributionMultipartFile != null) {
+            Distribution distribution = new Distribution(dataset);
+
+            if(distributionAccessURL == null) {
+                distribution.dcatAccessURL_$eq(distributionDownloadURL);
+            } else {
+                distribution.dcatAccessURL_$eq(distributionAccessURL);
+            }
+            distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+
+            if(distributionMultipartFile != null) {
+                distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
+                        distributionMultipartFile , dataset.dctIdentifier()));
+            }
+
+            distribution.dctDescription_$eq("Distribution for the dataset: " + dataset.dctIdentifier());
+            distribution.dcatMediaType_$eq(distributionMediaType);
+            distribution.encoding_$eq(distributionEncoding);
+            dataset.addDistribution(distribution);
+        }
+
+
+        AddDatasetResult addDatasetResult = this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
+        int addDatasetResultStatusCode = addDatasetResult.getStatus_code();
+        if(addDatasetResultStatusCode >= 200 && addDatasetResultStatusCode < 300) {
+            MappingDocument mappingDocument = new MappingDocument();
+            mappingDocument.dctSubject_$eq(mappingDocumentSubject);
+            mappingDocument.dctCreator_$eq(organizationID);
+            mappingDocument.accessURL_$eq(mappingDocumentAccessURL);
+            if(mappingDocumentTitle == null) {
+                mappingDocument.dctTitle_$eq(dataset.dctIdentifier());
+            } else {
+                mappingDocument.dctTitle_$eq(mappingDocumentTitle);
+            }
+            mappingDocument.mappingLanguage_$eq(mappingLanguage);
+            if(mappingDocumentMultipartFile != null) {
+                File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingDocumentMultipartFile, dataset.dctIdentifier());
+                mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
+            }
+
+            mappingDocument.setDownloadURL(mappingDocumentDownloadURL);
+
+
+            AddMappingDocumentResult addMappingDocumentResult = mappingDocumentController.addNewMappingDocument(dataset, manifestFileRef
+                    , "true", generateManifestFile, mappingDocument);
+            int addMappingDocumentResultStatusCode = addMappingDocumentResult.getStatus_code();
+            if("true".equalsIgnoreCase(executeMapping)) {
+                if(addMappingDocumentResultStatusCode >= 200 && addMappingDocumentResultStatusCode < 300) {
+                    try {
+                        ExecuteMappingResult executeMappingResult = this.mappingExecutionController.executeMapping(
+                                mappingDocument
+                                , dataset
+                                , queryFileDownloadURL
+                                , outputFilename
+
+                                , true
+                                , true
+                                , true
+
+                                , null
+                        );
+
+                        return new AddDatasetMappingExecuteResult (addDatasetResult, addMappingDocumentResult, executeMappingResult);
+
+
+
+                    } catch (Exception e){
+                        e.printStackTrace();
+                        return new AddDatasetMappingExecuteResult (addDatasetResult, addMappingDocumentResult, null);
+
+                    }
+
+
+                } else {
+                    return new AddDatasetMappingExecuteResult(addDatasetResult, addMappingDocumentResult, null);
+
+                }
+            } else {
+                return new AddDatasetMappingExecuteResult(addDatasetResult, addMappingDocumentResult, null);
+
+            }
+
+
+
+        } else {
+            return new AddDatasetMappingExecuteResult(addDatasetResult, null, null);
+
+        }
     }
 
     @RequestMapping(value = "/datasets/{organizationID}", method= RequestMethod.POST)

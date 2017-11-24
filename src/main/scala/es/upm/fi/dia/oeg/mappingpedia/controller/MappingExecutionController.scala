@@ -13,13 +13,13 @@ import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, JenaClient, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, JenaClient, MappingPediaUtility}
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory, MorphRDBProperties, MorphRDBRunnerFactory}
 
 import scala.collection.JavaConversions._
 
-class MappingExecutionController(val ckanClient:CKANClient, val githubClient:GitHubUtility) {
+class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   @throws(classOf[Exception])

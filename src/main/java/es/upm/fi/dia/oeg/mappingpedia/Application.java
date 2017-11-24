@@ -5,7 +5,6 @@ import java.io.InputStream;
 
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
-import es.upm.fi.dia.oeg.mappingpedia.model.MappingDocument;
 import es.upm.fi.dia.oeg.mappingpedia.utility.*;
 import org.apache.jena.ontology.OntModel;
 import org.slf4j.Logger;
@@ -44,7 +43,7 @@ public class Application {
 			);
 			MappingPediaEngine.githubClient_$eq(githubClient);
 
-			CKANClient ckanClient = new CKANClient(properties.ckanURL(), properties.ckanKey());
+			CKANUtility ckanClient = new CKANUtility(properties.ckanURL(), properties.ckanKey());
 			MappingPediaEngine.ckanClient_$eq(ckanClient);
 
 			if(properties.virtuosoEnabled()) {

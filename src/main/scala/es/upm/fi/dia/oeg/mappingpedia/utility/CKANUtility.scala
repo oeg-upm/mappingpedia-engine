@@ -7,7 +7,7 @@ import java.net.HttpURLConnection
 import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
 import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
-import es.upm.fi.dia.oeg.mappingpedia.utility.CKANClient.logger
+import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaEngine, MappingPediaProperties}
 import eu.trentorise.opendata.jackan.CkanClient
 import org.json.JSONObject
@@ -23,7 +23,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
 
-class CKANClient(val ckanUrl: String, val authorizationToken: String) {
+class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def createResource(distribution: Distribution) = {
@@ -161,9 +161,12 @@ class CKANClient(val ckanUrl: String, val authorizationToken: String) {
     response;
   }
 
+  def setLanguageForOrganizationDatasets(organizationId:String) = {
+
+  }
 }
 
-object CKANClient {
+object CKANUtility {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def getDatasetList(catalogUrl:String) : ListResult = {

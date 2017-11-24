@@ -2,7 +2,8 @@ package es.upm.fi.dia.oeg.mappingpedia.model.result
 
 import es.upm.fi.dia.oeg.mappingpedia.model.MappingDocument
 
-class AddMappingDocumentResult(val errorCode:Integer, val status:String, val mappingDocument:MappingDocument
+class AddMappingDocumentResult(val errorCode:Integer, val status:String
+                               , val mappingDocument:MappingDocument
                                , val virtuosoStoreManifestStatus:String, val virtuosoStoreMappingStatus:String
                        ){
 

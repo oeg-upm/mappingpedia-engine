@@ -7,13 +7,13 @@ import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, AddDistributionResult}
 import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.apache.http.util.EntityUtils
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
 
-class DistributionController(val ckanClient:CKANClient, val githubClient:GitHubUtility) {
+class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def storeManifestFileOnGitHub(file:File, distribution:Distribution) : HttpResponse[JsonNode] = {
