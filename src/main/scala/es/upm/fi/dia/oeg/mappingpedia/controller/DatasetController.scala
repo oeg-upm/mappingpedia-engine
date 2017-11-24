@@ -14,7 +14,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANClient, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.util.EntityUtils
 import org.json.JSONObject
@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
 import scala.collection.JavaConversions._
 
-class DatasetController(val ckanClient:CKANClient, val githubClient:GitHubUtility)  {
+class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtility)  {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val distributionController = new DistributionController(ckanClient, githubClient);
 
