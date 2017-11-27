@@ -35,6 +35,7 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     logger.info(s"description = ${distribution.dctDescription}")
     logger.info(s"mimetype = ${distribution.dcatMediaType}")
     logger.info(s"upload = ${distribution.distributionFile}")
+    logger.info(s"dataset.dctLanguage = ${dataset.dctLanguage}")
 
     val httpClient = HttpClientBuilder.create.build
     try {
@@ -58,6 +59,9 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       }
       if(distribution.distributionFile != null) {
         builder.addBinaryBody("upload", distribution.distributionFile)
+      }
+      if(dataset.dctLanguage != null) {
+        builder.addTextBody("language", dataset.dctLanguage)
       }
 
       val mpEntity = builder.build();
@@ -149,6 +153,9 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     }
     if(dataset.dcatKeyword != null) {
       jsonObj.put("category", dataset.dcatKeyword);
+    }
+    if(dataset.dctLanguage != null) {
+      jsonObj.put("language", dataset.dctLanguage);
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate

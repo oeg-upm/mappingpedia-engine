@@ -477,12 +477,12 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets_mappings_execute", method= RequestMethod.POST)
-    public AddDatasetMappingExecuteResult postDatastsMappingExecute(
-            @PathVariable("organizationID") String organizationID
+    public AddDatasetMappingExecuteResult postDatastsMappingsExecute(
+            @RequestParam("organization_id") String organizationID
 
             , @RequestParam(value="dataset_title", required = false) String datasetTitle
             , @RequestParam(value="dataset_keywords", required = false) String datasetKeywords
-            , @RequestParam(value="dataset_language", required = false) String datasetLanguage
+            , @RequestParam(value="dataset_language", required = false, defaultValue="en") String datasetLanguage
             , @RequestParam(value="dataset_description", required = false) String datasetDescription
 
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
@@ -586,31 +586,24 @@ public class MappingPediaController {
                                 , null
                         );
 
-                        return new AddDatasetMappingExecuteResult (addDatasetResult, addMappingDocumentResult, executeMappingResult);
+                        return new AddDatasetMappingExecuteResult (HttpURLConnection.HTTP_OK, addDatasetResult, addMappingDocumentResult, executeMappingResult);
 
 
 
                     } catch (Exception e){
                         e.printStackTrace();
-                        return new AddDatasetMappingExecuteResult (addDatasetResult, addMappingDocumentResult, null);
+                        return new AddDatasetMappingExecuteResult (HttpURLConnection.HTTP_INTERNAL_ERROR, addDatasetResult, addMappingDocumentResult, null);
 
                     }
-
-
                 } else {
-                    return new AddDatasetMappingExecuteResult(addDatasetResult, addMappingDocumentResult, null);
-
+                    return new AddDatasetMappingExecuteResult(HttpURLConnection.HTTP_INTERNAL_ERROR, addDatasetResult, addMappingDocumentResult, null);
                 }
             } else {
-                return new AddDatasetMappingExecuteResult(addDatasetResult, addMappingDocumentResult, null);
-
+                return new AddDatasetMappingExecuteResult(HttpURLConnection.HTTP_INTERNAL_ERROR,addDatasetResult, addMappingDocumentResult, null);
             }
 
-
-
         } else {
-            return new AddDatasetMappingExecuteResult(addDatasetResult, null, null);
-
+            return new AddDatasetMappingExecuteResult(HttpURLConnection.HTTP_INTERNAL_ERROR, addDatasetResult, null, null);
         }
     }
 
