@@ -49,27 +49,27 @@ public class MappingPediaController {
     private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
-    public Greeting greetingGET(@RequestParam(value="name", defaultValue="World") String name) {
+    public Greeting getGreeting(@RequestParam(value="name", defaultValue="World") String name) {
         logger.info("/greeting(GET) ...");
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
     }
 
     @RequestMapping(value="/greeting/{name}", method= RequestMethod.PUT)
-    public Greeting greetingPUT(@PathVariable("name") String name) {
+    public Greeting putGreeting(@PathVariable("name") String name) {
         logger.info("/greeting(PUT) ...");
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
     }
 
-    @RequestMapping(value="/githubRepoURL", method= RequestMethod.GET)
+    @RequestMapping(value="/github_repo_url", method= RequestMethod.GET)
     public String getGitHubRepoURL() {
-        logger.info("/githubRepo(GET) ...");
+        logger.info("GET /github_repo_url ...");
         return MappingPediaEngine.mappingpediaProperties().githubRepository();
     }
 
-    @RequestMapping(value="/ckanDatasetList", method= RequestMethod.GET)
-    public ListResult getCKANDatasetList(@RequestParam(value="catalogUrl", required = false) String catalogUrl) {
+    @RequestMapping(value="/ckan_datasets", method= RequestMethod.GET)
+    public ListResult getCKANDatasets(@RequestParam(value="catalogUrl", required = false) String catalogUrl) {
         if(catalogUrl == null) {
             catalogUrl = MappingPediaEngine.mappingpediaProperties().ckanURL();
         }
@@ -77,32 +77,32 @@ public class MappingPediaController {
         return CKANUtility.getDatasetList(catalogUrl);
     }
 
-    @RequestMapping(value="/virtuosoEnabled", method= RequestMethod.GET)
+    @RequestMapping(value="/virtuoso_enabled", method= RequestMethod.GET)
     public String getVirtuosoEnabled() {
         logger.info("GET /virtuosoEnabled ...");
         return MappingPediaEngine.mappingpediaProperties().virtuosoEnabled() + "";
     }
 
-    @RequestMapping(value="/mappingpediaGraph", method= RequestMethod.GET)
-    public String getMappingPediaGraph() {
+    @RequestMapping(value="/mappingpedia_graph", method= RequestMethod.GET)
+    public String getMappingpediaGraph() {
         logger.info("/getMappingPediaGraph(GET) ...");
         return MappingPediaEngine.mappingpediaProperties().graphName();
     }
 
-    @RequestMapping(value="/ckanActionOrganizationCreate", method= RequestMethod.GET)
-    public String getCKANActionOrganizationCreate() {
+    @RequestMapping(value="/ckan_api_action_organization_create", method= RequestMethod.GET)
+    public String getCKANAPIActionOrganizationCreate() {
         logger.info("GET //ckanActionOrganizationCreate ...");
         return MappingPediaEngine.mappingpediaProperties().ckanActionOrganizationCreate();
     }
 
-    @RequestMapping(value="/ckanActionPackageCreate", method= RequestMethod.GET)
-    public String ckanActionPackageCreate() {
+    @RequestMapping(value="/ckan_api_action_package_create", method= RequestMethod.GET)
+    public String getCKANAPIActionPpackageCreate() {
         logger.info("GET //ckanActionPackageCreate ...");
         return MappingPediaEngine.mappingpediaProperties().ckanActionPackageCreate();
     }
 
-    @RequestMapping(value="/ckanActionResourceCreate", method= RequestMethod.GET)
-    public String getCKANActionResourceCreate() {
+    @RequestMapping(value="/ckan_api_action_resource_create", method= RequestMethod.GET)
+    public String getCKANAPIActionResourceCreate() {
         logger.info("GET //getCKANActionResourceCreate ...");
         return MappingPediaEngine.mappingpediaProperties().ckanActionResourceCreate();
     }
@@ -132,7 +132,7 @@ public class MappingPediaController {
         return null;
     }
 
-    @RequestMapping(value="/triplesMaps", method= RequestMethod.GET)
+    @RequestMapping(value="/triples_maps", method= RequestMethod.GET)
     public ListResult getTriplesMaps() {
         logger.info("/triplesMaps ...");
         ListResult listResult = MappingPediaEngine.getAllTriplesMaps();
@@ -142,7 +142,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/mappings", method= RequestMethod.GET)
-    public ListResult getMappingsByDatasetId(
+    public ListResult getMappings(
             @RequestParam(value="datasetId", defaultValue = "") String datasetId
     ) {
         logger.info("/findMappingDocumentsByDatasetId...");
@@ -162,7 +162,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-    public ListResult getAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,
+    public ListResult getOGDAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,
                                           @RequestParam(value="searchTerm", required = false) String searchTerm
     ) {
         logger.info("/ogd/annotations(GET) ...");
@@ -183,8 +183,9 @@ public class MappingPediaController {
 
 
 
+    //TODO REFACTOR THIS; MERGE /executions with /executions2
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
-    public ExecuteMappingResult executeMappingWithoutPathVariables(
+    public ExecuteMappingResult postExecutions(
             @RequestParam(value="organizationId", required = false) String organizationId
             , @RequestParam(value="datasetId", required = false) String datasetId
             , @RequestParam(value="datasetDistributionURL", required = false) String datasetDistributionURL
@@ -278,7 +279,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/executions/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
-    public ExecuteMappingResult executeMappingWithPathVariables(
+    public ExecuteMappingResult postExecutions(
             @PathVariable("organizationId") String organizationId
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
@@ -364,7 +365,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}", method= RequestMethod.POST)
-    public AddMappingDocumentResult addNewMappingDocumentWithoutDatasetId(
+    public AddMappingDocumentResult postMappings(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileRef
@@ -404,7 +405,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/mappings/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddMappingDocumentResult addNewMappingDocumentWithDatasetID(
+    public AddMappingDocumentResult postMappings(
             @PathVariable("organizationID") String organizationID
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
@@ -463,7 +464,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/mappings/{mappingpediaUsername}/{mappingDirectory}/{mappingFilename:.+}", method= RequestMethod.PUT)
-    public GeneralResult updateExistingMapping(
+    public GeneralResult putMappings(
             @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("mappingDirectory") String mappingDirectory
             , @PathVariable("mappingFilename") String mappingFilename
@@ -476,7 +477,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets_mappings_execute", method= RequestMethod.POST)
-    public AddDatasetMappingExecuteResult addNewDatasetAndMappings(
+    public AddDatasetMappingExecuteResult postDatastsMappingExecute(
             @PathVariable("organizationID") String organizationID
 
             , @RequestParam(value="dataset_title", required = false) String datasetTitle
@@ -614,7 +615,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets/{organizationID}", method= RequestMethod.POST)
-    public AddDatasetResult addNewDataset(
+    public AddDatasetResult postDatasets(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="datasetFile", required = false) MultipartFile datasetMultipartFile
             , @RequestParam(value="distribution_file", required = false) MultipartFile distributionMultipartFile
@@ -684,7 +685,7 @@ public class MappingPediaController {
 
     //LEGACY ENDPOINT, use /distributions/{organizationID}/{datasetID} instead
     @RequestMapping(value = "/datasets/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddDistributionResult addNewDataset(
+    public AddDistributionResult postDatasets(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
@@ -735,7 +736,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/distributions/{organizationID}/{datasetID}", method= RequestMethod.POST)
-    public AddDistributionResult addNewDistribution(
+    public AddDistributionResult postDistributions(
             @PathVariable("organizationID") String organizationID
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
@@ -790,7 +791,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
-    public GeneralResult addNewQuery(
+    public GeneralResult postQueries(
             @RequestParam("queryFile") MultipartFile queryFileRef
             , @PathVariable("mappingpediaUsername") String mappingpediaUsername
             , @PathVariable("datasetID") String datasetID
@@ -801,8 +802,8 @@ public class MappingPediaController {
     }
 
 
-    @RequestMapping(value = "/storeRDFFile")
-    public GeneralResult storeRDFFile(
+    @RequestMapping(value = "/rdf_file", method= RequestMethod.POST)
+    public GeneralResult postRDFFile(
             @RequestParam("rdfFile") MultipartFile fileRef
             , @RequestParam(value="graphURI") String graphURI)
     {
@@ -811,7 +812,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/ogd/utility/subclasses", method= RequestMethod.GET)
-    public ListResult getSubclassesDetail(
+    public ListResult getSubclassesDetails(
             @RequestParam(value="aClass") String aClass
     ) {
         logger.info("GET /ogd/utility/subclasses ...");
@@ -841,7 +842,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/ogd/instances", method= RequestMethod.GET)
-    public ListResult getInstances(@RequestParam(value="aClass") String aClass,
+    public ListResult getOGDInstances(@RequestParam(value="aClass") String aClass,
                                    @RequestParam(value="outputType", defaultValue = "0") String outputType,
                                    @RequestParam(value="inputType", defaultValue = "0") String inputType
 
