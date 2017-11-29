@@ -152,7 +152,12 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
     val response = Unirest.get(url)
       .basicAuth(githubUsername, githubAccessToken)
       .asJson();
-    response.getBody.getObject.getString("sha");
+    val responseStatus = response.getStatus
+    if(responseStatus >= 200 && responseStatus < 300) {
+      response.getBody.getObject.getString("sha");
+    } else {
+      null
+    }
   }
 
   def encodeAndPutFile(organizationId:String, datasetId:String, filename:String, message:String, file:File) = {

@@ -168,7 +168,57 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     response;
   }
 
-  def setLanguageForOrganizationDatasets(organizationId:String) = {
+
+
+  def updateDatasetLanguage(organizationId:String, datasetId:String, language:String) : Integer = {
+    val jsonObj = new JSONObject();
+
+    jsonObj.put("owner_org", organizationId);
+    jsonObj.put("name", datasetId);
+    jsonObj.put("language", language);
+    val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageUpdate
+    logger.info(s"Hitting endpoint: $uri");
+    logger.info(s"owner_org = $organizationId");
+    logger.info(s"name = $datasetId");
+    logger.info(s"language = $language");
+
+    val response = Unirest.post(uri)
+      .header("Authorization", this.authorizationToken)
+      .body(jsonObj)
+      .asJson();
+    response.getStatus
+
+  }
+
+  def getDatasets(organizationId:String) = {
+    val uri = s"${MappingPediaEngine.mappingpediaProperties.ckanActionOrganizationShow}?id=$organizationId&include_datasets=true"
+    logger.info(s"Hitting endpoint: $uri");
+
+    val response = Unirest.get(uri)
+      .header("Authorization", this.authorizationToken)
+      .asJson();
+    response
+  }
+
+  def updateDatasetLanguage(organizationId:String, language:String) : Integer = {
+    val getDatasetsResponse = this.getDatasets(organizationId)
+    val getDatasetsResponseStatus = getDatasetsResponse.getStatus
+    if(getDatasetsResponseStatus >= 200 && getDatasetsResponseStatus < 300) {
+      val packages = getDatasetsResponse.getBody.getObject.getJSONObject("result").getJSONArray("packages")
+      for(i <- 0 to packages.length() - 1) {
+        val pkg = packages.get(i)
+        val datasetId = pkg.asInstanceOf[JSONObject].getString("id")
+        logger.info(s"datasetId = $datasetId");
+
+        this.updateDatasetLanguage(organizationId, datasetId, language);
+      }
+      HttpURLConnection.HTTP_OK
+
+    } else {
+      HttpURLConnection.HTTP_INTERNAL_ERROR
+    }
+
+
 
   }
 }

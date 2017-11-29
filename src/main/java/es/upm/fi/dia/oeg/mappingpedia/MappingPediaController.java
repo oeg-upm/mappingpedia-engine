@@ -7,6 +7,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
 
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.DistributionController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController;
@@ -130,6 +133,19 @@ public class MappingPediaController {
 
         //return ckanUtility.createResource(file.getPath(), packageId);
         return null;
+    }
+
+    @RequestMapping(value="/dataset_language/{organizationId}", method= RequestMethod.POST)
+    public Integer postDatasetLanguage(
+            @PathVariable("organizationId") String organizationId
+            , @RequestParam(value="dataset_language", required = true) String datasetLanguage
+    ) {
+        logger.info("POST /dataset_language ...");
+        String ckanURL = MappingPediaEngine.mappingpediaProperties().ckanURL();
+        String ckanKey = MappingPediaEngine.mappingpediaProperties().ckanKey();
+
+        CKANUtility ckanClient = new CKANUtility(ckanURL, ckanKey);
+        return ckanClient.updateDatasetLanguage(organizationId, datasetLanguage);
     }
 
     @RequestMapping(value="/triples_maps", method= RequestMethod.GET)
@@ -625,7 +641,7 @@ public class MappingPediaController {
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
     )
     {
-        logger.info("[POST] /datasets/{mappingpediaUsername}");
+        logger.info("[POST] /datasets/{organizationID}");
         Organization organization = new Organization(organizationID);
 
         Dataset dataset = new Dataset(organization);
