@@ -48,7 +48,10 @@ class MappingPediaProperties(is:InputStream) extends Properties {
 
 	val ckanURL:String = this.getProperty("ckan.url")
 	val ckanActionOrganizationCreate:String=ckanURL + "/api/action/organization_create"
+	val ckanActionOrganizationShow:String=ckanURL + "/api/action/organization_show"
+
 	val ckanActionPackageCreate:String=ckanURL + "/api/action/package_create"
+	val ckanActionPackageUpdate:String=ckanURL + "/api/action/package_update"
 	val ckanActionResourceCreate:String=ckanURL + "/api/action/resource_create"
 
 

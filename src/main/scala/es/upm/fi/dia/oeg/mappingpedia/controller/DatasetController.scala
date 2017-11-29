@@ -34,12 +34,12 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     val manifestFileName = file.getName
     val organizationId = organization.dctIdentifier;
 
-    logger.info(s"storing manifest file for the dataset ${datasetId} on github ...")
     val addNewManifestCommitMessage = s"Add manifest file for dataset: $datasetId"
 
+    logger.info(s"storing manifest file for the dataset $datasetId on github ... ")
     val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
       , datasetId, manifestFileName, addNewManifestCommitMessage, file)
-    logger.info(s"Manifest file for dataset $datasetId stored on github ...")
+    logger.info(s"manifest file for the dataset $datasetId stored on github.")
     githubResponse
   }
 

@@ -6,7 +6,7 @@ mpids:dataset-$datasetID a mpv:Dataset ;
     dcterms:modified "$datasetModified"^^xsd:dateTime;
     dcterms:identifier "$datasetID" ;
     dcat:keyword "$datasetKeywords" ;
-    #dcterms:language <http://id.loc.gov/vocabulary/iso639-1/en> ;
+    dcterms:language <http://id.loc.gov/vocabulary/iso639-1/$datasetLanguage> ;
     mpv:datasetIdentifier "dataset-$datasetID" ;
     #mpv:publisherId mpi:user-1 ;
     #mpv:datasetLanguage <http://id.loc.gov/vocabulary/iso639-1/en> ;

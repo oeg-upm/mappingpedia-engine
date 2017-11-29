@@ -106,11 +106,12 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
       this.githubClient.getAccessURL(addDistributionFileGitHubResponse)
     }
     val distributionDownloadURL = this.githubClient.getDownloadURL(distributionAccessURL);
-    if(distributionDownloadURL != null) {
+    val addDistributionFileGitHubResponseStatus:Integer = if(addDistributionFileGitHubResponse == null) { null }
+    else { addDistributionFileGitHubResponse.getStatus }
+
+    if(addDistributionFileGitHubResponseStatus >= 200 && addDistributionFileGitHubResponseStatus < 300 && distributionDownloadURL != null) {
       distribution.sha = this.githubClient.getSHA(distributionAccessURL);
     }
-    val addDatasetFileGitHubResponseStatus:Integer = if(addDistributionFileGitHubResponse == null) { null }
-    else { addDistributionFileGitHubResponse.getStatus }
 
     val addDatasetFileGitHubResponseStatusText = if(addDistributionFileGitHubResponse == null) { null }
     else { addDistributionFileGitHubResponse.getStatusText }
@@ -313,7 +314,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
       , addManifestFileGitHubResponseStatus, addManifestFileGitHubResponseStatusText
 
       //, distributionAccessURL, distributionDownloadURL, distribution.sha
-      , addDatasetFileGitHubResponseStatus, addDatasetFileGitHubResponseStatusText
+      , addDistributionFileGitHubResponseStatus, addDatasetFileGitHubResponseStatusText
 
       , addManifestVirtuosoResponse
 
