@@ -309,7 +309,13 @@ object MappingPediaUtility {
       val normalizedTermSingular = originalTerm.toLowerCase.replaceAll(" ", "");
       val normalizedTermPlural1 = normalizedTermSingular + "s"
       val normalizedTermPlural2 = normalizedTermSingular + "es"
-      List(normalizedTermSingular, normalizedTermPlural1, normalizedTermPlural2)
+      val normalizedTermPlural3 = if(normalizedTermSingular.endsWith("y")) {
+        val plural = normalizedTermSingular.substring(0, normalizedTermSingular.length-1) + "ies"
+        logger.info(s"$normalizedTermSingular  -- $plural")
+        plural
+      } else { normalizedTermSingular }
+
+      List(normalizedTermSingular, normalizedTermPlural1, normalizedTermPlural2, normalizedTermPlural3)
     } else {
       Nil
     }
