@@ -1,24 +1,22 @@
 package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.net.HttpURLConnection
-import java.util.{Date, UUID}
+import java.util.{Date}
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
-import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, MappingPediaEngine, MappingPediaRunner}
+import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
-import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
-import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, JenaClient, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility._
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
+//import virtuoso.jena.driver.{VirtuosoQueryExecutionFactory}
 
 import scala.collection.JavaConversions._
-import scala.io.Source
 
-class MappingDocumentController(val githubClient:GitHubUtility) {
+class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def storeMappingDocumentOnGitHub(mappingDocument:MappingDocument, dataset: Dataset) = {
@@ -200,6 +198,76 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
 
 
   }
+
+  def findAllMappedClasses(prefix:String): ListResult = {
+
+    //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
+      "$prefix" -> prefix
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findAllMappedClasses.rq")
+
+    logger.info(s"queryString = $queryString");
+    /*
+    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+    */
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+
+    var results: List[String] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      logger.info("Obtaining result from executing query=\n" + queryString)
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+        val mappedClass = qs.get("mappedClass").toString;
+        results = mappedClass :: results;
+      }
+    } finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+
+
+  }
+
+  def findAllMappedProperties(prefix:String): ListResult = {
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
+      "$prefix" -> prefix
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findAllMappedProperties.rq")
+
+    logger.info(s"queryString = $queryString");
+    /*
+    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+    */
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+
+
+    var results: List[String] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      logger.info("Obtaining result from executing query=\n" + queryString)
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+        val mappedProperty = qs.get("mappedProperty").toString;
+        results = mappedProperty :: results;
+      }
+    } finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
+
 }
 
 object MappingDocumentController {
@@ -266,38 +334,9 @@ object MappingDocumentController {
 
   }
 
-  def findAllMappedClasses(prefix:String): ListResult = {
-
-    //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
-      "$prefix" -> prefix
-    );
-
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
-      mapValues, "templates/findAllMappedClasses.rq")
-
-    logger.info(s"queryString = $queryString");
-    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
-      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
-
-    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
-    var results: List[String] = List.empty;
-    try {
-      val rs = qexec.execSelect
-      logger.info("Obtaining result from executing query=\n" + queryString)
-      while (rs.hasNext) {
-        val qs = rs.nextSolution
-        val mappedClass = qs.get("mappedClass").toString;
-        results = mappedClass :: results;
-      }
-    } finally qexec.close
-
-    val listResult = new ListResult(results.length, results);
-    listResult
 
 
-  }
+
 
   def findMappingDocumentsByMappedClass(mappedClass: String): ListResult = {
     //logger.info("findMappingDocumentsByMappedClass:" + mappedClass)

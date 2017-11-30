@@ -18,10 +18,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
-import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
-import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
-import es.upm.fi.dia.oeg.mappingpedia.utility.JenaClient;
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.jena.ontology.OntModel;
 import org.springframework.web.bind.annotation.*;
@@ -45,10 +42,11 @@ public class MappingPediaController {
     private GitHubUtility githubClient = MappingPediaEngine.githubClient();
     private CKANUtility ckanClient = MappingPediaEngine.ckanClient();
     private JenaClient jenaClient = MappingPediaEngine.jenaClient();
+    private VirtuosoClient virtuosoClient = MappingPediaEngine.virtuosoClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
-    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient);
+    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient);
     private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
@@ -178,16 +176,26 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/mapped_classes", method= RequestMethod.GET)
-    public ListResult getMappedClasses(@RequestParam(value="prefix", required = false, defaultValue = "") String prefix
+    public ListResult getMappedClasses(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
     ) {
         logger.info("/mapped_classes ...");
-        ListResult listResult = MappingDocumentController.findAllMappedClasses(prefix);
+        logger.info("prefix = " + prefix);
+        ListResult listResult = this.mappingDocumentController.findAllMappedClasses(prefix);
         logger.info("mapped_classes result = " + listResult);
 
         return listResult;
     }
 
+    @RequestMapping(value="/mapped_properties", method= RequestMethod.GET)
+    public ListResult getMappedProperty(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
+    ) {
+        logger.info("/mapped_properties ...");
+        logger.info("prefix = " + prefix);
+        ListResult listResult = this.mappingDocumentController.findAllMappedProperties(prefix);
+        logger.info("mapped_properties result = " + listResult);
 
+        return listResult;
+    }
 
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
     public ListResult getOGDAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,

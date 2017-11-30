@@ -8,5 +8,5 @@ SELECT DISTINCT ?mappedClass
 FROM <$graphURL>
 WHERE {
    ?sm rr:class ?mappedClass .
-   FILTER regex(str(?mappedClass), "schema.org", "i")
+   FILTER regex(str(?mappedClass), "$prefix", "i")
 }
