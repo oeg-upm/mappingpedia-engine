@@ -14,8 +14,10 @@ class JenaClient(val ontModel:OntModel) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   val mapNormalizedTerms:Map[String, String] = {
-    val subclassesLocalNames = this.getSubclassesLocalNames("http://schema.org/Thing").results.asInstanceOf[Iterable[String]];
-    subclassesLocalNames.flatMap(subclassesLocalName => {
+    val subclassesLocalNames:List[String] = this.getSubclassesSummary("Thing").results.asInstanceOf[List[String]];
+    val subclassesURIs:List[String] = this.getSubclassesSummary("http://schema.org/Thing").results.asInstanceOf[List[String]];
+
+    (subclassesLocalNames:::subclassesURIs).distinct.flatMap(subclassesLocalName => {
       val normalizedLocalNames = MappingPediaUtility.normalizeTerm(subclassesLocalName);
       normalizedLocalNames.map(normalizedLocalName => normalizedLocalName -> subclassesLocalName)
     }).toMap
@@ -45,17 +47,8 @@ class JenaClient(val ontModel:OntModel) {
   }
 
   def getSuperclasses(aClass:String) : ListResult = {
-    logger.info(s"aClass = $aClass");
-    val isLocalName = if(aClass.contains("/")) { false } else { true }
-    logger.info(s"isLocalName = $isLocalName");
-    val classIRI = if(isLocalName) {
-      "http://schema.org/" + aClass
-    } else {
-      aClass
-    }
-    logger.info(s"classIRI = $classIRI");
-
-    val resource = ontModel.getResource(classIRI);
+    val classURI = MappingPediaUtility.getClassURI(aClass, "http://schema.org/");
+    val resource = ontModel.getResource(classURI);
     val cls = resource.as(classOf[OntClass])
     this.getSuperclasses(cls);
 
@@ -74,15 +67,7 @@ class JenaClient(val ontModel:OntModel) {
   }
 
   def getSubclassesDetail(pClass:String) : ListResult  = {
-    logger.info(s"pClass = $pClass");
-    val isLocalName = if(pClass.contains("/")) { false } else { true }
-    logger.info(s"isLocalName = $isLocalName");
-    val classIRI = if(isLocalName) {
-      "http://schema.org/" + pClass
-    } else {
-      pClass
-    }
-    logger.info(s"classIRI = $classIRI");
+    val classURI = MappingPediaUtility.getClassURI(pClass, "http://schema.org/");
 
 //    val normalizedClasses = MappingPediaUtility.normalizeTerm(classIRI);
 //    logger.info(s"normalizedClasses = $normalizedClasses");
@@ -92,7 +77,7 @@ class JenaClient(val ontModel:OntModel) {
       try {
         //val schemaClass = this.mapNormalizedTerms(normalizedClass);
         //logger.info(s"schemaClass = $schemaClass");
-        val resource = ontModel.getResource(classIRI);
+        val resource = ontModel.getResource(classURI);
         val cls = resource.as(classOf[OntClass])
         val result = this.getSubclassesDetail(cls).results.asInstanceOf[List[String]];
         val listResult = new ListResult(result.size, result);
@@ -107,7 +92,7 @@ class JenaClient(val ontModel:OntModel) {
 
   }
 
-  def getSubclassesLocalNames(aClass:String) : ListResult = {
+  def getSubclassesSummary(aClass:String) : ListResult = {
     val isLocalName = if(aClass.contains("/")) { false } else { true }
 
     val subclassesDetail= this.getSubclassesDetail(aClass)

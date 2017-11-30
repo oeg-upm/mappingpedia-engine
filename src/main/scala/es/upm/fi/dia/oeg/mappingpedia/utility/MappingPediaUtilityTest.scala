@@ -13,7 +13,7 @@ object MappingPediaUtilityTest {
   val jenaClient = new JenaClient(model)
 
   val aClass = "MedicalBusiness"
-  val subclasses = jenaClient.getSubclassesLocalNames(aClass);
+  val subclasses = jenaClient.getSubclassesSummary(aClass);
   println("subclasses = " + subclasses)
 
 }

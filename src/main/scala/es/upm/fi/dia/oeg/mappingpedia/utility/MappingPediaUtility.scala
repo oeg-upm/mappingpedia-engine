@@ -314,4 +314,14 @@ object MappingPediaUtility {
       Nil
     }
   }
+
+  def getClassURI(pClass:String, defaultNamespace:String) = {
+    val isLocalName = if(pClass.contains("/")) { false } else { true }
+    val classIRI = if(isLocalName) {
+      defaultNamespace + pClass
+    } else {
+      pClass
+    }
+    classIRI
+  }
 }

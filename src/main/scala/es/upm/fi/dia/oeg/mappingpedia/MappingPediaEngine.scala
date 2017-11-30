@@ -306,18 +306,18 @@ object MappingPediaEngine {
 
 
 
-	def getSubclassesLocalNames(aClass:String) : ListResult = {
-		logger.info(s"jenaClient.mapNormalizedTerms = ${jenaClient.mapNormalizedTerms}")
+	def getSubclassesSummary(pClass:String) : ListResult = {
+		//val classURI = MappingPediaUtility.getClassURI(pClass, "http://schema.org/");
 
-		val normalizedClasses = MappingPediaUtility.normalizeTerm(aClass);
+		val normalizedClasses = MappingPediaUtility.normalizeTerm(pClass).distinct;
 		logger.info(s"normalizedClasses = $normalizedClasses");
 
 		val resultAux:List[String] = normalizedClasses.flatMap(normalizedClass => {
 			logger.info(s"normalizedClass = $normalizedClass");
 			val schemaClass:String = jenaClient.mapNormalizedTerms.getOrElse(normalizedClass, normalizedClass);
 			logger.info(s"schemaClass = $schemaClass");
-			jenaClient.getSubclassesLocalNames(schemaClass).results.asInstanceOf[List[String]]
-		});
+			jenaClient.getSubclassesSummary(schemaClass).results.asInstanceOf[List[String]]
+		}).distinct;
 		new ListResult(resultAux.size, resultAux)
 	}
 
