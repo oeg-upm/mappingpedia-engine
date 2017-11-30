@@ -217,8 +217,9 @@ object MappingDocumentController {
     var results: List[MappingDocument] = List.empty;
     try {
       val rs = qexec.execSelect
+      logger.info("Obtaining result from executing query=\n" + queryString)
       while (rs.hasNext) {
-        logger.info("Obtaining result from executing query=\n" + queryString)
+
         val qs = rs.nextSolution
         val mdID= qs.get("mdID").toString;
         val md = new MappingDocument(mdID);
@@ -262,6 +263,39 @@ object MappingDocumentController {
       mapValues, "templates/findAllMappingDocuments.rq")
 
     MappingDocumentController.findMappingDocuments(queryString);
+
+  }
+
+  def findAllMappedClasses(prefix:String): ListResult = {
+
+    //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
+      "$prefix" -> prefix
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findAllMappedClasses.rq")
+
+    logger.info(s"queryString = $queryString");
+    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+
+    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+    var results: List[String] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      logger.info("Obtaining result from executing query=\n" + queryString)
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+        val mappedClass = qs.get("mappedClass").toString;
+        results = mappedClass :: results;
+      }
+    } finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+
 
   }
 

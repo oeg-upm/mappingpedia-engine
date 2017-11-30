@@ -1,0 +1,12 @@
+prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
+prefix rr: <http://www.w3.org/ns/r2rml#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dcterms: <http://purl.org/dc/elements/1.1/>
+
+SELECT DISTINCT ?mappedClass
+FROM <$graphURL>
+WHERE {
+   ?sm rr:class ?mappedClass .
+   FILTER regex(str(?mappedClass), "schema.org", "i")
+}

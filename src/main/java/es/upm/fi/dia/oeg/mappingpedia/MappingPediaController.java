@@ -177,6 +177,18 @@ public class MappingPediaController {
         return listResult;
     }
 
+    @RequestMapping(value="/mapped_classes", method= RequestMethod.GET)
+    public ListResult getMappedClasses(@RequestParam(value="prefix", required = false, defaultValue = "") String prefix
+    ) {
+        logger.info("/mapped_classes ...");
+        ListResult listResult = MappingDocumentController.findAllMappedClasses(prefix);
+        logger.info("mapped_classes result = " + listResult);
+
+        return listResult;
+    }
+
+
+
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
     public ListResult getOGDAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,
                                           @RequestParam(value="searchTerm", required = false) String searchTerm
