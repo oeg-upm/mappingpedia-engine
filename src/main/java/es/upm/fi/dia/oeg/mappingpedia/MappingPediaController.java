@@ -837,7 +837,7 @@ public class MappingPediaController {
     ) {
         logger.info("GET /ogd/utility/subclassesSummary ...");
         logger.info("aClass = " + aClass);
-        ListResult result = MappingPediaEngine.getSubclassesLocalNames(aClass) ;
+        ListResult result = MappingPediaEngine.getSubclassesSummary(aClass) ;
         //logger.info("result = " + result);
         return result;
     }
@@ -846,7 +846,7 @@ public class MappingPediaController {
     public ListResult getSuperclassesSummary(@RequestParam(value="aClass") String aClass) {
         logger.info("GET /ogd/utility/superclassesSummary ...");
         logger.info("aClass = " + aClass);
-        ListResult result = jenaClient.getSuperclasses(aClass, ontModel);
+        ListResult result = jenaClient.getSuperclasses(aClass);
         return result;
     }
 

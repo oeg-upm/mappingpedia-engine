@@ -281,7 +281,7 @@ object MappingDocumentController {
 
   def findMappingDocumentsByMappedSubClass(aClass: String, jenaClient: JenaClient): ListResult = {
     val subclassesListResult = jenaClient.getSubclassesDetail(
-      aClass, MappingPediaEngine.ontologyModel);
+      aClass);
     logger.info(s"subclassesListResult = subclassesListResult")
 
     val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
