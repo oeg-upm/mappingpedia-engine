@@ -303,4 +303,15 @@ object MappingPediaUtility {
     }
     (fileName:String, fileContent:String);
   }
+
+  def normalizeTerm(originalTerm:String) : List[String] = {
+    if(originalTerm != null) {
+      val normalizedTermSingular = originalTerm.toLowerCase.replaceAll(" ", "");
+      val normalizedTermPlural1 = normalizedTermSingular + "s"
+      val normalizedTermPlural2 = normalizedTermSingular + "es"
+      List(normalizedTermSingular, normalizedTermPlural1, normalizedTermPlural2)
+    } else {
+      Nil
+    }
+  }
 }
