@@ -235,28 +235,27 @@ public class MappingPediaController {
     //TODO REFACTOR THIS; MERGE /executions with /executions2
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
     public ExecuteMappingResult postExecutions(
-            @RequestParam(value="organizationId", required = false) String organizationId
-            , @RequestParam(value="datasetId", required = false) String datasetId
-            , @RequestParam(value="datasetDistributionURL", required = false) String datasetDistributionURL
+            @RequestParam(value="organization_id", required = false) String organizationId
+            , @RequestParam(value="dataset_id", required = false) String datasetId
+            //, @RequestParam(value="datasetDistributionURL", required = false) String datasetDistributionURL
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
-            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
+            , @RequestParam(value="distribution_download_url", required = true) String distributionDownloadURL
 
-            , @RequestParam(value="queryFile", required = false) String queryFile
-            , @RequestParam(value="outputFilename", required = false) String outputFilename
-            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
-            , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
+            , @RequestParam(value="query_file", required = false) String queryFile
+            , @RequestParam(value="output_filename", required = false) String outputFilename
+            , @RequestParam(value="mapping_language", required = false, defaultValue="r2rml") String mappingLanguage
+            , @RequestParam(value="field_separator", required = false) String fieldSeparator
 
-            , @RequestParam(value="mappingURL", required = false) String mappingURL
             , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
 
-            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="distribution_mediatype", required = false, defaultValue="text/csv") String distributionMediaType
 
-            , @RequestParam(value="dbUserName", required = false) String dbUserName
-            , @RequestParam(value="dbPassword", required = false) String dbPassword
-            , @RequestParam(value="dbName", required = false) String dbName
+            , @RequestParam(value="db_username", required = false) String dbUserName
+            , @RequestParam(value="db_password", required = false) String dbPassword
+            , @RequestParam(value="db_name", required = false) String dbName
             , @RequestParam(value="jdbc_url", required = false) String jdbc_url
-            , @RequestParam(value="databaseDriver", required = false) String databaseDriver
-            , @RequestParam(value="databaseType", required = false) String databaseType
+            , @RequestParam(value="database_driver", required = false) String databaseDriver
+            , @RequestParam(value="database_type", required = false) String databaseType
     )
     {
         logger.info("POST /executions2");
@@ -275,11 +274,8 @@ public class MappingPediaController {
             dataset = new Dataset(organization, datasetId);
         }
         Distribution distribution = new Distribution(dataset);
-        if(distributionDownloadURL != null) {
-            distribution.dcatDownloadURL_$eq(distributionDownloadURL);
-        } else {
-            distribution.dcatDownloadURL_$eq(datasetDistributionURL);
-        }
+
+        distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatAccessURL_$eq(distributionAccessURL);
 
         if(fieldSeparator != null) {
@@ -291,11 +287,7 @@ public class MappingPediaController {
 
         MappingDocument md = new MappingDocument();
         md.mappingLanguage_$eq(mappingLanguage);
-        if(mappingDocumentDownloadURL != null) {
-            md.setDownloadURL(mappingDocumentDownloadURL);
-        } else {
-            md.setDownloadURL(mappingURL);
-        }
+        md.setDownloadURL(mappingDocumentDownloadURL);
 
 
         MappingExecution mappingExecution = new MappingExecution(md, dataset);
