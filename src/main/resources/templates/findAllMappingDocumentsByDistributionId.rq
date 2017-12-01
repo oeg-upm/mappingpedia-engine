@@ -23,6 +23,6 @@ WHERE {
         ?distribution dcterms:identifier ?distributionId .
         ?distribution dcat:accessURL ?distributionAccessURL .
         ?distribution mpv:sha ?distributionSHA .
-    FILTER regex(str(?distribution), "$distributionId", "i")
+    FILTER regex(str(?distributionId), "$distributionId", "i")
 }
 ORDER BY ASC(?dateSubmitted)

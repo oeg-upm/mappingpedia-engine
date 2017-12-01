@@ -28,5 +28,7 @@ class AddDistributionResult (val errorCode:Integer, val status:String, distribut
     def getCKAN_store_resource_status = this.ckanStoreResourceStatus
 
     //def getDistributionId = this.ckanResourceId;
-    def getDistribution_id = distribution.ckanResourceId
+    def getDistribution_id = distribution.dctIdentifier
+    def getCKAN_resource_id = distribution.ckanResourceId
+
 }

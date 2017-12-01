@@ -13,14 +13,15 @@ import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, JenaClient, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility._
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory, MorphRDBProperties, MorphRDBRunnerFactory}
 
 import scala.collection.JavaConversions._
 
-class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility) {
+class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val mappingDocumentController:MappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient);
 
   @throws(classOf[Exception])
   def executeMapping(
@@ -300,7 +301,8 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     }).asInstanceOf[Iterable[MappingDocument]];
     */
 
-    val mappingDocuments = MappingDocumentController.findMappingDocumentsByMappedSubClass(aClass, jenaClient).results
+
+    val mappingDocuments = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(aClass, jenaClient).results
 
     var executedMappingDocuments:List[(String, String)]= Nil;
 

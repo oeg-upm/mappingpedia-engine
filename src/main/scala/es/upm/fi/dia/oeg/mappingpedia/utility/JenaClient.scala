@@ -25,7 +25,7 @@ class JenaClient(val ontModel:OntModel) {
 
 
   def getSubclassesDetail(cls:OntClass) : ListResult = {
-    logger.info("Retrieving subclasses of = " + cls.getURI)
+    //logger.info("Retrieving subclasses of = " + cls.getURI)
     val clsSubClasses:List[OntClass] = cls.listSubClasses(false).toList.toList;
 
     val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;

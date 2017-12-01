@@ -18,10 +18,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
-import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
-import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
-import es.upm.fi.dia.oeg.mappingpedia.utility.JenaClient;
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.jena.ontology.OntModel;
 import org.springframework.web.bind.annotation.*;
@@ -45,11 +42,12 @@ public class MappingPediaController {
     private GitHubUtility githubClient = MappingPediaEngine.githubClient();
     private CKANUtility ckanClient = MappingPediaEngine.ckanClient();
     private JenaClient jenaClient = MappingPediaEngine.jenaClient();
+    private VirtuosoClient virtuosoClient = MappingPediaEngine.virtuosoClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
-    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient);
-    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient);
+    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient);
+    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient, virtuosoClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
     public Greeting getGreeting(@RequestParam(value="name", defaultValue="World") String name) {
@@ -162,12 +160,18 @@ public class MappingPediaController {
             @RequestParam(value="dataset_id", defaultValue = "", required = false) String datasetId
             , @RequestParam(value="distribution_id", defaultValue = "", required = false) String distributionId
     ) {
-        logger.info("/findMappingDocumentsByDatasetId...");
+        logger.info("dataset_id = " + datasetId);
+        logger.info("distribution_id = " + distributionId);
+
         ListResult listResult = null;
-        if(datasetId != null) {
-             listResult = MappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
-        } else if(distributionId != null) {
-             listResult = MappingDocumentController.findMappingDocumentsByDistributionId(datasetId);
+        if(!"".equalsIgnoreCase(datasetId.trim())) {
+            logger.info("/findMappingDocumentsByDatasetId...");
+
+            listResult = this.mappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
+        } else if(!"".equalsIgnoreCase(distributionId.trim())) {
+            logger.info("/findMappingDocumentsByDistributionId...");
+
+            listResult = this.mappingDocumentController.findMappingDocumentsByDistributionId(distributionId);
         }
 
         logger.info("findMappingDocumentsByDatasetId result = " + listResult);
@@ -184,6 +188,28 @@ public class MappingPediaController {
         return listResult;
     }
 
+    @RequestMapping(value="/mapped_classes", method= RequestMethod.GET)
+    public ListResult getMappedClasses(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
+    ) {
+        logger.info("/mapped_classes ...");
+        logger.info("prefix = " + prefix);
+        ListResult listResult = this.mappingDocumentController.findAllMappedClasses(prefix);
+        logger.info("mapped_classes result = " + listResult);
+
+        return listResult;
+    }
+
+    @RequestMapping(value="/mapped_properties", method= RequestMethod.GET)
+    public ListResult getMappedProperty(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
+    ) {
+        logger.info("/mapped_properties ...");
+        logger.info("prefix = " + prefix);
+        ListResult listResult = this.mappingDocumentController.findAllMappedProperties(prefix);
+        logger.info("mapped_properties result = " + listResult);
+
+        return listResult;
+    }
+
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
     public ListResult getOGDAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,
                                           @RequestParam(value="searchTerm", required = false) String searchTerm
@@ -193,11 +219,11 @@ public class MappingPediaController {
         logger.info("searchTerm = " + searchTerm);
         if("subclass".equalsIgnoreCase(searchType)) {
             logger.info("get all mapping documents by mapped class and its subclasses ...");
-            ListResult listResult = MappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm, jenaClient);
+            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm, jenaClient);
             //logger.info("listResult = " + listResult);
             return listResult;
         } else {
-            ListResult listResult = MappingDocumentController.findMappingDocuments(searchType, searchTerm);
+            ListResult listResult = this.mappingDocumentController.findMappingDocuments(searchType, searchTerm);
             //logger.info("listResult = " + listResult);
             return listResult;
         }

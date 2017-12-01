@@ -1,24 +1,20 @@
 package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.net.HttpURLConnection
-import java.util.{Date, UUID}
+import java.util.Date
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
-import es.upm.fi.dia.oeg.mappingpedia.{Application, MappingPediaConstant, MappingPediaEngine, MappingPediaRunner}
+import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
-import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
-import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, JenaClient, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility._
 import org.springframework.web.multipart.MultipartFile
-import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
 
 import scala.collection.JavaConversions._
-import scala.io.Source
 
-class MappingDocumentController(val githubClient:GitHubUtility) {
+class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def storeMappingDocumentOnGitHub(mappingDocument:MappingDocument, dataset: Dataset) = {
@@ -200,25 +196,231 @@ class MappingDocumentController(val githubClient:GitHubUtility) {
 
 
   }
-}
 
-object MappingDocumentController {
-  val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  //val githubClient = MappingPediaEngine.githubClient;
+  def findAllMappedClasses(): ListResult = {
+    this.findAllMappedClasses("http://schema.org")
+  }
 
-  def findMappingDocuments(queryString: String): ListResult = {
-    logger.info(s"queryString = $queryString");
+  def findAllMappedClasses(prefix:String): ListResult = {
+
+    //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
+      "$prefix" -> prefix
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findAllMappedClasses.rq")
+
+    //logger.info(s"queryString = $queryString");
+    /*
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
-
-
-
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+    */
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+
+    var results: List[String] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      //logger.info("Obtaining result from executing query=\n" + queryString)
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+        val mappedClass = qs.get("mappedClass").toString;
+        results = mappedClass :: results;
+      }
+    } finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
+
+  def findAllMappedProperties(prefix:String): ListResult = {
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
+      "$prefix" -> prefix
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findAllMappedProperties.rq")
+
+    //logger.info(s"queryString = $queryString");
+    /*
+    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+    */
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+
+
+    var results: List[String] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      //logger.info("Obtaining result from executing query=\n" + queryString)
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+        val mappedProperty = qs.get("mappedProperty").toString;
+        results = mappedProperty :: results;
+      }
+    } finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
+
+
+  def findAllMappingDocuments(): ListResult = {
+
+    //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findAllMappingDocuments.rq")
+
+    this.findMappingDocuments(queryString);
+
+  }
+
+  def findMappingDocuments(searchType: String, searchTerm: String): ListResult = {
+    val result: ListResult = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
+
+      val listResult = this.findMappingDocumentsByMappedClass(searchTerm)
+      listResult
+    } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_PROPERTY.equals(searchType) && searchTerm != null) {
+      logger.info("findMappingDocumentsByMappedProperty:" + searchTerm)
+      val listResult = this.findMappingDocumentsByMappedProperty(searchTerm)
+      listResult
+    } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_TABLE.equals(searchType) && searchTerm != null) {
+      logger.info("findMappingDocumentsByMappedTable:" + searchTerm)
+      val listResult = this.findMappingDocumentsByMappedTable(searchTerm)
+      listResult
+    } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_COLUMN.equals(searchType) && searchTerm != null) {
+      logger.info("findMappingDocumentsByMappedColumn:" + searchTerm)
+      val listResult = this.findMappingDocumentsByMappedColumn(searchTerm)
+      listResult
+    } else {
+      logger.info("findAllMappingDocuments")
+      val listResult = this.findAllMappingDocuments
+      listResult
+    }
+    //logger.info("result = " + result)
+
+    result;
+  }
+
+  def findMappingDocumentsByDatasetId(datasetId: String): ListResult = {
+    logger.info("findMappingDocumentsByDatasetId:" + datasetId)
+    val queryTemplateFile = "templates/findAllMappingDocumentsByDatasetId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$datasetId" -> datasetId
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByMappedClass(mappedClass: String): ListResult = {
+    //logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
+    val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$mappedClass" -> mappedClass
+      //, "$mappedProperty" -> mappedProperty
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByMappedSubClass(aClass: String, jenaClient: JenaClient): ListResult = {
+    val classURI = MappingPediaUtility.getClassURI(aClass);
+
+    val normalizedClassURI = jenaClient.mapNormalizedTerms.getOrElse(classURI, classURI);
+
+    val subclassesURIs:List[String] = jenaClient.getSubclassesSummary(normalizedClassURI).results.asInstanceOf[List[String]];
+
+    val allMappedClasses:List[String] = this.findAllMappedClasses().results.asInstanceOf[List[String]]
+
+    val intersectedClasses = subclassesURIs.intersect(allMappedClasses);
+    
+    val mappingDocuments = intersectedClasses.flatMap(intersectedClass => {
+      this.findMappingDocumentsByMappedClass(intersectedClass).getResults();
+    }).asInstanceOf[Iterable[MappingDocument]];
+
+    val listResult = new ListResult(mappingDocuments.size, mappingDocuments)
+    listResult
+  }
+
+  def findMappingDocumentsByDistributionId(distributionId: String): ListResult = {
+    logger.info("findMappingDocumentsByDistributionId:" + distributionId)
+    val queryTemplateFile = "templates/findAllMappingDocumentsByDistributionId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$distributionId" -> distributionId
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByMappedProperty(mappedProperty: String): ListResult = {
+    val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$mappedProperty" -> mappedProperty
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByMappedColumn(mappedColumn: String): ListResult = {
+    val queryTemplateFile = "templates/findTriplesMapsByMappedColumn.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$mappedColumn" -> mappedColumn
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByMappedTable(mappedTable: String): ListResult = {
+    val queryTemplateFile = "templates/findTriplesMapsByMappedTable.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$mappedTable" -> mappedTable
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocuments(queryString: String): ListResult = {
+    //logger.info(s"queryString = $queryString");
+    /*
+    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+    */
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+    logger.info(s"queryString = $queryString")
+
     var results: List[MappingDocument] = List.empty;
     try {
       val rs = qexec.execSelect
+      //logger.info("Obtaining result from executing query=\n" + queryString)
       while (rs.hasNext) {
-        logger.info("Obtaining result from executing query=\n" + queryString)
+
         val qs = rs.nextSolution
         val mdID= qs.get("mdID").toString;
         val md = new MappingDocument(mdID);
@@ -251,137 +453,27 @@ object MappingDocumentController {
     listResult
   }
 
-  def findAllMappingDocuments(): ListResult = {
+}
 
-    //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-    );
+object MappingDocumentController {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  //val githubClient = MappingPediaEngine.githubClient;
 
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
-      mapValues, "templates/findAllMappingDocuments.rq")
 
-    MappingDocumentController.findMappingDocuments(queryString);
 
-  }
 
-  def findMappingDocumentsByMappedClass(mappedClass: String): ListResult = {
-    //logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
-    val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
 
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$mappedClass" -> mappedClass
-      //, "$mappedProperty" -> mappedProperty
-    );
 
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    MappingDocumentController.findMappingDocuments(queryString);
-  }
 
-  def findMappingDocumentsByMappedSubClass(aClass: String, jenaClient: JenaClient): ListResult = {
-    val subclassesListResult = jenaClient.getSubclassesDetail(
-      aClass);
-    logger.info(s"subclassesListResult = subclassesListResult")
 
-    val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
-      result => result.asInstanceOf[OntologyClass].getURI).toList.distinct
-    val mappingDocuments = subclassesURIs.flatMap(subclassURI => {
-      MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults();
-    }).asInstanceOf[Iterable[MappingDocument]];
 
-    val listResult = new ListResult(mappingDocuments.size, mappingDocuments)
-    listResult
-  }
 
-  def findMappingDocumentsByDatasetId(datasetId: String): ListResult = {
-    logger.info("findMappingDocumentsByDatasetId:" + datasetId)
-    val queryTemplateFile = "templates/findAllMappingDocumentsByDatasetId.rq";
 
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$datasetId" -> datasetId
-    );
 
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    MappingDocumentController.findMappingDocuments(queryString);
-  }
 
-  def findMappingDocumentsByDistributionId(distributionId: String): ListResult = {
-    logger.info("findMappingDocumentsByDistributionId:" + distributionId)
-    val queryTemplateFile = "templates/findAllMappingDocumentsByDistributionId.rq";
 
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$distributionId" -> distributionId
-    );
 
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    MappingDocumentController.findMappingDocuments(queryString);
-  }
 
-  def findMappingDocumentsByMappedProperty(mappedProperty: String): ListResult = {
-    val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
-
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$mappedProperty" -> mappedProperty
-    );
-
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    MappingDocumentController.findMappingDocuments(queryString);
-  }
-
-  def findMappingDocumentsByMappedColumn(mappedColumn: String): ListResult = {
-    val queryTemplateFile = "templates/findTriplesMapsByMappedColumn.rq";
-
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$mappedColumn" -> mappedColumn
-    );
-
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    MappingDocumentController.findMappingDocuments(queryString);
-  }
-
-  def findMappingDocumentsByMappedTable(mappedTable: String): ListResult = {
-    val queryTemplateFile = "templates/findTriplesMapsByMappedTable.rq";
-
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$mappedTable" -> mappedTable
-    );
-
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    MappingDocumentController.findMappingDocuments(queryString);
-  }
-
-  def findMappingDocuments(searchType: String, searchTerm: String): ListResult = {
-    val result: ListResult = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
-
-      val listResult = MappingDocumentController.findMappingDocumentsByMappedClass(searchTerm)
-      listResult
-    } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_PROPERTY.equals(searchType) && searchTerm != null) {
-      logger.info("findMappingDocumentsByMappedProperty:" + searchTerm)
-      val listResult = MappingDocumentController.findMappingDocumentsByMappedProperty(searchTerm)
-      listResult
-    } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_TABLE.equals(searchType) && searchTerm != null) {
-      logger.info("findMappingDocumentsByMappedTable:" + searchTerm)
-      val listResult = MappingDocumentController.findMappingDocumentsByMappedTable(searchTerm)
-      listResult
-    } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_COLUMN.equals(searchType) && searchTerm != null) {
-      logger.info("findMappingDocumentsByMappedColumn:" + searchTerm)
-      val listResult = MappingDocumentController.findMappingDocumentsByMappedColumn(searchTerm)
-      listResult
-    } else {
-      logger.info("findAllMappingDocuments")
-      val listResult = MappingDocumentController.findAllMappingDocuments
-      listResult
-    }
-    //logger.info("result = " + result)
-
-    result;
-  }
 
 
 
