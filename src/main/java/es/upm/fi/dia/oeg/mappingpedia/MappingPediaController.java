@@ -47,7 +47,7 @@ public class MappingPediaController {
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
     private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient);
-    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient);
+    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient, virtuosoClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
     public Greeting getGreeting(@RequestParam(value="name", defaultValue="World") String name) {
@@ -160,7 +160,7 @@ public class MappingPediaController {
             @RequestParam(value="datasetId", defaultValue = "") String datasetId
     ) {
         logger.info("/findMappingDocumentsByDatasetId...");
-        ListResult listResult = MappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
+        ListResult listResult = this.mappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
         logger.info("findMappingDocumentsByDatasetId result = " + listResult);
 
         return listResult;
@@ -206,11 +206,11 @@ public class MappingPediaController {
         logger.info("searchTerm = " + searchTerm);
         if("subclass".equalsIgnoreCase(searchType)) {
             logger.info("get all mapping documents by mapped class and its subclasses ...");
-            ListResult listResult = MappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm, jenaClient);
+            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm, jenaClient);
             //logger.info("listResult = " + listResult);
             return listResult;
         } else {
-            ListResult listResult = MappingDocumentController.findMappingDocuments(searchType, searchTerm);
+            ListResult listResult = this.mappingDocumentController.findMappingDocuments(searchType, searchTerm);
             //logger.info("listResult = " + listResult);
             return listResult;
         }
