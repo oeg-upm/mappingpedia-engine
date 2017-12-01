@@ -17,8 +17,14 @@ WHERE {
     OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
     OPTIONAL {
-        ?md mpv:hasDataset ?dataset .
-        ?dataset dcterms:identifier ?datasetId .
+        {
+                ?md mpv:hasDataset ?dataset .
+                ?dataset dcterms:identifier ?datasetId .
+        }
+        UNION
+        {
+                ?md mpv:hasDatasetId ?datasetId .
+        }
         ?dataset dcterms:title ?datasetTitle.
         ?dataset dcat:distribution ?distribution .
         ?distribution dcat:accessURL ?distributionAccessURL .
