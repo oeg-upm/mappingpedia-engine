@@ -307,6 +307,19 @@ object MappingDocumentController {
     MappingDocumentController.findMappingDocuments(queryString);
   }
 
+  def findMappingDocumentsByDistributionId(distributionId: String): ListResult = {
+    logger.info("findMappingDocumentsByDistributionId:" + distributionId)
+    val queryTemplateFile = "templates/findAllMappingDocumentsByDistributionId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$distributionId" -> distributionId
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    MappingDocumentController.findMappingDocuments(queryString);
+  }
+
   def findMappingDocumentsByMappedProperty(mappedProperty: String): ListResult = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
 
