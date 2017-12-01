@@ -21,8 +21,9 @@ WHERE {
         ?dataset dcterms:title ?datasetTitle.
         ?dataset dcat:distribution ?distribution .
         ?distribution dcterms:identifier ?distributionId .
+        ?distribution mpv:ckanResourceId ?distributionCKANId .
         ?distribution dcat:accessURL ?distributionAccessURL .
         ?distribution mpv:sha ?distributionSHA .
-    FILTER regex(str(?distributionId), "$distributionId", "i")
+    FILTER (regex(str(?distributionId), "$distributionId", "i") || regex(str(?distributionCKANId), "$distributionId", "i")  )
 }
 ORDER BY ASC(?dateSubmitted)
