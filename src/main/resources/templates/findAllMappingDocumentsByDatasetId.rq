@@ -19,16 +19,17 @@ WHERE {
     OPTIONAL {
         {
                 ?md mpv:hasDataset ?dataset .
+                ?dataset dcterms:title ?datasetTitle.
+                ?dataset dcat:distribution ?distribution .
+                ?distribution dcat:accessURL ?distributionAccessURL .
+                ?distribution mpv:sha ?distributionSHA .
                 ?dataset dcterms:identifier ?datasetId .
         }
         UNION
         {
                 ?md mpv:hasDatasetId ?datasetId .
         }
-        ?dataset dcterms:title ?datasetTitle.
-        ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:accessURL ?distributionAccessURL .
-        ?distribution mpv:sha ?distributionSHA .
+
     }
     FILTER regex(str(?datasetId), "$datasetId", "i")
 }
