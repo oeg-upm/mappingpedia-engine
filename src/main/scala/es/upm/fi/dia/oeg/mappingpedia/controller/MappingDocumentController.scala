@@ -439,6 +439,8 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
     var results: List[MappingDocument] = List.empty;
     try {
+      var retrievedMappings:List[String] = Nil;
+
       val rs = qexec.execSelect
       //logger.info("Obtaining result from executing query=\n" + queryString)
       while (rs.hasNext) {
@@ -467,7 +469,11 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
         //logger.info(s"md.distributionSHA = ${md.distributionSHA}");
         //logger.info(s"md.sha = ${md.sha}");
 
-        results = md :: results;
+        if(!retrievedMappings.contains(md.sha)) {
+          results = md :: results;
+          retrievedMappings = md.sha :: retrievedMappings
+        }
+
       }
     } finally qexec.close
 
