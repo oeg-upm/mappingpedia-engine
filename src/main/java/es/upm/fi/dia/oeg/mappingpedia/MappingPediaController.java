@@ -190,10 +190,16 @@ public class MappingPediaController {
 
     @RequestMapping(value="/mapped_classes", method= RequestMethod.GET)
     public ListResult getMappedClasses(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
+                                       , @RequestParam(value="mapped_table", required = false) String mappedTable
     ) {
         logger.info("/mapped_classes ...");
         logger.info("prefix = " + prefix);
-        ListResult listResult = this.mappingDocumentController.findAllMappedClasses(prefix);
+        ListResult listResult = null;
+        if(mappedTable == null) {
+             listResult = this.mappingDocumentController.findAllMappedClasses(prefix);
+        } else {
+            listResult = this.mappingDocumentController.findAllMappedClassesByTableName(prefix, mappedTable);
+        }
         logger.info("mapped_classes result = " + listResult);
 
         return listResult;

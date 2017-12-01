@@ -237,6 +237,46 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     listResult
   }
 
+  def findAllMappedClassesByTableName(tableName:String): ListResult = {
+    this.findAllMappedClassesByTableName("http://schema.org")
+  }
+
+  def findAllMappedClassesByTableName(prefix:String, tableName:String): ListResult = {
+
+    //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
+      "$tableName" -> tableName
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findAllMappedClassesByMappedTable.rq")
+
+    //logger.info(s"queryString = $queryString");
+    /*
+    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
+    */
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+
+    var results: List[String] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      //logger.info("Obtaining result from executing query=\n" + queryString)
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+        val mappedClass = qs.get("mappedClass").toString;
+        val count = qs.get("count").toString;
+
+        results = s"$mappedClass -- $count" :: results;
+      }
+    } finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
+
   def findAllMappedProperties(prefix:String): ListResult = {
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
