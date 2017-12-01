@@ -24,6 +24,6 @@ WHERE {
         ?distribution dcat:accessURL ?distributionAccessURL .
         ?distribution mpv:sha ?distributionSHA .
     }
-    FILTER regex(str(?dataset), "$datasetId", "i")
+    FILTER regex(str(?datasetId), "$datasetId", "i")
 }
 ORDER BY ASC(?dateSubmitted)
