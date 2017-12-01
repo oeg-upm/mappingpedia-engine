@@ -197,6 +197,8 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
   }
 
+
+
   def findAllMappedClasses(): ListResult = {
     this.findAllMappedClasses("http://schema.org")
   }
@@ -369,6 +371,26 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
+  def findMappingDocumentsByMappingDocumentId(mappingDocumentId: String): MappingDocument = {
+    logger.info("findMappingDocumentsByMappingDocumentId:" + mappingDocumentId)
+    val queryTemplateFile = "templates/findAllMappingDocumentsByMappingDocumentId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$mappingDocumentId" -> mappingDocumentId
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    val resultAux = this.findMappingDocuments(queryString).getResults();
+    val result = if(resultAux != null) {
+      resultAux.iterator().next().asInstanceOf[MappingDocument]
+    } else {
+      null
+    }
+    result
+
+  }
+
   def findMappingDocumentsByMappedProperty(mappedProperty: String): ListResult = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
 
@@ -509,4 +531,17 @@ object MappingDocumentController {
   }
 
 
+  def detectMappingLanguage(pMappingLanguage:String) : String = {
+    val mappingLanguage = if (pMappingLanguage != null) {
+      val splitedMappingLanguage = pMappingLanguage.split(".")
+      if (splitedMappingLanguage.length == 3 && "rml".equalsIgnoreCase(splitedMappingLanguage(1)) && ".ttl".equalsIgnoreCase(splitedMappingLanguage(2))) {
+        "rml"
+      } else {
+        "r2rml"
+      }
+    } else {
+      "r2rml"
+    }
+    mappingLanguage
+  }
 }

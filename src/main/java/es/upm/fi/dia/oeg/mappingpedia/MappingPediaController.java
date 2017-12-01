@@ -174,7 +174,7 @@ public class MappingPediaController {
             listResult = this.mappingDocumentController.findMappingDocumentsByDistributionId(distributionId);
         }
 
-        logger.info("findMappingDocumentsByDatasetId result = " + listResult);
+        logger.info("mappings result = " + listResult);
 
         return listResult;
     }
@@ -234,7 +234,7 @@ public class MappingPediaController {
 
     //TODO REFACTOR THIS; MERGE /executions with /executions2
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
-    public ExecuteMappingResult postExecutions(
+    public ExecuteMappingResult postExecutions2(
             @RequestParam(value="organization_id", required = false) String organizationId
             , @RequestParam(value="dataset_id", required = false) String datasetId
             //, @RequestParam(value="datasetDistributionURL", required = false) String datasetDistributionURL
@@ -243,10 +243,11 @@ public class MappingPediaController {
 
             , @RequestParam(value="query_file", required = false) String queryFile
             , @RequestParam(value="output_filename", required = false) String outputFilename
-            , @RequestParam(value="mapping_language", required = false, defaultValue="r2rml") String mappingLanguage
+            , @RequestParam(value="mapping_language", required = false) String pMappingLanguage
             , @RequestParam(value="field_separator", required = false) String fieldSeparator
 
             , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
+            , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
 
             , @RequestParam(value="distribution_mediatype", required = false, defaultValue="text/csv") String distributionMediaType
 
@@ -286,8 +287,21 @@ public class MappingPediaController {
 
 
         MappingDocument md = new MappingDocument();
+        String mappingLanguage = MappingDocumentController.detectMappingLanguage(pMappingLanguage);
+        logger.info("mappingLanguage = " + mappingLanguage);
         md.mappingLanguage_$eq(mappingLanguage);
-        md.setDownloadURL(mappingDocumentDownloadURL);
+
+        if(mappingDocumentDownloadURL != null) {
+            md.setDownloadURL(mappingDocumentDownloadURL);
+        } else {
+            if(mappingDocumentId != null) {
+                MappingDocument foundMappingDocument = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
+                md.setDownloadURL(foundMappingDocument.getDownloadURL());
+            } else {
+                //I don't know that to do here, Ahmad will handle
+
+            }
+        }
 
 
         MappingExecution mappingExecution = new MappingExecution(md, dataset);
@@ -319,8 +333,9 @@ public class MappingPediaController {
 
     }
 
-    @RequestMapping(value="/executions/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
-    public ExecuteMappingResult postExecutions(
+    //TODO REFACTOR THIS; MERGE /executions with /executions2
+    @RequestMapping(value="/executions1/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
+    public ExecuteMappingResult postExecutions1(
             @PathVariable("organizationId") String organizationId
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
@@ -330,8 +345,10 @@ public class MappingPediaController {
 
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
-            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
+            , @RequestParam(value="mappingLanguage", required = false) String pMappingLanguage
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
+
+            , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
 
             , @RequestParam(value="distributionMediaType", required = false
             , defaultValue="text/csv") String distributionMediaType
@@ -371,9 +388,21 @@ public class MappingPediaController {
         String mappingDocumentDownloadURL = GitHubUtility.generateDownloadURL(organizationId, datasetId, mappingFilename);
         MappingDocument md = new MappingDocument();
         md.setDownloadURL(mappingDocumentDownloadURL);
+        String mappingLanguage = MappingDocumentController.detectMappingLanguage(pMappingLanguage);
+        logger.info("mappingLanguage = " + mappingLanguage);
         md.mappingLanguage_$eq(mappingLanguage);
 
+        if(mappingDocumentDownloadURL != null) {
+            md.setDownloadURL(mappingDocumentDownloadURL);
+        } else {
+            if(mappingDocumentId != null) {
+                MappingDocument foundMappingDocument = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
+                md.setDownloadURL(foundMappingDocument.getDownloadURL());
+            } else {
+                //I don't know that to do here, Ahmad will handle
 
+            }
+        }
         //return MappingExecutionController.executeMapping2(md, dataset, queryFile, outputFilename, true);
 
         try {
