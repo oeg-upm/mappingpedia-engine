@@ -238,7 +238,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
   }
 
   def findAllMappedClassesByTableName(tableName:String): ListResult = {
-    this.findAllMappedClassesByTableName("http://schema.org")
+    this.findAllMappedClassesByTableName("http://schema.org", tableName)
   }
 
   def findAllMappedClassesByTableName(prefix:String, tableName:String): ListResult = {
