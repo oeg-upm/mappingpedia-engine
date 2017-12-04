@@ -238,7 +238,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
   }
 
   def findAllMappedClassesByTableName(tableName:String): ListResult = {
-    this.findAllMappedClassesByTableName("http://schema.org")
+    this.findAllMappedClassesByTableName("http://schema.org", tableName)
   }
 
   def findAllMappedClassesByTableName(prefix:String, tableName:String): ListResult = {
@@ -259,7 +259,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-  logger.info(s"queryString = $queryString")
+  logger.info(s"queryString = \n$queryString")
 
     var results: List[String] = List.empty;
     try {
@@ -269,10 +269,16 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
         val qs = rs.nextSolution
         val mappedClass = qs.get("mappedClass").toString;
         val count = qs.get("count").toString;
+        logger.info(s"mappedClass = $mappedClass")
+        logger.info(s"count = $count")
 
         results = s"$mappedClass -- $count" :: results;
       }
-    } finally qexec.close
+    }
+      catch {
+        case e:Exception => { e.printStackTrace()}
+      }
+    finally qexec.close
 
     val listResult = new ListResult(results.length, results);
     listResult

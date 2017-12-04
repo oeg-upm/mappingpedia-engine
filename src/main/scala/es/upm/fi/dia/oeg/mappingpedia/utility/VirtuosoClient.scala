@@ -21,10 +21,11 @@ class VirtuosoClient(val virtuosoJDBC:String, val virtuosoUser:String, val virtu
     new VirtGraph (virtuosoGraphName, virtuosoJDBC, virtuosoUser, virtuosoPwd);
   }
 
-  val model = VirtModel.openDatabaseModel(virtuosoGraphName, virtuosoJDBC, virtuosoUser, virtuosoPwd);
+  val databaseModel = VirtModel.openDatabaseModel(virtuosoGraphName, virtuosoJDBC, virtuosoUser, virtuosoPwd);
+  //val defaultModel = VirtModel.openDefaultModel(virtuosoJDBC, virtuosoUser, virtuosoPwd)
 
   def createQueryExecution(queryString:String) = {
-    VirtuosoQueryExecutionFactory.create(queryString, this.model)
+    VirtuosoQueryExecutionFactory.create(queryString, this.databaseModel)
   }
 
   def store(file:File) : Unit = {

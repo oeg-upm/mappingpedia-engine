@@ -286,8 +286,15 @@ object MappingPediaUtility {
 
     val (fileName:String, fileContent:String) = {
       if(file != null) {
+        val fileAbsolutePath = file.getAbsolutePath;
+        //logger.info(s"fileAbsolutePath = $fileAbsolutePath");
         val fileContent = Source.fromFile(file.getAbsolutePath, encoding)
-        val fileContentString = fileContent.getLines.mkString("\n")
+        //logger.info(s"fileContent = $fileContent");
+
+        val fileContentLines = fileContent.getLines;
+        //logger.info(s"fileContentLines = $fileContentLines");
+
+        val fileContentString = fileContentLines.mkString("\n")
         (file.getName, fileContentString)
       } else if(downloadURL!= null) {
         val downloadURLFilename = downloadURL.substring(
