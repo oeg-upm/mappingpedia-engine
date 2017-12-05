@@ -83,6 +83,7 @@ class VirtuosoClient(val virtuosoJDBC:String, val virtuosoUser:String, val virtu
 
   def readModelFromInputStream(inputStream:InputStream, lang:String) : Model = {
     val model = ModelFactory.createDefaultModel();
+
     model.read(inputStream, null, lang);
     model;
   }

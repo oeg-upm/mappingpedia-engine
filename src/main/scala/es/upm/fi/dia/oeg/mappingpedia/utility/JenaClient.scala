@@ -23,6 +23,34 @@ class JenaClient(val ontModel:OntModel) {
     }).toMap
   }
 
+  def getProperties(cls:OntClass, direct:Boolean) : ListResult = {
+    logger.info(s"cls = $cls");
+    logger.info(s"direct = $direct");
+
+    //val properties = cls.listProperties().toList.toList
+    //logger.info(s"properties = $properties");
+
+    val properties = cls.listDeclaredProperties(direct).toList.toList;
+    logger.info(s"properties = properties");
+
+    val propertiesInString = properties.map(property => property.getLocalName);
+
+    new ListResult(propertiesInString.length, propertiesInString.asInstanceOf[List[String]])
+  }
+
+  def getProperties(cls:String, direct:String) : ListResult = {
+    val classURI = MappingPediaUtility.getClassURI(cls);
+    val resource = ontModel.getResource(classURI);
+    val ontClass = resource.as(classOf[OntClass])
+
+    val directBoolean = if("false".equalsIgnoreCase(direct) || "no".equalsIgnoreCase(direct)) {
+      false
+    } else {
+      true
+    }
+
+    this.getProperties(ontClass, directBoolean)
+  }
 
   def getSubclassesDetail(cls:OntClass) : ListResult = {
     //logger.info("Retrieving subclasses of = " + cls.getURI)
@@ -124,6 +152,7 @@ object JenaClient {
     val ontModelSpec = OntModelSpec.RDFS_MEM_TRANS_INF;
 
     val defaultModel = MappingPediaEngine.virtuosoClient.readModelFromFile(ontologyFileName, ontologyFormat);
+    logger.info(s"defaultModel = $defaultModel")
     val rdfsModel = ModelFactory.createOntologyModel(OntModelSpec.RDFS_MEM_TRANS_INF, defaultModel)
     rdfsModel;
   }

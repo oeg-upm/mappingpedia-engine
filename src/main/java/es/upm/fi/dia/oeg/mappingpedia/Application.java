@@ -52,7 +52,8 @@ public class Application {
 				);
 				MappingPediaEngine.virtuosoClient_$eq(virtuosoClient);
 
-				OntModel schemaOntology = JenaClient.loadSchemaOrgOntology("tree.jsonld", "JSON-LD");
+				OntModel schemaOntology = JenaClient.loadSchemaOrgOntology(
+						MappingPediaConstant.SCHEMA_ORG_FILE(), MappingPediaConstant.FORMAT());
 				MappingPediaEngine.setOntologyModel(schemaOntology);
 				JenaClient jenaClient = new JenaClient(schemaOntology);
 				MappingPediaEngine.jenaClient_$eq(jenaClient);

@@ -62,4 +62,9 @@ object MappingPediaConstant {
 	val GITHUB_RAW_URL_PREFIX = "https://raw.githubusercontent.com/";
 	val GITHUB_ACCESS_URL_PREFIX = "https://api.github.com/repos/";
 
+	val SCHEMA_ORG_FILE = "schema.rdf"
+	//val SCHEMA_ORG_FILE = "tree.jsonld"
+	val FORMAT = "RDF/XML"
+
+
 }

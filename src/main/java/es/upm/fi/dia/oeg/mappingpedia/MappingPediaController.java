@@ -179,6 +179,19 @@ public class MappingPediaController {
         return listResult;
     }
 
+    @RequestMapping(value="/properties", method= RequestMethod.GET)
+    public ListResult getProperties(
+            @RequestParam(value="class", required = false, defaultValue="Thing") String aClass
+            , @RequestParam(value="direct", required = false, defaultValue="false") String direct
+    )
+    {
+        logger.info("/properties ...");
+        ListResult listResult = this.jenaClient.getProperties(aClass, direct);
+        logger.info("properties result = " + listResult);
+
+        return listResult;
+    }
+
     @RequestMapping(value="/datasets", method= RequestMethod.GET)
     public ListResult getDatasets() {
         logger.info("/datasets ...");
