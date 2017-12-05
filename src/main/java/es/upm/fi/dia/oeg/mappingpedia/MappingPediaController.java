@@ -219,20 +219,27 @@ public class MappingPediaController {
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
     public ListResult getOGDAnnotations(
     		//@RequestParam(value="searchType", defaultValue = "0") String searchType,
-    		@RequestParam(value="searchClass", required = false) String searchClass
-    		, @RequestParam(value="subclass", required = false, defaultValue="true") String subclass
+    		@RequestParam(value="class", required = false) String searchedClass
+            , @RequestParam(value="property", required = false) String searchedProperty
+            , @RequestParam(value="subclass", required = false, defaultValue="true") String subclass
 
     ) {
         logger.info("/ogd/annotations(GET) ...");
-        logger.info("searchClass = " + searchClass);
+        logger.info("searchedClass = " + searchedClass);
+        logger.info("searchedProperty = " + searchedProperty);
+
         if("true".equalsIgnoreCase(subclass)) {
             logger.info("get all mapping documents by mapped class and its subclasses ...");
-            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(searchClass, true);
+/*            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClass(
+                    searchClass, true);*/
+            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
+                    searchedClass, searchedProperty, true);
+
             //logger.info("listResult = " + listResult);
             return listResult;
         } else {
             //ListResult listResult = this.mappingDocumentController.findMappingDocuments(searchType, searchTerm);
-            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClass(searchClass);
+            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClass(searchedClass);
 
             //logger.info("listResult = " + listResult);
             return listResult;

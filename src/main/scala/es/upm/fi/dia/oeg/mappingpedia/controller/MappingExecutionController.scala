@@ -302,7 +302,8 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     */
 
 
-    val mappingDocuments = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(aClass, true).results
+    val mappingDocuments = this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
+      aClass, null, true).results
 
     var executedMappingDocuments:List[(String, String)]= Nil;
 

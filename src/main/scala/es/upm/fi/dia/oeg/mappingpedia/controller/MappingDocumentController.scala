@@ -386,7 +386,20 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedSubClass(aClass: String, subclass: Boolean): ListResult = {
+  def findMappingDocumentsByMappedClassAndProperty(mappedClass: String, mappedProperty:String): ListResult = {
+    val queryTemplateFile = "templates/findTriplesMapsByMappedClassAndProperty.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$mappedClass" -> mappedClass
+      , "$mappedProperty" -> mappedProperty
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findMappingDocuments(queryString);
+  }
+
+  def findMappingDocumentsByMappedClassAndProperty(aClass: String, aProperty:String, subclass: Boolean): ListResult = {
     val classURI = MappingPediaUtility.getClassURI(aClass);
 
     val normalizedClassURI = this.jenaClient.mapNormalizedTerms.getOrElse(classURI, classURI);
@@ -403,7 +416,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val intersectedClasses = subclassesURIs.intersect(allMappedClasses);
     
     val mappingDocuments = intersectedClasses.flatMap(intersectedClass => {
-      this.findMappingDocumentsByMappedClass(intersectedClass).getResults();
+      this.findMappingDocumentsByMappedClassAndProperty(intersectedClass, aProperty).getResults();
     }).asInstanceOf[Iterable[MappingDocument]];
 
     val listResult = new ListResult(mappingDocuments.size, mappingDocuments)
