@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile
 
 import scala.collection.JavaConversions._
 
-class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient) {
+class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient, val jenaClient:JenaClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def storeMappingDocumentOnGitHub(mappingDocument:MappingDocument, dataset: Dataset) = {
@@ -386,12 +386,17 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedSubClass(aClass: String, jenaClient: JenaClient): ListResult = {
+  def findMappingDocumentsByMappedSubClass(aClass: String, subclass: Boolean): ListResult = {
     val classURI = MappingPediaUtility.getClassURI(aClass);
 
-    val normalizedClassURI = jenaClient.mapNormalizedTerms.getOrElse(classURI, classURI);
+    val normalizedClassURI = this.jenaClient.mapNormalizedTerms.getOrElse(classURI, classURI);
 
-    val subclassesURIs:List[String] = jenaClient.getSubclassesSummary(normalizedClassURI).results.asInstanceOf[List[String]];
+    //val subclassesURIs:List[String] = jenaClient.getSubclassesSummary(normalizedClassURI).results.asInstanceOf[List[String]];
+    val subclassesURIs:List[String] = if(subclass) {
+      jenaClient.getSubclassesSummary(normalizedClassURI).results.asInstanceOf[List[String]];
+    } else {
+      List(normalizedClassURI)
+    }
 
     val allMappedClasses:List[String] = this.findAllMappedClasses().results.asInstanceOf[List[String]]
 

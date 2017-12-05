@@ -46,8 +46,8 @@ public class MappingPediaController {
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
-    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient);
-    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient, virtuosoClient);
+    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
+    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient, virtuosoClient, jenaClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
     public Greeting getGreeting(@RequestParam(value="name", defaultValue="World") String name) {
@@ -217,19 +217,23 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-    public ListResult getOGDAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,
-                                          @RequestParam(value="searchTerm", required = false) String searchTerm
+    public ListResult getOGDAnnotations(
+    		//@RequestParam(value="searchType", defaultValue = "0") String searchType,
+    		@RequestParam(value="searchClass", required = false) String searchClass
+    		, @RequestParam(value="subclass", required = false, defaultValue="true") String subclass
+
     ) {
         logger.info("/ogd/annotations(GET) ...");
-        logger.info("searchType = " + searchType);
-        logger.info("searchTerm = " + searchTerm);
-        if("subclass".equalsIgnoreCase(searchType)) {
+        logger.info("searchClass = " + searchClass);
+        if("true".equalsIgnoreCase(subclass)) {
             logger.info("get all mapping documents by mapped class and its subclasses ...");
-            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm, jenaClient);
+            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(searchClass, true);
             //logger.info("listResult = " + listResult);
             return listResult;
         } else {
-            ListResult listResult = this.mappingDocumentController.findMappingDocuments(searchType, searchTerm);
+            //ListResult listResult = this.mappingDocumentController.findMappingDocuments(searchType, searchTerm);
+            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClass(searchClass);
+
             //logger.info("listResult = " + listResult);
             return listResult;
         }

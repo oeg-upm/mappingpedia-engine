@@ -19,9 +19,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRun
 
 import scala.collection.JavaConversions._
 
-class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient) {
+class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient, val jenaClient:JenaClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  val mappingDocumentController:MappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient);
+  val mappingDocumentController:MappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
 
   @throws(classOf[Exception])
   def executeMapping(
@@ -302,7 +302,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     */
 
 
-    val mappingDocuments = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(aClass, jenaClient).results
+    val mappingDocuments = this.mappingDocumentController.findMappingDocumentsByMappedSubClass(aClass, true).results
 
     var executedMappingDocuments:List[(String, String)]= Nil;
 
