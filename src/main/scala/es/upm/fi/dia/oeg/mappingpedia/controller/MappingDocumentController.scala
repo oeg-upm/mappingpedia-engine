@@ -602,9 +602,14 @@ object MappingDocumentController {
   }
 
 
-  def detectMappingLanguage(pMappingLanguage:String) : String = {
-    val mappingLanguage = if (pMappingLanguage != null) {
-      val splitedMappingLanguage = pMappingLanguage.split(".")
+  def detectMappingLanguage(mappingDocumentDownloadURL:String) : String = {
+    logger.info(s"pMappingLanguage = ${mappingDocumentDownloadURL}")
+
+
+    val mappingLanguage = if (mappingDocumentDownloadURL != null) {
+      val splitedMappingLanguage = mappingDocumentDownloadURL.split("\\.")
+      logger.info(s"splitedMappingLanguage = ${splitedMappingLanguage.mkString}")
+
       if (splitedMappingLanguage.length == 3 && "rml".equalsIgnoreCase(splitedMappingLanguage(1)) && ".ttl".equalsIgnoreCase(splitedMappingLanguage(2))) {
         "rml"
       } else {

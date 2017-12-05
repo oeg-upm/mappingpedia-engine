@@ -316,10 +316,18 @@ public class MappingPediaController {
         dataset.addDistribution(distribution);
 
 
+
+
+
         MappingDocument md = new MappingDocument();
-        String mappingLanguage = MappingDocumentController.detectMappingLanguage(pMappingLanguage);
-        logger.info("mappingLanguage = " + mappingLanguage);
-        md.mappingLanguage_$eq(mappingLanguage);
+        if(pMappingLanguage != null) {
+            md.mappingLanguage_$eq(pMappingLanguage);
+        } else {
+            String mappingLanguage = MappingDocumentController.detectMappingLanguage(mappingDocumentDownloadURL);
+            logger.info("mappingLanguage = " + mappingLanguage);
+            md.mappingLanguage_$eq(mappingLanguage);
+        }
+
 
         if(mappingDocumentDownloadURL != null) {
             md.setDownloadURL(mappingDocumentDownloadURL);
