@@ -31,6 +31,6 @@ WHERE {
         }
 
     }
-    FILTER regex(str(?datasetId), "$datasetId", "i")
+    FILTER regex(str(?mdID), "$mappingDocumentId", "i")
 }
 ORDER BY ASC(?dateSubmitted)

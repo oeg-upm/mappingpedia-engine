@@ -286,8 +286,15 @@ object MappingPediaUtility {
 
     val (fileName:String, fileContent:String) = {
       if(file != null) {
+        val fileAbsolutePath = file.getAbsolutePath;
+        //logger.info(s"fileAbsolutePath = $fileAbsolutePath");
         val fileContent = Source.fromFile(file.getAbsolutePath, encoding)
-        val fileContentString = fileContent.getLines.mkString("\n")
+        //logger.info(s"fileContent = $fileContent");
+
+        val fileContentLines = fileContent.getLines;
+        //logger.info(s"fileContentLines = $fileContentLines");
+
+        val fileContentString = fileContentLines.mkString("\n")
         (file.getName, fileContentString)
       } else if(downloadURL!= null) {
         val downloadURLFilename = downloadURL.substring(
@@ -311,7 +318,7 @@ object MappingPediaUtility {
       val normalizedTermPlural2 = normalizedTermSingular + "es"
       val normalizedTermPlural3 = if(normalizedTermSingular.endsWith("y")) {
         val plural = normalizedTermSingular.substring(0, normalizedTermSingular.length-1) + "ies"
-        logger.info(s"$normalizedTermSingular  -- $plural")
+        //logger.info(s"$normalizedTermSingular  -- $plural")
         plural
       } else { normalizedTermSingular }
 
@@ -321,10 +328,18 @@ object MappingPediaUtility {
     }
   }
 
-  def getClassURI(pClass:String, defaultNamespace:String) = {
+  def getClassURI(pClass:String) : String  = {
+    this.getClassURI(pClass, "http://schema.org/")
+  }
+
+  def getClassURI(pClass:String, defaultNamespace:String) : String = {
     val isLocalName = if(pClass.contains("/")) { false } else { true }
     val classIRI = if(isLocalName) {
-      defaultNamespace + pClass
+      if(defaultNamespace.endsWith("/")) {
+        defaultNamespace + pClass
+      } else {
+        defaultNamespace + "/" + pClass
+      }
     } else {
       pClass
     }

@@ -38,27 +38,55 @@ public class Application {
 			logger.info("Configuration file loaded.");
 			MappingPediaEngine.setProperties(properties);
 
-			GitHubUtility githubClient = new GitHubUtility(properties.githubRepository(), properties.githubUser()
-					, properties.githubAccessToken()
-			);
-			MappingPediaEngine.githubClient_$eq(githubClient);
-
-			CKANUtility ckanClient = new CKANUtility(properties.ckanURL(), properties.ckanKey());
-			MappingPediaEngine.ckanClient_$eq(ckanClient);
-
-			if(properties.virtuosoEnabled()) {
-				VirtuosoClient virtuosoClient = new VirtuosoClient(properties.virtuosoJDBC(), properties.virtuosoUser()
-						, properties.virtuosoPwd(), properties.graphName()
-				);
-				MappingPediaEngine.virtuosoClient_$eq(virtuosoClient);
-
-				OntModel schemaOntology = JenaClient.loadSchemaOrgOntology("tree.jsonld", "JSON-LD");
-				MappingPediaEngine.setOntologyModel(schemaOntology);
-				JenaClient jenaClient = new JenaClient(schemaOntology);
-				MappingPediaEngine.jenaClient_$eq(jenaClient);
-
+			if(properties.githubEnabled()) {
+				try {
+					GitHubUtility githubClient = new GitHubUtility(properties.githubRepository(), properties.githubUser()
+							, properties.githubAccessToken()
+					);
+					logger.info(" githubClient = " + githubClient);
+					MappingPediaEngine.githubClient_$eq(githubClient);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 
+			if(properties.ckanEnable()) {
+				try {
+					CKANUtility ckanClient = new CKANUtility(properties.ckanURL(), properties.ckanKey());
+					logger.info(" ckanClient = " + ckanClient);
+					MappingPediaEngine.ckanClient_$eq(ckanClient);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+
+
+
+			VirtuosoClient virtuosoClient = null;
+			if(properties.virtuosoEnabled()) {
+				try {
+					 virtuosoClient = new VirtuosoClient(properties.virtuosoJDBC(), properties.virtuosoUser()
+							, properties.virtuosoPwd(), properties.graphName()
+					);
+					logger.info(" virtuosoClient = " + virtuosoClient);
+					MappingPediaEngine.virtuosoClient_$eq(virtuosoClient);
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+
+
+			try {
+				OntModel schemaOntology = JenaClient.loadSchemaOrgOntology(
+						virtuosoClient,
+						MappingPediaConstant.SCHEMA_ORG_FILE(), MappingPediaConstant.FORMAT());
+				MappingPediaEngine.setOntologyModel(schemaOntology);
+				JenaClient jenaClient = new JenaClient(schemaOntology);
+				logger.info(" jenaClient = " + jenaClient);
+				MappingPediaEngine.jenaClient_$eq(jenaClient);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 
 		} catch (Exception ex) {

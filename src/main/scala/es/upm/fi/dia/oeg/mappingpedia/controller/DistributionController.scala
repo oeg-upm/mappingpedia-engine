@@ -116,6 +116,89 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     val addDatasetFileGitHubResponseStatusText = if(addDistributionFileGitHubResponse == null) { null }
     else { addDistributionFileGitHubResponse.getStatusText }
 
+
+
+
+    /*
+    //STORING DATASET & RESOURCE ON CKAN
+    val ckanAddResourceResponse = try {
+      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
+
+        logger.info("storing distribution on CKAN ...")
+        val (addResourceStatus, addResourceEntity) =
+          if(distribution != null) {
+            ckanClient.createResource(distribution);
+          } else {
+            (null, null)
+          }
+
+        if(addResourceStatus != null) {
+          if (addResourceStatus.getStatusCode < 200 || addResourceStatus.getStatusCode >= 300) {
+            val errorMessage = "failed to add the distribution file to CKAN storage. response status line from was: " + addResourceStatus
+            throw new Exception(errorMessage);
+          }
+          logger.info("dataset stored on CKAN.")
+        }
+
+        (addResourceStatus, addResourceEntity)
+      } else {
+        (null, null)
+      }
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error storing dataset file on CKAN: " + e.getMessage
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
+    */
+
+    //STORING DISTRIBUTION FILE AS RESOURCE ON CKAN
+    val ckanAddResourceResponse = try {
+      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
+        logger.info("storing distribution file as a package on CKAN ...")
+
+        if(distribution != null) {
+          ckanClient.createResource(distribution);
+        } else {
+          null
+        }
+      } else {
+        null
+      }
+    } catch {
+      case e: Exception => {
+        errorOccured = true;
+        e.printStackTrace()
+        val errorMessage = "error storing distribution file as a resource on CKAN: " + e.getMessage
+        logger.error(errorMessage)
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        null
+      }
+    }
+
+
+    val ckanAddResourceResponseStatusCode:Integer = {
+      if(ckanAddResourceResponse == null) {
+        null
+      } else {
+        ckanAddResourceResponse.getStatusLine.getStatusCode
+      }
+    }
+    distribution.ckanResourceId = {
+      if(ckanAddResourceResponse == null) {
+        null
+      } else {
+        val httpEntity  = ckanAddResourceResponse.getEntity
+        val entity = EntityUtils.toString(httpEntity)
+        val responseEntity = new JSONObject(entity);
+        responseEntity.getJSONObject("result").getString("id");
+      }
+    }
+
     //MANIFEST FILE
     val manifestFile:File = try {
       if (manifestFileRef != null) {//if the user provides a manifest file
@@ -183,68 +266,6 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
       }
     }
 
-
-    /*
-    //STORING DATASET & RESOURCE ON CKAN
-    val ckanAddResourceResponse = try {
-      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
-
-        logger.info("storing distribution on CKAN ...")
-        val (addResourceStatus, addResourceEntity) =
-          if(distribution != null) {
-            ckanClient.createResource(distribution);
-          } else {
-            (null, null)
-          }
-
-        if(addResourceStatus != null) {
-          if (addResourceStatus.getStatusCode < 200 || addResourceStatus.getStatusCode >= 300) {
-            val errorMessage = "failed to add the distribution file to CKAN storage. response status line from was: " + addResourceStatus
-            throw new Exception(errorMessage);
-          }
-          logger.info("dataset stored on CKAN.")
-        }
-
-        (addResourceStatus, addResourceEntity)
-      } else {
-        (null, null)
-      }
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "error storing dataset file on CKAN: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
-      }
-    }
-    */
-
-    //STORING DISTRIBUTION FILE AS RESOURCE ON CKAN
-    val ckanAddResourceResponse = try {
-      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
-        logger.info("storing distribution file as a package on CKAN ...")
-
-        if(distribution != null) {
-          ckanClient.createResource(distribution);
-        } else {
-          null
-        }
-      } else {
-        null
-      }
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "error storing distribution file as a resource on CKAN: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
-      }
-    }
-
     val (responseStatus, responseStatusText) = if(errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
     } else {
@@ -253,23 +274,6 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
 
 
 
-    val ckanAddResourceResponseStatusCode:Integer = {
-      if(ckanAddResourceResponse == null) {
-        null
-      } else {
-        ckanAddResourceResponse.getStatusLine.getStatusCode
-      }
-    }
-    distribution.ckanResourceId = {
-      if(ckanAddResourceResponse == null) {
-        null
-      } else {
-        val httpEntity  = ckanAddResourceResponse.getEntity
-        val entity = EntityUtils.toString(httpEntity)
-        val responseEntity = new JSONObject(entity);
-        responseEntity.getJSONObject("result").getString("id");
-      }
-    }
 
 
     val addManifestFileGitHubResponseStatus:Integer = if(addManifestFileGitHubResponse == null) {
@@ -373,6 +377,7 @@ object DistributionController {
           , "$distributionID" -> distribution.dctIdentifier
           , "$distributionIssued" -> distribution.dctIssued
           , "$distributionModified" -> distribution.dctModified
+          , "$ckanResourceID" -> distribution.ckanResourceId
           , "$sha" -> distribution.sha
         )
       }

@@ -1,0 +1,24 @@
+prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
+prefix rr: <http://www.w3.org/ns/r2rml#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dcterms: <http://purl.org/dc/elements/1.1/>
+
+SELECT DISTINCT ?mappedClass ?tn COUNT(?mappedClass) AS ?count
+#FROM <$graphURL>
+WHERE {
+    ?tm rr:logicalTable ?lt.
+    ?lt rr:tableName ?tn.
+    {
+        ?tm rr:subjectMap ?sm .
+        ?sm rr:class ?mappedClass .
+    }
+    UNION
+    {
+        ?tm rr:predicateObjectMap ?pom .
+        ?pom rr:predicateMap ?pm . ?pm rr:constant rdf:type .
+        ?pom rr:objectMap ?om . ?om rr:constant ?mappedClass .
+    }
+    FILTER regex(str(?tn), "$tableName", "i")
+}
+GROUP BY ?mappedClass ?tn

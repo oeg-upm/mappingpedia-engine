@@ -26,4 +26,6 @@ class AddMappingDocumentResult(val errorCode:Integer, val status:String
 
   def getVirtuosoStoreMappingStatus = this.virtuosoStoreMappingStatus
   def getVirtuoso_store_mapping_status = this.virtuosoStoreMappingStatus
+
+  def getId = mappingDocument.dctIdentifier
 }

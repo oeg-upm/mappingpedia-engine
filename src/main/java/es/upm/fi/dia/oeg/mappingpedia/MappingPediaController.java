@@ -18,10 +18,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 //import org.apache.log4j.LogManager;
 //import org.apache.log4j.Logger;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
-import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility;
-import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility;
-import es.upm.fi.dia.oeg.mappingpedia.utility.JenaClient;
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility;
+import es.upm.fi.dia.oeg.mappingpedia.utility.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.jena.ontology.OntModel;
 import org.springframework.web.bind.annotation.*;
@@ -45,11 +42,12 @@ public class MappingPediaController {
     private GitHubUtility githubClient = MappingPediaEngine.githubClient();
     private CKANUtility ckanClient = MappingPediaEngine.ckanClient();
     private JenaClient jenaClient = MappingPediaEngine.jenaClient();
+    private VirtuosoClient virtuosoClient = MappingPediaEngine.virtuosoClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
-    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient);
-    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient);
+    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
+    private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient, virtuosoClient, jenaClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
     public Greeting getGreeting(@RequestParam(value="name", defaultValue="World") String name) {
@@ -63,6 +61,15 @@ public class MappingPediaController {
         logger.info("/greeting(PUT) ...");
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
+    }
+
+    @RequestMapping(value="/ontology/resource_details", method= RequestMethod.GET)
+    public OntologyResource getOntologyResourceDetails(
+            @RequestParam(value="resource") String resource) {
+        logger.info("GET /ontology/resource_details ...");
+        String uri = MappingPediaUtility.getClassURI(resource);
+
+        return this.jenaClient.getDetails(uri);
     }
 
     @RequestMapping(value="/github_repo_url", method= RequestMethod.GET)
@@ -159,11 +166,38 @@ public class MappingPediaController {
 
     @RequestMapping(value="/mappings", method= RequestMethod.GET)
     public ListResult getMappings(
-            @RequestParam(value="datasetId", defaultValue = "") String datasetId
+            @RequestParam(value="dataset_id", defaultValue = "", required = false) String datasetId
+            , @RequestParam(value="distribution_id", defaultValue = "", required = false) String distributionId
     ) {
-        logger.info("/findMappingDocumentsByDatasetId...");
-        ListResult listResult = MappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
-        logger.info("findMappingDocumentsByDatasetId result = " + listResult);
+        logger.info("dataset_id = " + datasetId);
+        logger.info("distribution_id = " + distributionId);
+
+        ListResult listResult = null;
+        if(!"".equalsIgnoreCase(datasetId.trim())) {
+            logger.info("/findMappingDocumentsByDatasetId...");
+
+            listResult = this.mappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
+        } else if(!"".equalsIgnoreCase(distributionId.trim())) {
+            logger.info("/findMappingDocumentsByDistributionId...");
+
+            listResult = this.mappingDocumentController.findMappingDocumentsByDistributionId(distributionId);
+        }
+
+        logger.info("mappings result = " + listResult);
+
+        return listResult;
+    }
+
+    @RequestMapping(value="/properties", method= RequestMethod.GET)
+    public ListResult getProperties(
+            @RequestParam(value="class", required = false, defaultValue="Thing") String aClass
+            , @RequestParam(value="direct", required = false, defaultValue="true") String direct
+    )
+    {
+        logger.info("/properties ...");
+        logger.info("this.jenaClient = " + this.jenaClient);
+
+        ListResult listResult = this.jenaClient.getProperties(aClass, direct);
 
         return listResult;
     }
@@ -177,20 +211,59 @@ public class MappingPediaController {
         return listResult;
     }
 
+    @RequestMapping(value="/mapped_classes", method= RequestMethod.GET)
+    public ListResult getMappedClasses(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
+                                       , @RequestParam(value="mapped_table", required = false) String mappedTable
+    ) {
+        logger.info("/mapped_classes ...");
+        logger.info("prefix = " + prefix);
+        ListResult listResult = null;
+        if(mappedTable == null) {
+             listResult = this.mappingDocumentController.findAllMappedClasses(prefix);
+        } else {
+            listResult = this.mappingDocumentController.findAllMappedClassesByTableName(prefix, mappedTable);
+        }
+        logger.info("mapped_classes result = " + listResult);
+
+        return listResult;
+    }
+
+    @RequestMapping(value="/mapped_properties", method= RequestMethod.GET)
+    public ListResult getMappedProperty(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
+    ) {
+        logger.info("/mapped_properties ...");
+        logger.info("prefix = " + prefix);
+        ListResult listResult = this.mappingDocumentController.findAllMappedProperties(prefix);
+        logger.info("mapped_properties result = " + listResult);
+
+        return listResult;
+    }
+
     @RequestMapping(value="/ogd/annotations", method= RequestMethod.GET)
-    public ListResult getOGDAnnotations(@RequestParam(value="searchType", defaultValue = "0") String searchType,
-                                          @RequestParam(value="searchTerm", required = false) String searchTerm
+    public ListResult getOGDAnnotations(
+    		//@RequestParam(value="searchType", defaultValue = "0") String searchType,
+    		@RequestParam(value="class", required = false) String searchedClass
+            , @RequestParam(value="property", required = false) String searchedProperty
+            , @RequestParam(value="subclass", required = false, defaultValue="true") String subclass
+
     ) {
         logger.info("/ogd/annotations(GET) ...");
-        logger.info("searchType = " + searchType);
-        logger.info("searchTerm = " + searchTerm);
-        if("subclass".equalsIgnoreCase(searchType)) {
+        logger.info("searchedClass = " + searchedClass);
+        logger.info("searchedProperty = " + searchedProperty);
+
+        if("true".equalsIgnoreCase(subclass)) {
             logger.info("get all mapping documents by mapped class and its subclasses ...");
-            ListResult listResult = MappingDocumentController.findMappingDocumentsByMappedSubClass(searchTerm, jenaClient);
+/*            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClass(
+                    searchClass, true);*/
+            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
+                    searchedClass, searchedProperty, true);
+
             //logger.info("listResult = " + listResult);
             return listResult;
         } else {
-            ListResult listResult = MappingDocumentController.findMappingDocuments(searchType, searchTerm);
+            //ListResult listResult = this.mappingDocumentController.findMappingDocuments(searchType, searchTerm);
+            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClass(searchedClass);
+
             //logger.info("listResult = " + listResult);
             return listResult;
         }
@@ -201,29 +274,29 @@ public class MappingPediaController {
 
     //TODO REFACTOR THIS; MERGE /executions with /executions2
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
-    public ExecuteMappingResult postExecutions(
-            @RequestParam(value="organizationId", required = false) String organizationId
-            , @RequestParam(value="datasetId", required = false) String datasetId
-            , @RequestParam(value="datasetDistributionURL", required = false) String datasetDistributionURL
+    public ExecuteMappingResult postExecutions2(
+            @RequestParam(value="organization_id", required = false) String organizationId
+            , @RequestParam(value="dataset_id", required = false) String datasetId
+            //, @RequestParam(value="datasetDistributionURL", required = false) String datasetDistributionURL
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
-            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
+            , @RequestParam(value="distribution_download_url", required = true) String distributionDownloadURL
 
-            , @RequestParam(value="queryFile", required = false) String queryFile
-            , @RequestParam(value="outputFilename", required = false) String outputFilename
-            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
-            , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
+            , @RequestParam(value="query_file", required = false) String queryFile
+            , @RequestParam(value="output_filename", required = false) String outputFilename
+            , @RequestParam(value="mapping_language", required = false) String pMappingLanguage
+            , @RequestParam(value="field_separator", required = false) String fieldSeparator
 
-            , @RequestParam(value="mappingURL", required = false) String mappingURL
             , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
+            , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
 
-            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="distribution_mediatype", required = false, defaultValue="text/csv") String distributionMediaType
 
-            , @RequestParam(value="dbUserName", required = false) String dbUserName
-            , @RequestParam(value="dbPassword", required = false) String dbPassword
-            , @RequestParam(value="dbName", required = false) String dbName
+            , @RequestParam(value="db_username", required = false) String dbUserName
+            , @RequestParam(value="db_password", required = false) String dbPassword
+            , @RequestParam(value="db_name", required = false) String dbName
             , @RequestParam(value="jdbc_url", required = false) String jdbc_url
-            , @RequestParam(value="databaseDriver", required = false) String databaseDriver
-            , @RequestParam(value="databaseType", required = false) String databaseType
+            , @RequestParam(value="database_driver", required = false) String databaseDriver
+            , @RequestParam(value="database_type", required = false) String databaseType
     )
     {
         logger.info("POST /executions2");
@@ -242,11 +315,8 @@ public class MappingPediaController {
             dataset = new Dataset(organization, datasetId);
         }
         Distribution distribution = new Distribution(dataset);
-        if(distributionDownloadURL != null) {
-            distribution.dcatDownloadURL_$eq(distributionDownloadURL);
-        } else {
-            distribution.dcatDownloadURL_$eq(datasetDistributionURL);
-        }
+
+        distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         distribution.dcatAccessURL_$eq(distributionAccessURL);
 
         if(fieldSeparator != null) {
@@ -256,12 +326,29 @@ public class MappingPediaController {
         dataset.addDistribution(distribution);
 
 
+
+
+
         MappingDocument md = new MappingDocument();
-        md.mappingLanguage_$eq(mappingLanguage);
+        if(pMappingLanguage != null) {
+            md.mappingLanguage_$eq(pMappingLanguage);
+        } else {
+            String mappingLanguage = MappingDocumentController.detectMappingLanguage(mappingDocumentDownloadURL);
+            logger.info("mappingLanguage = " + mappingLanguage);
+            md.mappingLanguage_$eq(mappingLanguage);
+        }
+
+
         if(mappingDocumentDownloadURL != null) {
             md.setDownloadURL(mappingDocumentDownloadURL);
         } else {
-            md.setDownloadURL(mappingURL);
+            if(mappingDocumentId != null) {
+                MappingDocument foundMappingDocument = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
+                md.setDownloadURL(foundMappingDocument.getDownloadURL());
+            } else {
+                //I don't know that to do here, Ahmad will handle
+
+            }
         }
 
 
@@ -294,8 +381,9 @@ public class MappingPediaController {
 
     }
 
-    @RequestMapping(value="/executions/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
-    public ExecuteMappingResult postExecutions(
+    //TODO REFACTOR THIS; MERGE /executions with /executions2
+    @RequestMapping(value="/executions1/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
+    public ExecuteMappingResult postExecutions1(
             @PathVariable("organizationId") String organizationId
             , @PathVariable("datasetId") String datasetId
             , @PathVariable("mappingFilename") String mappingFilename
@@ -305,8 +393,10 @@ public class MappingPediaController {
 
             , @RequestParam(value="queryFile", required = false) String queryFile
             , @RequestParam(value="outputFilename", required = false) String outputFilename
-            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
+            , @RequestParam(value="mappingLanguage", required = false) String pMappingLanguage
             , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
+
+            , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
 
             , @RequestParam(value="distributionMediaType", required = false
             , defaultValue="text/csv") String distributionMediaType
@@ -346,9 +436,21 @@ public class MappingPediaController {
         String mappingDocumentDownloadURL = GitHubUtility.generateDownloadURL(organizationId, datasetId, mappingFilename);
         MappingDocument md = new MappingDocument();
         md.setDownloadURL(mappingDocumentDownloadURL);
+        String mappingLanguage = MappingDocumentController.detectMappingLanguage(pMappingLanguage);
+        logger.info("mappingLanguage = " + mappingLanguage);
         md.mappingLanguage_$eq(mappingLanguage);
 
+        if(mappingDocumentDownloadURL != null) {
+            md.setDownloadURL(mappingDocumentDownloadURL);
+        } else {
+            if(mappingDocumentId != null) {
+                MappingDocument foundMappingDocument = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
+                md.setDownloadURL(foundMappingDocument.getDownloadURL());
+            } else {
+                //I don't know that to do here, Ahmad will handle
 
+            }
+        }
         //return MappingExecutionController.executeMapping2(md, dataset, queryFile, outputFilename, true);
 
         try {

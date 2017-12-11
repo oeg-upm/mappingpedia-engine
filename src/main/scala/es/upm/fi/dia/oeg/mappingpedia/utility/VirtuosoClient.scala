@@ -9,7 +9,7 @@ import org.apache.jena.graph.Triple
 import org.apache.jena.rdf.model.{Model, ModelFactory}
 import org.apache.jena.util.FileManager
 import org.slf4j.{Logger, LoggerFactory}
-import virtuoso.jena.driver.VirtGraph
+import virtuoso.jena.driver.{VirtGraph, VirtModel, VirtuosoQueryExecutionFactory}
 
 import scala.collection.JavaConversions._
 
@@ -19,6 +19,13 @@ class VirtuosoClient(val virtuosoJDBC:String, val virtuosoUser:String, val virtu
   val virtGraph:VirtGraph = {
     logger.info("Connecting to Virtuoso Graph...");
     new VirtGraph (virtuosoGraphName, virtuosoJDBC, virtuosoUser, virtuosoPwd);
+  }
+
+  val databaseModel = VirtModel.openDatabaseModel(virtuosoGraphName, virtuosoJDBC, virtuosoUser, virtuosoPwd);
+  //val defaultModel = VirtModel.openDefaultModel(virtuosoJDBC, virtuosoUser, virtuosoPwd)
+
+  def createQueryExecution(queryString:String) = {
+    VirtuosoQueryExecutionFactory.create(queryString, this.databaseModel)
   }
 
   def store(file:File) : Unit = {
@@ -76,6 +83,7 @@ class VirtuosoClient(val virtuosoJDBC:String, val virtuosoUser:String, val virtu
 
   def readModelFromInputStream(inputStream:InputStream, lang:String) : Model = {
     val model = ModelFactory.createDefaultModel();
+
     model.read(inputStream, null, lang);
     model;
   }

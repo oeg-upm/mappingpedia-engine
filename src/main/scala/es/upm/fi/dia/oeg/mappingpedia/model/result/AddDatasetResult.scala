@@ -38,5 +38,7 @@ class AddDatasetResult(val errorCode:Integer, val status:String, val dataset:Dat
   def getDistribution_manifest_access_url = if(distribution == null ) { null } else { distribution.manifestAccessURL }
   def getDistribution_manifest_download_url = if(distribution == null ) { null } else { distribution.manifestDownloadURL }
   def getDistribution_sha = if(distribution == null ) { null } else { distribution.sha }
-  def getDistribution_id = if(distribution == null ) { null } else { distribution.ckanResourceId}
+  def getDistribution_id = if(distribution == null ) { null } else { distribution.dctIdentifier}
+  def getDistribution_ckan_resource_id = if(distribution == null ) { null } else { distribution.ckanResourceId}
+
 }

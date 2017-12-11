@@ -9,7 +9,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.OntologyClass
 object MappingPediaUtilityTest {
   val app:Application = new Application;
 
-  val model = JenaClient.loadSchemaOrgOntology("tree.jsonld", "JSON-LD");
+  val model = JenaClient.loadSchemaOrgOntology(null, "tree.jsonld", "JSON-LD");
   val jenaClient = new JenaClient(model)
 
   val aClass = "MedicalBusiness"

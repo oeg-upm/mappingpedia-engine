@@ -441,8 +441,9 @@ object DatasetController {
     var results: List[Dataset] = List.empty;
     try {
       val rs = qexec.execSelect
+      logger.info("Obtaining result from executing query=\n" + queryString)
       while (rs.hasNext) {
-        logger.info("Obtaining result from executing query=\n" + queryString)
+
         val qs = rs.nextSolution
         val datasetID = qs.get("datasetID").toString;
         val dataset = new Dataset(datasetID);

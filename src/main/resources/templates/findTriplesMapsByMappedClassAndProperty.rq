@@ -1,0 +1,50 @@
+prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
+prefix rr: <http://www.w3.org/ns/r2rml#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dcterms: <http://purl.org/dc/elements/1.1/>
+
+SELECT DISTINCT *
+FROM <$graphURL>
+WHERE {
+    ?md a mpv:R2RMLMappingDocument .
+    ?md dcterms:identifier ?mdID .
+    ?md mpv:hasTriplesMaps ?tm .
+    ?tm rr:predicateObjectMap ?pomProperty .
+    {
+        ?tm rr:subjectMap ?sm .
+        ?sm rr:class ?searchedClass .
+        FILTER regex(str(?searchedClass), "$mappedClass", "i")
+        {
+            ?pomProperty rr:predicate ?searchedProperty .
+            FILTER regex(str(?searchedProperty), "$mappedProperty", "i")
+        }
+        UNION
+        {
+            ?pomProperty rr:predicateMap ?pmProperty . ?pmProperty rr:constant ?searchedProperty .
+            FILTER regex(str(?searchedProperty), "$mappedProperty", "i")
+        }
+    }
+    UNION
+    {
+        ?tm rr:predicateObjectMap ?pomClass .
+        ?pomClass rr:predicateMap ?pmClass . ?pmClass rr:constant rdf:type .
+        ?pomClass rr:objectMap ?omClass . ?omClass rr:constant ?searchedClass .
+        FILTER regex(str(?searchedClass), "$mappedClass", "i")
+    }
+    #OPTIONAL { ?md mpv:sha ?mdSHA . }
+    ?md mpv:sha ?mdSHA .
+    OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
+    OPTIONAL {
+        ?md mpv:hasDataset ?dataset .
+        ?dataset dcterms:identifier ?datasetId .
+        OPTIONAL { ?dataset dcat:distribution ?distribution . }
+        OPTIONAL { ?distribution dcat:accessURL ?distributionAccessURL . }
+        OPTIONAL { ?distribution dcat:downloadURL ?distributionDownloadURL . }
+        ?distribution mpv:sha ?distributionSHA .
+    }
+    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
+    OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
+    OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
+}
+ORDER BY ASC(?dateSubmitted)
