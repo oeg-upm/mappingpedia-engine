@@ -63,6 +63,15 @@ public class MappingPediaController {
                 String.format(template, name));
     }
 
+    @RequestMapping(value="/ontology/resource_details", method= RequestMethod.GET)
+    public OntologyResource getOntologyResourceDetails(
+            @RequestParam(value="resource") String resource) {
+        logger.info("GET /ontology/resource_details ...");
+        String uri = MappingPediaUtility.getClassURI(resource);
+
+        return this.jenaClient.getDetails(uri);
+    }
+
     @RequestMapping(value="/github_repo_url", method= RequestMethod.GET)
     public String getGitHubRepoURL() {
         logger.info("GET /github_repo_url ...");
@@ -182,12 +191,13 @@ public class MappingPediaController {
     @RequestMapping(value="/properties", method= RequestMethod.GET)
     public ListResult getProperties(
             @RequestParam(value="class", required = false, defaultValue="Thing") String aClass
-            , @RequestParam(value="direct", required = false, defaultValue="false") String direct
+            , @RequestParam(value="direct", required = false, defaultValue="true") String direct
     )
     {
         logger.info("/properties ...");
+        logger.info("this.jenaClient = " + this.jenaClient);
+
         ListResult listResult = this.jenaClient.getProperties(aClass, direct);
-        logger.info("properties result = " + listResult);
 
         return listResult;
     }

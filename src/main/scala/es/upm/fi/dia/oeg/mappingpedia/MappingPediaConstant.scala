@@ -66,5 +66,8 @@ object MappingPediaConstant {
 	//val SCHEMA_ORG_FILE = "tree.jsonld"
 	val FORMAT = "RDF/XML"
 
+	val SCHEMA_RANGE_INCLUDES_PROPERTY = ResourceFactory.createProperty("http://schema.org/rangeIncludes");
+	val SCHEMA_DOMAIN_INCLUDES_PROPERTY = ResourceFactory.createProperty("http://schema.org/domainIncludes");
+
 
 }
