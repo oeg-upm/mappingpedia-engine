@@ -189,15 +189,10 @@ object JenaClient {
     val defaultModel = virtuosoClient.readModelFromFile(ontologyFileName, ontologyFormat);
     val rdfsModel = ModelFactory.createOntologyModel(OntModelSpec.RDFS_MEM_TRANS_INF, defaultModel)
     val ontProperties = rdfsModel.listOntProperties().toList
-    logger.info(s"ontProperties  = " + ontProperties )
-    logger.info(s"ontProperties.length  = ${ontProperties.length}")
     for(ontProperty <- ontProperties) {
-      logger.info(s"ontProperty  = " + ontProperty )
 
       val domainOld = ontProperty.getDomain;
-      logger.info(s"domainOld  = ${domainOld}")
       val rangeOld = ontProperty.getRange;
-      logger.info(s"rangeOld  = ${rangeOld}")
 
       val schemaDomain = ontProperty.getPropertyResourceValue(MappingPediaConstant.SCHEMA_DOMAIN_INCLUDES_PROPERTY)
       if(schemaDomain != null) {
@@ -210,9 +205,7 @@ object JenaClient {
       }
 
       val domainNew = ontProperty.getDomain;
-      logger.info(s"domainNew  = ${domainNew}")
       val rangeNew = ontProperty.getRange;
-      logger.info(s"rangeNew  = ${rangeNew}")
 
     }
 
