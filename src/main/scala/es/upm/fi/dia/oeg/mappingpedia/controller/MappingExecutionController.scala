@@ -76,7 +76,6 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     */
 
     val mappingExecutionDirectory = s"executions/$organizationId/$datasetId/$mappingExecutionId";
-    logger.info(s"mappingExecutionDirectory = $mappingExecutionDirectory");
 
     val outputFileName = if (pOutputFilename == null) {
       UUID.randomUUID.toString + ".txt"
@@ -84,7 +83,6 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       pOutputFilename;
     }
     val outputFilepath:String = s"$mappingExecutionDirectory/$outputFileName"
-    logger.info(s"outputFilepath = $outputFilepath");
     val outputFile: File = new File(outputFilepath)
 
     //EXECUTING MAPPING

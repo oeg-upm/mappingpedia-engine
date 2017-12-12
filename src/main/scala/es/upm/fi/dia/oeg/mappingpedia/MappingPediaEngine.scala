@@ -181,7 +181,7 @@ object MappingPediaEngine {
 
 			val file = new File(uuidDirectory + "/" + filename)
 			val bw = new BufferedWriter(new FileWriter(file))
-			logger.info(s"manifestTriples = $manifestTriples")
+			logger.debug(s"manifestTriples = $manifestTriples")
 			bw.write(manifestTriples)
 			bw.close()
 			file
