@@ -259,6 +259,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
+    logger.info("\n")
 
     new ExecuteMappingResult(
       responseStatus, responseStatusText
