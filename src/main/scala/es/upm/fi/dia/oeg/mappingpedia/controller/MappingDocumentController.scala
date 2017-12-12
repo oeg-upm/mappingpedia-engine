@@ -603,15 +603,20 @@ object MappingDocumentController {
 
 
   def detectMappingLanguage(mappingDocumentDownloadURL:String) : String = {
-    logger.info(s"pMappingLanguage = ${mappingDocumentDownloadURL}")
 
 
     val mappingLanguage = if (mappingDocumentDownloadURL != null) {
       val splitedMappingLanguage = mappingDocumentDownloadURL.split("\\.")
-      logger.info(s"splitedMappingLanguage = ${splitedMappingLanguage.mkString}")
 
-      if (splitedMappingLanguage.length == 3 && "rml".equalsIgnoreCase(splitedMappingLanguage(1)) && ".ttl".equalsIgnoreCase(splitedMappingLanguage(2))) {
-        "rml"
+      if (splitedMappingLanguage.length >= 3) {
+        val extension1 = splitedMappingLanguage(splitedMappingLanguage.length-2);
+        val extension2 = splitedMappingLanguage(splitedMappingLanguage.length-1);
+
+        if("rml".equalsIgnoreCase(extension1) && "ttl".equalsIgnoreCase(extension2)) {
+          "rml"
+        } else {
+          "r2rml"
+        }
       } else {
         "r2rml"
       }
