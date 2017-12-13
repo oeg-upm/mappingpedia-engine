@@ -334,13 +334,21 @@ object MappingPediaEngine {
 
 
 
+	def generateAdditionalTriples(mappingLanguage:String, manifestModel:Model, mappingDocumentModel:Model) : List[Triple] = {
+		if("rml".equalsIgnoreCase(mappingLanguage)) {
+			this.generateAdditionalTriplesForRML(manifestModel, mappingDocumentModel);
+		} else {
+			this.generateAdditionalTriplesForR2RML(manifestModel, mappingDocumentModel);
+		}
+	}
 
-	def generateAdditionalTriples(manifestModel:Model, mappingDocumentModel:Model) : List[Triple] = {
+	def generateAdditionalTriplesForR2RML(manifestModel:Model, mappingDocumentModel:Model) : List[Triple] = {
+		logger.info("generating additional triples for R2RML ...");
+
 		var newTriples:List[Triple] = List.empty;
 
 		val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
 			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
-		//logger.info("r2rmlMappingDocumentResources = " + r2rmlMappingDocumentResources);
 
 		if(r2rmlMappingDocumentResources != null) {
 			while(r2rmlMappingDocumentResources.hasNext()) {
@@ -370,7 +378,45 @@ object MappingPediaEngine {
 		newTriples;
 	}
 
-	def storeManifestAndMapping(manifestFilePath:String, pMappingFilePath:String, clearGraphString:String
+	def generateAdditionalTriplesForRML(manifestModel:Model, mappingDocumentModel:Model) : List[Triple] = {
+		logger.info("generating additional triples for RML ...");
+
+		val mappingDocumentResources = manifestModel.listResourcesWithProperty(
+			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
+		logger.info(s"mappingDocumentResources = ${mappingDocumentResources}");
+
+		val newTriples:List[Triple] = if(mappingDocumentResources != null) {
+			mappingDocumentResources.toIterator.flatMap(mappingDocumentResource => {
+				logger.info(s"mappingDocumentResource = ${mappingDocumentResource}");
+
+				val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
+					MappingPediaConstant.RML_LOGICALSOURCE_PROPERTY);
+
+
+				if(triplesMapResources != null) {
+					val newTriplesAux:List[Triple] = triplesMapResources.toIterator.map(triplesMapResource => {
+						logger.info(s"triplesMapResource.toString = ${triplesMapResource.toString}");
+
+						val newStatement = new StatementImpl(mappingDocumentResource
+							, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
+						logger.info("adding new hasTriplesMap statement: " + newStatement);
+						val newTriple = newStatement.asTriple();
+						newTriple
+					}).toList;
+					newTriplesAux
+				} else {
+					List.empty
+				}
+			}).toList;
+		} else {
+			List.empty
+		}
+
+		logger.info(s"newTriples = $newTriples");
+		newTriples;
+	}
+
+	def storeManifestAndMapping(mappingLanguage:String, manifestFilePath:String, pMappingFilePath:String, clearGraphString:String
 															//, mappingpediaEngine:MappingPediaEngine
 															, pReplaceMappingBaseURI:String, newMappingBaseURI:String
 														 ): Unit = {
@@ -428,8 +474,9 @@ object MappingPediaEngine {
 			this.virtuosoClient.store(manifestTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 
 			logger.info("Storing generated triples.");
-			val additionalTriples = this.generateAdditionalTriples(manifestModel, mappingDocumentModel);
-			//logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
+			val additionalTriples = this.generateAdditionalTriples(mappingLanguage
+				, manifestModel, mappingDocumentModel);
+			logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
 
 			this.virtuosoClient.store(additionalTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 		}

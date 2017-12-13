@@ -169,21 +169,21 @@ public class MappingPediaController {
             @RequestParam(value="dataset_id", defaultValue = "", required = false) String datasetId
             , @RequestParam(value="distribution_id", defaultValue = "", required = false) String distributionId
     ) {
-        logger.info("dataset_id = " + datasetId);
-        logger.info("distribution_id = " + distributionId);
-
         ListResult listResult = null;
         if(!"".equalsIgnoreCase(datasetId.trim())) {
             logger.info("/findMappingDocumentsByDatasetId...");
+            logger.info("dataset_id = " + datasetId);
+
 
             listResult = this.mappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
         } else if(!"".equalsIgnoreCase(distributionId.trim())) {
             logger.info("/findMappingDocumentsByDistributionId...");
+            logger.info("distribution_id = " + distributionId);
+
 
             listResult = this.mappingDocumentController.findMappingDocumentsByDistributionId(distributionId);
         }
 
-        logger.info("mappings result = " + listResult);
 
         return listResult;
     }
@@ -535,11 +535,13 @@ public class MappingPediaController {
             , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
             , @RequestParam(value="mappingDocumentCreator", defaultValue="") String mappingDocumentCreator
             , @RequestParam(value="mappingDocumentSubjects", defaultValue="") String mappingDocumentSubjects
-            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
+            , @RequestParam(value="mappingLanguage", required = false) String pMappingLanguage
 
     )
     {
         logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
+        logger.info("pMappingLanguage = " + pMappingLanguage);
+
         Organization organization = new Organization(organizationID);
         Dataset dataset = new Dataset(organization, datasetID);
 
@@ -551,21 +553,41 @@ public class MappingPediaController {
         } else {
             mappingDocument.dctTitle_$eq(mappingDocumentTitle);
         }
-        mappingDocument.mappingLanguage_$eq(mappingLanguage);
+
+        //mappingDocument.mappingLanguage_$eq(mappingLanguage);
+        if(pMappingLanguage != null) {
+            mappingDocument.mappingLanguage_$eq(pMappingLanguage);
+        }
+
+        File mappingDocumentFile = null;
         if(mappingDocumentFileMultipartFile != null) {
-            File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingDocumentFileMultipartFile, dataset.dctIdentifier());
+            mappingDocumentFile = MappingPediaUtility.multipartFileToFile(
+                    mappingDocumentFileMultipartFile, dataset.dctIdentifier());
+        } else if(mappingFileMultipartFile != null) {
+            mappingDocumentFile = MappingPediaUtility.multipartFileToFile(
+                    mappingFileMultipartFile , dataset.dctIdentifier());
+        }
+        if(mappingDocumentFile != null) {
             mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
-        } else {
-            if(mappingFileMultipartFile != null) {
-                File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingFileMultipartFile , dataset.dctIdentifier());
-                logger.info("mappingFileMultipartFile = " + mappingFileMultipartFile.getOriginalFilename());
-                mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
+            if(pMappingLanguage == null) {
+                String mappingLanguage = MappingDocumentController.detectMappingLanguage(
+                        mappingDocumentFile.getAbsolutePath());
+                mappingDocument.mappingLanguage_$eq(mappingLanguage);
             }
         }
 
-        mappingDocument.setDownloadURL(mappingDocumentDownloadURL);
+        if(mappingDocumentDownloadURL != null) {
+            mappingDocument.setDownloadURL(mappingDocumentDownloadURL);
+            if(pMappingLanguage == null) {
+                String mappingLanguage = MappingDocumentController.detectMappingLanguage(
+                        mappingDocumentDownloadURL);
+                mappingDocument.mappingLanguage_$eq(mappingLanguage);
+            }
+        }
 
 
+
+        logger.info("mappingDocument.mappingLanguage() = " + mappingDocument.mappingLanguage());
         return mappingDocumentController.addNewMappingDocument(dataset, manifestFileRef
                 , replaceMappingBaseURI, generateManifestFile, mappingDocument
         );

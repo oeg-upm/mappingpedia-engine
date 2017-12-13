@@ -112,7 +112,8 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
           manifestFile.getPath;
         }
         val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
-        MappingPediaEngine.storeManifestAndMapping(manifestFilePath, mappingDocument.getDownloadURL(), "false"
+        MappingPediaEngine.storeManifestAndMapping(mappingDocument.mappingLanguage
+          , manifestFilePath, mappingDocument.getDownloadURL(), "false"
           //, Application.mappingpediaEngine
           , replaceMappingBaseURI, newMappingBaseURI)
         logger.info("Mapping and manifest file stored on Virtuoso")
@@ -261,7 +262,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-  logger.info(s"queryString = \n$queryString")
+  logger.debug(s"queryString = \n$queryString")
 
     var results: List[String] = List.empty;
     try {
@@ -502,7 +503,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-    logger.info(s"queryString = $queryString")
+    logger.debug(s"queryString = $queryString")
 
     var results: List[MappingDocument] = List.empty;
     try {
