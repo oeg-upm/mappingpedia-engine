@@ -70,4 +70,9 @@ object MappingPediaConstant {
 	val SCHEMA_DOMAIN_INCLUDES_PROPERTY = ResourceFactory.createProperty("http://schema.org/domainIncludes");
 
 
+	// CUSTOM CKAN FIELDS
+	val CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL = "original_dataset_distribution_download_url";
+	val CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL = "mapping_document_download_url";
+	val CKAN_RESOURCE_PROV_TRIPLES = "prov_triples";
+
 }
