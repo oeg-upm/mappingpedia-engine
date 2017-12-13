@@ -166,17 +166,43 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL")
 
 
-    //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
     val mappingExecutionResultDistribution = new Distribution(dataset)
+    mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
+    mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
+    mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
+    mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
+    mappingExecutionResultDistribution.distributionFile = outputFile;
+
+    //GENERATING MANIFEST FILE
+    val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
+
+    //STORING MANIFEST ON GITHUB
+    val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
+      if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
+        try {
+          this.storeManifestFileOnGitHub(manifestFile, dataset, md);
+        } catch {
+          case e: Exception => {
+            errorOccured = true;
+            e.printStackTrace()
+            val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
+            logger.error(errorMessage)
+            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+            null
+          }
+        }
+      } else {
+        null
+      }
+    val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
+    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
+
+    //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
     val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
         logger.info("storing mapping execution result on CKAN ...")
 
-        mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
-        mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
-        mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
-        mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
-        mappingExecutionResultDistribution.distributionFile = outputFile;
+
         //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
         //            , resourceMediaType, resourceFileRef, resourceDownloadURL)
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
@@ -184,7 +210,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
         val mapTextBody:Map[String, String] = Map(
           MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> datasetDistribution.dcatDownloadURL
             , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
-          //, MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> manifestDownloadURL
+          , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> manifestDownloadURL
         )
         ckanClient.createResource(mappingExecutionResultDistribution, Some(mapTextBody));
 
@@ -215,30 +241,10 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       }
     }
 
-    //GENERATING MANIFEST FILE
-    val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
 
 
-    //STORING MANIFEST ON GITHUB
-    val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
-      if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
-        try {
-          this.storeManifestFileOnGitHub(manifestFile, dataset, md);
-        } catch {
-          case e: Exception => {
-            errorOccured = true;
-            e.printStackTrace()
-            val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
-            logger.error(errorMessage)
-            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-            null
-          }
-        }
-      } else {
-        null
-      }
-    val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
-    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
+
+
 
     //STORING MANIFEST FILE AS TRIPLES ON VIRTUOSO
     val addManifestVirtuosoResponse:String = try {
