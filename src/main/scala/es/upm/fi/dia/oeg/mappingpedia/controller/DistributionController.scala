@@ -162,7 +162,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
         logger.info("storing distribution file as a package on CKAN ...")
 
         if(distribution != null) {
-          ckanClient.createResource(distribution);
+          ckanClient.createResource(distribution, None);
         } else {
           null
         }

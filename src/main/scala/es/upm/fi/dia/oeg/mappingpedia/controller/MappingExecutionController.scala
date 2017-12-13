@@ -5,6 +5,7 @@ import java.net.HttpURLConnection
 import java.util.{Date, UUID}
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode, Unirest}
+import es.upm.fi.dia.oeg.mappingpedia
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, ExecutionMappingResultSummary, GeneralResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
@@ -162,24 +163,56 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     } else {
       null
     }
-
     logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL")
 
 
     val mappingExecutionResultDistribution = new Distribution(dataset)
+    mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
+    mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
+    mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
+    mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
+    mappingExecutionResultDistribution.distributionFile = outputFile;
+
+    //GENERATING MANIFEST FILE
+    val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
+
+    //STORING MANIFEST ON GITHUB
+    val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
+      if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
+        try {
+          this.storeManifestFileOnGitHub(manifestFile, dataset, md);
+        } catch {
+          case e: Exception => {
+            errorOccured = true;
+            e.printStackTrace()
+            val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
+            logger.error(errorMessage)
+            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+            null
+          }
+        }
+      } else {
+        null
+      }
+    val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
+    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
+
     //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
     val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
         logger.info("storing mapping execution result on CKAN ...")
-        mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
-        mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
-        mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
-        mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
-        mappingExecutionResultDistribution.distributionFile = outputFile;
+
+
         //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
         //            , resourceMediaType, resourceFileRef, resourceDownloadURL)
         //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
-        ckanClient.createResource(mappingExecutionResultDistribution);
+
+        val mapTextBody:Map[String, String] = Map(
+          MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> datasetDistribution.dcatDownloadURL
+            , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
+          , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> manifestDownloadURL
+        )
+        ckanClient.createResource(mappingExecutionResultDistribution, Some(mapTextBody));
 
         /*
         mappingExecutionResultDistribution.ckanResourceId = addNewResourceEntity.getJSONObject("result").getString("id");
@@ -208,26 +241,9 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       }
     }
 
-    val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
 
-    //STORING MANIFEST ON GITHUB
-    val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
-      if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
-        try {
-          this.storeManifestFileOnGitHub(manifestFile, dataset, md);
-        } catch {
-          case e: Exception => {
-            errorOccured = true;
-            e.printStackTrace()
-            val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
-            logger.error(errorMessage)
-            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-            null
-          }
-        }
-      } else {
-        null
-      }
+
+
 
 
     //STORING MANIFEST FILE AS TRIPLES ON VIRTUOSO
@@ -250,8 +266,6 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       }
     }
 
-    val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
-    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -259,6 +273,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       (HttpURLConnection.HTTP_OK, "OK")
     }
 
+    logger.info("\n")
 
     new ExecuteMappingResult(
       responseStatus, responseStatusText

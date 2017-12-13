@@ -558,6 +558,7 @@ public class MappingPediaController {
         } else {
             if(mappingFileMultipartFile != null) {
                 File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingFileMultipartFile , dataset.dctIdentifier());
+                logger.info("mappingFileMultipartFile = " + mappingFileMultipartFile.getOriginalFilename());
                 mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
             }
         }

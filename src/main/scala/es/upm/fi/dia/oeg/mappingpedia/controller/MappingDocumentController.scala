@@ -187,6 +187,8 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       //, manifestAccessURL, manifestDownloadURL
       , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
     )
+
+    logger.info("\n")
     addMappingResult
 
     /*

@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia.utility
 
 import java.io.File
 import java.net.HttpURLConnection
+import java.util.Properties
 
 import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
@@ -26,16 +27,16 @@ import org.apache.http.util.EntityUtils
 class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  def createResource(distribution: Distribution) = {
+  def createResource(distribution: Distribution, textBodyMap:Option[Map[String, String]]) = {
     val dataset = distribution.dataset;
 
     val packageId = dataset.dctIdentifier;
-    logger.info(s"packageId = $packageId")
-    logger.info(s"url = ${distribution.dcatDownloadURL}")
-    logger.info(s"description = ${distribution.dctDescription}")
-    logger.info(s"mimetype = ${distribution.dcatMediaType}")
-    logger.info(s"upload = ${distribution.distributionFile}")
-    logger.info(s"dataset.dctLanguage = ${dataset.dctLanguage}")
+    logger.debug(s"packageId = $packageId")
+    logger.debug(s"url = ${distribution.dcatDownloadURL}")
+    logger.debug(s"description = ${distribution.dctDescription}")
+    logger.debug(s"mimetype = ${distribution.dcatMediaType}")
+    logger.debug(s"upload = ${distribution.distributionFile}")
+    logger.debug(s"dataset.dctLanguage = ${dataset.dctLanguage}")
 
     val httpClient = HttpClientBuilder.create.build
     try {
@@ -62,6 +63,17 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       }
       if(dataset.dctLanguage != null) {
         builder.addTextBody("language", dataset.dctLanguage)
+      }
+
+      if(textBodyMap != null && textBodyMap.isDefined) {
+
+        for((key, value) <- textBodyMap.get) {
+          logger.debug(s"textBodyMap key = $key")
+          logger.debug(s"textBodyMap value = $value")
+
+          builder.addTextBody(key, value)
+        }
+
       }
 
       val mpEntity = builder.build();
