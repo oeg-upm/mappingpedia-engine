@@ -304,6 +304,7 @@ public class MappingPediaController {
     )
     {
         logger.info("POST /executions2");
+        logger.info("mapping_document_id = " + mappingDocumentId);
 
         Organization organization;
         if(organizationId == null) {
@@ -333,7 +334,13 @@ public class MappingPediaController {
 
 
 
-        MappingDocument md = new MappingDocument();
+        MappingDocument md;
+        if(mappingDocumentId != null) {
+            md = new MappingDocument(mappingDocumentId);
+        } else {
+            md = new MappingDocument();
+        }
+
         if(pMappingLanguage != null) {
             md.mappingLanguage_$eq(pMappingLanguage);
         } else {

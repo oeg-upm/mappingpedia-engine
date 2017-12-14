@@ -35,12 +35,12 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
                       , pStoreToGithub:Boolean
                       , pStoreToVirtuoso:Boolean
 
-                    /*
-                      , dbUserName:String, dbPassword:String
-                      , dbName:String, jdbc_url:String
-                      , databaseDriver:String, databaseType:String
-                      */
-                    , jdbcConnection: JDBCConnection
+                      /*
+                        , dbUserName:String, dbPassword:String
+                        , dbName:String, jdbc_url:String
+                        , databaseDriver:String, databaseType:String
+                        */
+                      , jdbcConnection: JDBCConnection
                     ) : ExecuteMappingResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
@@ -197,6 +197,13 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
     val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
 
+    val mappedClass:String = try {
+      this.mappingDocumentController.findAllMappedClassesByMappingDocumentId(md.dctIdentifier).results.iterator.next().toString
+    } catch {
+      case e:Exception => null
+    }
+    logger.info(s"mappedClass = $mappedClass")
+
     //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
     val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
@@ -209,8 +216,9 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
 
         val mapTextBody:Map[String, String] = Map(
           MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> datasetDistribution.dcatDownloadURL
-            , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
+          , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
           , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> manifestDownloadURL
+          , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClass
         )
         ckanClient.createResource(mappingExecutionResultDistribution, Some(mapTextBody));
 
@@ -440,12 +448,12 @@ object MappingExecutionController {
 
   def executeR2RMLMappingWithRDB(md:MappingDocument, dataset: Dataset
                                  , outputFilepath:String, queryFileName:String
-                                /*
-                                , dbUserName:String, dbPassword:String
-                                , dbName:String, jdbc_url:String
-                                , databaseDriver:String, databaseType:String
-                                */
-                                , jdbcConnection: JDBCConnection
+                                 /*
+                                 , dbUserName:String, dbPassword:String
+                                 , dbName:String, jdbc_url:String
+                                 , databaseDriver:String, databaseType:String
+                                 */
+                                 , jdbcConnection: JDBCConnection
 
                                 ) = {
     logger.info("Executing R2RML mapping ...")
