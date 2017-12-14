@@ -146,10 +146,14 @@ object MappingPediaUtility {
       newBaseURI = newBaseURI + ">";
     }
 
-    val newLines = lines.map(line =>
+    val newLines = lines.map(oneLine => {
+      val line = oneLine.trim;
+
       if(line.startsWith("@base")) {
         "@base " + newBaseURI + " . ";
       } else { line }
+    }
+
     )
     newLines;
   }

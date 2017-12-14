@@ -7,7 +7,10 @@ prefix dcterms: <http://purl.org/dc/elements/1.1/>
 SELECT DISTINCT *
 FROM <$graphURL>
 WHERE {
-    ?md a mpv:R2RMLMappingDocument .
+    { ?md a mpv:R2RMLMappingDocument . }
+    UNION
+    { ?md a mpv:MappingDocument . }
+
     ?md dcterms:identifier ?mdID .
     ?md mpv:hasTriplesMaps ?tm .
     ?tm rr:predicateObjectMap ?pomProperty .

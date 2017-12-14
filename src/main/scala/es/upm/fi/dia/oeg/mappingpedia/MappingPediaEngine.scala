@@ -348,7 +348,7 @@ object MappingPediaEngine {
 		var newTriples:List[Triple] = List.empty;
 
 		val r2rmlMappingDocumentResources = manifestModel.listResourcesWithProperty(
-			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
+			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_MAPPINGDOCUMENT_CLASS);
 
 		if(r2rmlMappingDocumentResources != null) {
 			while(r2rmlMappingDocumentResources.hasNext()) {
@@ -383,12 +383,10 @@ object MappingPediaEngine {
 		logger.info("generating additional triples for RML ...");
 
 		val mappingDocumentResources = manifestModel.listResourcesWithProperty(
-			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS);
-		logger.info(s"mappingDocumentResources = ${mappingDocumentResources}");
+			RDF.`type`, MappingPediaConstant.MAPPINGPEDIAVOCAB_MAPPINGDOCUMENT_CLASS);
 
 		val newTriples:List[Triple] = if(mappingDocumentResources != null) {
 			mappingDocumentResources.toIterator.flatMap(mappingDocumentResource => {
-				logger.info(s"mappingDocumentResource = ${mappingDocumentResource}");
 
 				val triplesMapResources = mappingDocumentModel.listResourcesWithProperty(
 					MappingPediaConstant.RML_LOGICALSOURCE_PROPERTY);
@@ -396,11 +394,9 @@ object MappingPediaEngine {
 
 				if(triplesMapResources != null) {
 					val newTriplesAux:List[Triple] = triplesMapResources.toIterator.map(triplesMapResource => {
-						logger.info(s"triplesMapResource.toString = ${triplesMapResource.toString}");
 
 						val newStatement = new StatementImpl(mappingDocumentResource
 							, MappingPediaConstant.HAS_TRIPLES_MAPS_PROPERTY, triplesMapResource);
-						logger.info("adding new hasTriplesMap statement: " + newStatement);
 						val newTriple = newStatement.asTriple();
 						newTriple
 					}).toList;
@@ -442,13 +438,13 @@ object MappingPediaEngine {
 
 		val oldMappingText:String = this.getMappingContent(manifestFilePath, pMappingFilePath);
 
-
 		val mappingText = if(replaceMappingBaseURI) {
 			MappingPediaUtility.replaceBaseURI(oldMappingText.split("\n").toIterator
 				, newMappingBaseURI).mkString("\n");
 		} else {
 			oldMappingText;
 		}
+
 		val mappingDocumentModel = this.virtuosoClient.readModelFromString(mappingText
 			, MappingPediaConstant.MANIFEST_FILE_LANGUAGE);
 		//mappingpediaEngine.mappingDocumentModel = mappingDocumentModel;

@@ -539,13 +539,16 @@ public class MappingPediaController {
 
     )
     {
-        logger.info("[POST] /mappings/{mappingpediaUsername}/{datasetID}");
+        logger.info("[POST] /mappings/{organizationID}/{datasetID}");
+        logger.info("organizationID = " + organizationID);
+        logger.info("datasetID = " + datasetID);
         logger.info("pMappingLanguage = " + pMappingLanguage);
 
         Organization organization = new Organization(organizationID);
         Dataset dataset = new Dataset(organization, datasetID);
 
         MappingDocument mappingDocument = new MappingDocument();
+        logger.info("mappingDocument.dctIdentifier() = " + mappingDocument.dctIdentifier());
         mappingDocument.dctSubject_$eq(mappingDocumentSubjects);
         mappingDocument.dctCreator_$eq(mappingDocumentCreator);
         if(mappingDocumentTitle == null) {
