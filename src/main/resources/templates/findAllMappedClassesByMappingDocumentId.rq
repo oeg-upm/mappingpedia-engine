@@ -5,14 +5,11 @@ prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
 prefix dcterms: <http://purl.org/dc/elements/1.1/>
 
-SELECT DISTINCT ?mappedClass ?tn COUNT(?mappedClass) AS ?count
-#FROM <$graphURL>
+SELECT DISTINCT ?mappedClass
+FROM <$graphURL>
 WHERE {
-    { ?tm rr:logicalTable ?lt. }
-    UNION
-    { ?tm rml:logicalSource ?lt. }
-
-    ?lt rr:tableName ?tn.
+    ?md mpv:hasTriplesMaps ?tm .
+    ?md dcterms:identifier ?mdId .
     {
         ?tm rr:subjectMap ?sm .
         ?sm rr:class ?mappedClass .
@@ -23,6 +20,5 @@ WHERE {
         ?pom rr:predicateMap ?pm . ?pm rr:constant rdf:type .
         ?pom rr:objectMap ?om . ?om rr:constant ?mappedClass .
     }
-    FILTER regex(str(?tn), "$tableName", "i")
+    FILTER regex(str(?mdId), "$mappingDocumentId", "i")
 }
-GROUP BY ?mappedClass ?tn

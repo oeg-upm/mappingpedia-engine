@@ -246,6 +246,39 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     listResult
   }
 
+  def findAllMappedClassesByMappingDocumentId(mappingDocumentId:String): ListResult = {
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
+      "$mappingDocumentId" -> mappingDocumentId
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findAllMappedClassesByMappingDocumentId.rq")
+
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+    logger.info(s"queryString = \n$queryString")
+
+    var results: List[String] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      //logger.info("Obtaining result from executing query=\n" + queryString)
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+        val mappedClass = qs.get("mappedClass").toString;
+        logger.info(s"mappedClass = $mappedClass")
+
+        results = mappedClass :: results;
+      }
+    }
+    catch {
+      case e:Exception => { e.printStackTrace()}
+    }
+    finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
+
   def findAllMappedClassesByTableName(tableName:String): ListResult = {
     this.findAllMappedClassesByTableName("http://schema.org", tableName)
   }

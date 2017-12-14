@@ -214,15 +214,19 @@ public class MappingPediaController {
     @RequestMapping(value="/mapped_classes", method= RequestMethod.GET)
     public ListResult getMappedClasses(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
                                        , @RequestParam(value="mapped_table", required = false) String mappedTable
+            , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
     ) {
         logger.info("/mapped_classes ...");
         logger.info("prefix = " + prefix);
         ListResult listResult = null;
-        if(mappedTable == null) {
-             listResult = this.mappingDocumentController.findAllMappedClasses(prefix);
-        } else {
+        if(mappingDocumentId != null) {
+            listResult = this.mappingDocumentController.findAllMappedClassesByMappingDocumentId(mappingDocumentId);
+        } else if(mappedTable != null) {
             listResult = this.mappingDocumentController.findAllMappedClassesByTableName(prefix, mappedTable);
+        } else {
+            listResult = this.mappingDocumentController.findAllMappedClasses(prefix);
         }
+
         logger.info("mapped_classes result = " + listResult);
 
         return listResult;
