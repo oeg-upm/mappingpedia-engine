@@ -17,7 +17,11 @@ WHERE {
         ?pom rr:predicateMap ?pm . ?pm rr:constant ?searchedProperty .
         FILTER regex(str(?searchedProperty), "$mappedProperty", "i")
     }
-    ?md a mpv:R2RMLMappingDocument .
+
+    { ?md a mpv:R2RMLMappingDocument . }
+    UNION
+    { ?md a mpv:MappingDocument . }
+
     ?md mpv:hasTriplesMaps ?tm .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
     OPTIONAL {

@@ -26,13 +26,15 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       MappingPediaUtility.getFileNameAndContent(mappingDocument.mappingDocumentFile, mappingDocumentDownloadURL, "UTF-8");
     val base64EncodedContent = GitHubUtility.encodeToBase64(mappingDocumentFileContent)
 
-    val commitMessage = "add a new mapping file by mappingpedia-engine"
+    val mappingDocumentFilePath = s"${organization.dctIdentifier}/${dataset.dctIdentifier}/${mappingDocument.dctIdentifier}/${mappingDocumentFileName}";
+    logger.info(s"mappingDocumentFilePath = $mappingDocumentFilePath")
+
+    val commitMessage = s"add a new mapping document file ${mappingDocumentFileName}"
     //val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
 
     logger.info("Storing mapping file on GitHub ...")
-    val response = githubClient.putEncodedContent(organization.dctIdentifier
-      , dataset.dctIdentifier, mappingDocumentFileName
-      , commitMessage, base64EncodedContent)
+    val response = githubClient.putEncodedContent(
+      mappingDocumentFilePath, commitMessage, base64EncodedContent)
     val responseStatus = response.getStatus
     if (HttpURLConnection.HTTP_OK == responseStatus
       || HttpURLConnection.HTTP_CREATED == responseStatus) {
@@ -111,9 +113,10 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
         } else {
           manifestFile.getPath;
         }
-        val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
-        MappingPediaEngine.storeManifestAndMapping(manifestFilePath, mappingDocument.getDownloadURL(), "false"
-          //, Application.mappingpediaEngine
+        val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + mappingDocument.dctIdentifier + "/"
+        val clearGraph = "false";
+        MappingPediaEngine.storeManifestAndMapping(mappingDocument.mappingLanguage
+          , manifestFilePath, mappingDocument.getDownloadURL(), clearGraph
           , replaceMappingBaseURI, newMappingBaseURI)
         logger.info("Mapping and manifest file stored on Virtuoso")
         "OK"
@@ -138,8 +141,12 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       if (manifestFile != null) {
         logger.info("Storing manifest file on GitHub ...")
         val addNewManifestCommitMessage = s"Add a new manifest file for mapping document: ${mappingDocument.dctIdentifier}"
-        val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
-          , dataset.dctIdentifier, manifestFile.getName, addNewManifestCommitMessage, manifestFile)
+
+        val mappingDocumentManifestFilePath = s"${organization.dctIdentifier}/${dataset.dctIdentifier}/${mappingDocument.dctIdentifier}/${manifestFile.getName}";
+        logger.info(s"mappingDocumentManifestFilePath = $mappingDocumentManifestFilePath")
+
+        val githubResponse = githubClient.encodeAndPutFile(
+          mappingDocumentManifestFilePath, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = githubResponse.getStatus
         val addNewManifestResponseStatusText = githubResponse.getStatusText
 
@@ -261,7 +268,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-  logger.info(s"queryString = \n$queryString")
+  logger.debug(s"queryString = \n$queryString")
 
     var results: List[String] = List.empty;
     try {
@@ -502,7 +509,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-    logger.info(s"queryString = $queryString")
+    logger.debug(s"queryString = $queryString")
 
     var results: List[MappingDocument] = List.empty;
     try {

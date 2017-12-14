@@ -1,5 +1,5 @@
-mpv:R2RMLMappingDocument rdfs:subClassOf dcterms:BibliographicResource .
-mpimd:mappingDocument-$mappingDocumentID a mpv:R2RMLMappingDocument ;
+mpv:MappingDocument rdfs:subClassOf dcterms:BibliographicResource .
+mpimd:mappingDocument-$mappingDocumentID a mpv:MappingDocument ;
     mpv:mappingDocumentIdentifier "mappingDocument-$mappingDocumentID" ;
     dcterms:identifier "$mappingDocumentID" ;
     mpv:mappingDocumentTitle "$mappingDocumentTitle" ;

@@ -27,6 +27,11 @@ object MappingPediaConstant {
 	val R2RML_LOGICALTABLE_URI = R2RML_NS + "logicalTable";
 	val R2RML_LOGICALTABLE_PROPERTY = ResourceFactory.createProperty(R2RML_LOGICALTABLE_URI);
 
+	//RML related constants
+	val RML_NS = "http://semweb.mmlab.be/ns/rml#";
+	val RML_LOGICALSOURCE_URI = RML_NS + "logicalSource";
+	val RML_LOGICALSOURCE_PROPERTY = ResourceFactory.createProperty(RML_LOGICALSOURCE_URI);
+
 	//Mappingpedia related constants
 	private val MAPPINGPEDIA_NS = "http://mappingpedia.linkeddata.es/vocabulary#";
 	val MAPPINGPEDIA_INSTANCE_NS = "http://mappingpedia.linkeddata.es/instance/";
@@ -37,6 +42,10 @@ object MappingPediaConstant {
 	val DEFAULT_MAPPINGDOCUMENTFILE_PROPERTY = ResourceFactory.createProperty(DEFAULT_MAPPINGDOCUMENTFILE_URI);
   val MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_URI = MAPPINGPEDIA_NS + "R2RMLMappingDocument";
 	val MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_CLASS = ResourceFactory.createResource(MAPPINGPEDIAVOCAB_R2RMLMAPPINGDOCUMENT_URI);
+	val MAPPINGPEDIAVOCAB_RMLMAPPINGDOCUMENT_URI = MAPPINGPEDIA_NS + "RMLMappingDocument";
+	val MAPPINGPEDIAVOCAB_RMLMAPPINGDOCUMENT_CLASS = ResourceFactory.createResource(MAPPINGPEDIAVOCAB_RMLMAPPINGDOCUMENT_URI);
+	val MAPPINGPEDIAVOCAB_MAPPINGDOCUMENT_URI = MAPPINGPEDIA_NS + "MappingDocument";
+	val MAPPINGPEDIAVOCAB_MAPPINGDOCUMENT_CLASS = ResourceFactory.createResource(MAPPINGPEDIAVOCAB_MAPPINGDOCUMENT_URI);
 
 	val MANIFEST_FILE_LANGUAGE = "TURTLE";
 	val R2RML_FILE_LANGUAGE = "TURTLE";
