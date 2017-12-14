@@ -111,10 +111,10 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
         } else {
           manifestFile.getPath;
         }
-        val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + dataset.dctIdentifier + "/"
+        val newMappingBaseURI = MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS + mappingDocument.dctIdentifier + "/"
+        val clearGraph = "false";
         MappingPediaEngine.storeManifestAndMapping(mappingDocument.mappingLanguage
-          , manifestFilePath, mappingDocument.getDownloadURL(), "false"
-          //, Application.mappingpediaEngine
+          , manifestFilePath, mappingDocument.getDownloadURL(), clearGraph
           , replaceMappingBaseURI, newMappingBaseURI)
         logger.info("Mapping and manifest file stored on Virtuoso")
         "OK"

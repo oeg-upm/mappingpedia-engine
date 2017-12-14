@@ -375,6 +375,7 @@ object MappingPediaEngine {
 			}
 		}
 
+		logger.info("newTriples = " + newTriples);
 		newTriples;
 	}
 
@@ -416,9 +417,8 @@ object MappingPediaEngine {
 		newTriples;
 	}
 
-	def storeManifestAndMapping(mappingLanguage:String, manifestFilePath:String, pMappingFilePath:String, clearGraphString:String
-															//, mappingpediaEngine:MappingPediaEngine
-															, pReplaceMappingBaseURI:String, newMappingBaseURI:String
+	def storeManifestAndMapping(mappingLanguage:String, manifestFilePath:String, pMappingFilePath:String
+															, clearGraphString:String, pReplaceMappingBaseURI:String, newMappingBaseURI:String
 														 ): Unit = {
 
 		val clearGraphBoolean = MappingPediaUtility.stringToBoolean(clearGraphString);
