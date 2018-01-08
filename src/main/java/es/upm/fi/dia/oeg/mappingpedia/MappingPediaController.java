@@ -280,20 +280,19 @@ public class MappingPediaController {
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
     public ExecuteMappingResult postExecutions2(
             @RequestParam(value="organization_id", required = false) String organizationId
+
             , @RequestParam(value="dataset_id", required = false) String datasetId
-            //, @RequestParam(value="datasetDistributionURL", required = false) String datasetDistributionURL
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
             , @RequestParam(value="distribution_download_url", required = true) String distributionDownloadURL
+            , @RequestParam(value="distribution_mediatype", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="field_separator", required = false) String fieldSeparator
+
+            , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
+            , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
+            , @RequestParam(value="mapping_language", required = false) String pMappingLanguage
 
             , @RequestParam(value="query_file", required = false) String queryFile
             , @RequestParam(value="output_filename", required = false) String outputFilename
-            , @RequestParam(value="mapping_language", required = false) String pMappingLanguage
-            , @RequestParam(value="field_separator", required = false) String fieldSeparator
-
-            , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
-            , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
-
-            , @RequestParam(value="distribution_mediatype", required = false, defaultValue="text/csv") String distributionMediaType
 
             , @RequestParam(value="db_username", required = false) String dbUserName
             , @RequestParam(value="db_password", required = false) String dbPassword
@@ -320,10 +319,14 @@ public class MappingPediaController {
             dataset = new Dataset(organization, datasetId);
         }
         Distribution distribution = new Distribution(dataset);
-
-        distribution.dcatDownloadURL_$eq(distributionDownloadURL);
-        distribution.dcatAccessURL_$eq(distributionAccessURL);
-
+        if(distributionAccessURL != null) {
+            distribution.dcatAccessURL_$eq(distributionAccessURL);
+        }
+        if(distributionDownloadURL != null) {
+            distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+        } else {
+            distribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
+        }
         if(fieldSeparator != null) {
             distribution.cvsFieldSeparator_$eq(fieldSeparator);
         }
@@ -331,14 +334,21 @@ public class MappingPediaController {
         dataset.addDistribution(distribution);
 
 
-
-
-
         MappingDocument md;
         if(mappingDocumentId != null) {
             md = new MappingDocument(mappingDocumentId);
         } else {
             md = new MappingDocument();
+        }
+        if(mappingDocumentDownloadURL != null) {
+            md.setDownloadURL(mappingDocumentDownloadURL);
+        } else {
+            if(mappingDocumentId != null) {
+                MappingDocument foundMappingDocument = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
+                md.setDownloadURL(foundMappingDocument.getDownloadURL());
+            } else {
+                //I don't know that to do here, Ahmad will handle
+            }
         }
 
         if(pMappingLanguage != null) {
@@ -350,30 +360,24 @@ public class MappingPediaController {
         }
 
 
-        if(mappingDocumentDownloadURL != null) {
-            md.setDownloadURL(mappingDocumentDownloadURL);
-        } else {
-            if(mappingDocumentId != null) {
-                MappingDocument foundMappingDocument = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
-                md.setDownloadURL(foundMappingDocument.getDownloadURL());
-            } else {
-                //I don't know that to do here, Ahmad will handle
+        JDBCConnection jdbcConnection = new JDBCConnection(dbUserName, dbPassword
+                , dbName, jdbc_url
+                , databaseDriver, databaseType);
 
-            }
-        }
-
-
-        MappingExecution mappingExecution = new MappingExecution(md, dataset);
-        mappingExecution.setStoreToCKAN("true");
-        mappingExecution.outputFileName_$eq(outputFilename);
-        mappingExecution.queryFilePath_$eq(queryFile);
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
                     , true, true, true
                     , null);
-            //return MappingExecutionController.executeMapping2(mappingExecution);
+
+            /*
+        MappingExecution mappingExecution = new MappingExecution(md, dataset);
+        mappingExecution.setStoreToCKAN("true");
+        mappingExecution.outputFileName_$eq(outputFilename);
+        mappingExecution.queryFilePath_$eq(queryFile);
+        return MappingExecutionController.executeMapping2(mappingExecution);
+*/
         } catch (Exception e) {
             e.printStackTrace();
             String errorMessage = "Error occured: " + e.getMessage();
@@ -389,68 +393,62 @@ public class MappingPediaController {
             );
             return executeMappingResult;
         }
-
     }
 
     //TODO REFACTOR THIS; MERGE /executions with /executions2
-    @RequestMapping(value="/executions1/{organizationId}/{datasetId}/{mappingFilename:.+}", method= RequestMethod.POST)
+    //@RequestMapping(value="/executions1/{organizationId}/{datasetId}/{mappingFilename:.+}"
+//            , method= RequestMethod.POST)
+    @RequestMapping(value="/executions1/{organizationId}/{datasetId}/{mappingDocumentId}"
+            , method= RequestMethod.POST)
     public ExecuteMappingResult postExecutions1(
-            @PathVariable("organizationId") String organizationId
-            , @PathVariable("datasetId") String datasetId
-            , @PathVariable("mappingFilename") String mappingFilename
-            , @RequestParam(value="datasetFile", required = false) String datasetFile
+            @PathVariable("organization_id") String organizationId
+
+            , @PathVariable("dataset_id") String datasetId
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
-
-            , @RequestParam(value="queryFile", required = false) String queryFile
-            , @RequestParam(value="outputFilename", required = false) String outputFilename
-            , @RequestParam(value="mappingLanguage", required = false) String pMappingLanguage
-            , @RequestParam(value="fieldSeparator", required = false) String fieldSeparator
+            , @RequestParam(value="distribution_mediatype", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="field_separator", required = false) String fieldSeparator
 
             , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
+            , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
+            , @RequestParam(value="mapping_language", required = false) String pMappingLanguage
 
-            , @RequestParam(value="distributionMediaType", required = false
-            , defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="query_file", required = false) String queryFile
+            , @RequestParam(value="output_filename", required = false) String outputFilename
 
-            , @RequestParam(value="dbUserName", required = false) String dbUserName
-            , @RequestParam(value="dbPassword", required = false) String dbPassword
-            , @RequestParam(value="dbName", required = false) String dbName
+            , @RequestParam(value="db_username", required = false) String dbUserName
+            , @RequestParam(value="db_password", required = false) String dbPassword
+            , @RequestParam(value="db_name", required = false) String dbName
             , @RequestParam(value="jdbc_url", required = false) String jdbc_url
-            , @RequestParam(value="databaseDriver", required = false) String databaseDriver
-            , @RequestParam(value="databaseType", required = false) String databaseType
+            , @RequestParam(value="database_driver", required = false) String databaseDriver
+            , @RequestParam(value="database_type", required = false) String databaseType
+
+            //, @PathVariable("mappingFilename") String mappingFilename
     )
     {
-        logger.info("POST /executions/{organizationId}/{datasetId}/{mappingFilename}");
+        logger.info("POST /executions1/{organizationId}/{datasetId}/{mappingDocumentId}");
+        logger.info("mapping_document_id = " + mappingDocumentId);
+
         Organization organization = new Organization(organizationId);
+
         Dataset dataset = new Dataset(organization, datasetId);
         Distribution distribution = new Distribution(dataset);
-        distribution.dcatMediaType_$eq(distributionMediaType);
         if(distributionAccessURL != null) {
             distribution.dcatAccessURL_$eq(distributionAccessURL);
-        } else {
-            distribution.dcatAccessURL_$eq(datasetFile);
         }
         if(distributionDownloadURL != null) {
             distribution.dcatDownloadURL_$eq(distributionDownloadURL);
         } else {
             distribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
         }
-
         if(fieldSeparator != null) {
             distribution.cvsFieldSeparator_$eq(fieldSeparator);
         }
+        distribution.dcatMediaType_$eq(distributionMediaType);
         dataset.addDistribution(distribution);
 
-        //String githubRepo = MappingPediaEngine.mappingpediaProperties().githubRepoContents()
-        //String mappingBlobURL = githubRepo + "/blob/master/" + organizationId + "/" + datasetId + "/" + mappingFilename;
 
-        String mappingDocumentDownloadURL = GitHubUtility.generateDownloadURL(organizationId, datasetId, mappingFilename);
         MappingDocument md = new MappingDocument();
-        md.setDownloadURL(mappingDocumentDownloadURL);
-        String mappingLanguage = MappingDocumentController.detectMappingLanguage(pMappingLanguage);
-        logger.info("mappingLanguage = " + mappingLanguage);
-        md.mappingLanguage_$eq(mappingLanguage);
-
         if(mappingDocumentDownloadURL != null) {
             md.setDownloadURL(mappingDocumentDownloadURL);
         } else {
@@ -459,21 +457,28 @@ public class MappingPediaController {
                 md.setDownloadURL(foundMappingDocument.getDownloadURL());
             } else {
                 //I don't know that to do here, Ahmad will handle
-
             }
         }
-        //return MappingExecutionController.executeMapping2(md, dataset, queryFile, outputFilename, true);
+
+        if(pMappingLanguage != null) {
+            md.mappingLanguage_$eq(pMappingLanguage);
+        } else {
+            String mappingLanguage = MappingDocumentController.detectMappingLanguage(mappingDocumentDownloadURL);
+            logger.info("mappingLanguage = " + mappingLanguage);
+            md.mappingLanguage_$eq(mappingLanguage);
+        }
+
+
+        JDBCConnection jdbcConnection = new JDBCConnection(dbUserName, dbPassword
+                , dbName, jdbc_url
+                , databaseDriver, databaseType);
+
 
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            JDBCConnection jdbcConnection = new JDBCConnection(dbUserName, dbPassword
-                    , dbName, jdbc_url
-                    , databaseDriver, databaseType);
-
             return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
                     , true, true, true, jdbcConnection
             );
-            //return MappingExecutionController.executeMapping2(mappingExecution);
         } catch (Exception e) {
             e.printStackTrace();
             String errorMessage = "Error occured: " + e.getMessage();
@@ -489,8 +494,6 @@ public class MappingPediaController {
             );
             return executeMappingResult;
         }
-
-
     }
 
     @RequestMapping(value = "/mappings/{organizationID}", method= RequestMethod.POST)
