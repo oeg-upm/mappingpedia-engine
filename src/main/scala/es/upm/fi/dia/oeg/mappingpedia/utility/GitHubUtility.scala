@@ -141,6 +141,9 @@ class GitHubUtility(githubRepository:String, githubUsername:String, githubAccess
     }
 
     logger.info(s"hitting github url $uri");
+    //logger.info(s"message = $message");
+    //logger.info(s"content = $base64EncodedContent");
+
     val response = Unirest.put(uri)
       .basicAuth(githubUsername, githubAccessToken)
       .body(jsonObj)

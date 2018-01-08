@@ -62,8 +62,9 @@ public class Application {
 
 
 
-			VirtuosoClient virtuosoClient = null;
 			if(properties.virtuosoEnabled()) {
+				VirtuosoClient virtuosoClient = null;
+
 				try {
 					 virtuosoClient = new VirtuosoClient(properties.virtuosoJDBC(), properties.virtuosoUser()
 							, properties.virtuosoPwd(), properties.graphName()
@@ -73,20 +74,22 @@ public class Application {
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
+
+				try {
+					OntModel schemaOntology = JenaClient.loadSchemaOrgOntology(
+							virtuosoClient,
+							MappingPediaConstant.SCHEMA_ORG_FILE(), MappingPediaConstant.FORMAT());
+					MappingPediaEngine.setOntologyModel(schemaOntology);
+					JenaClient jenaClient = new JenaClient(schemaOntology);
+					logger.info(" jenaClient = " + jenaClient);
+					MappingPediaEngine.jenaClient_$eq(jenaClient);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 
 
-			try {
-				OntModel schemaOntology = JenaClient.loadSchemaOrgOntology(
-						virtuosoClient,
-						MappingPediaConstant.SCHEMA_ORG_FILE(), MappingPediaConstant.FORMAT());
-				MappingPediaEngine.setOntologyModel(schemaOntology);
-				JenaClient jenaClient = new JenaClient(schemaOntology);
-				logger.info(" jenaClient = " + jenaClient);
-				MappingPediaEngine.jenaClient_$eq(jenaClient);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+
 
 
 		} catch (Exception ex) {

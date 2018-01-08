@@ -47,7 +47,6 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     val addNewDatasetCommitMessage = s"Add a new distribution file to dataset ${dataset.dctIdentifier}"
     val githubResponse = githubClient.putEncodedContent(organization.dctIdentifier
       , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64EncodedContent)
-    logger.info("New dataset file stored on github ...")
 
     if(githubResponse != null) {
       val responseStatus = githubResponse.getStatus;
@@ -100,6 +99,8 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
         null
       }
     }
+
+
     val distributionAccessURL = if(addDistributionFileGitHubResponse == null) {
       null
     } else {
@@ -108,10 +109,11 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     val distributionDownloadURL = this.githubClient.getDownloadURL(distributionAccessURL);
     val addDistributionFileGitHubResponseStatus:Integer = if(addDistributionFileGitHubResponse == null) { null }
     else { addDistributionFileGitHubResponse.getStatus }
-
-    if(addDistributionFileGitHubResponseStatus >= 200 && addDistributionFileGitHubResponseStatus < 300 && distributionDownloadURL != null) {
+    if(addDistributionFileGitHubResponseStatus!= null && addDistributionFileGitHubResponseStatus >= 200
+      && addDistributionFileGitHubResponseStatus < 300 && distributionDownloadURL != null) {
       distribution.sha = this.githubClient.getSHA(distributionAccessURL);
     }
+
 
     val addDatasetFileGitHubResponseStatusText = if(addDistributionFileGitHubResponse == null) { null }
     else { addDistributionFileGitHubResponse.getStatusText }
@@ -265,6 +267,9 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
         e.getMessage
       }
     }
+
+    logger.debug(s"errorOccured = $errorOccured")
+    logger.debug(s"collectiveErrorMessage = $collectiveErrorMessage")
 
     val (responseStatus, responseStatusText) = if(errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))

@@ -105,7 +105,15 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     }
     val distributionGithubStoreDistributionResponseStatus = if(addDistributionResult != null) { addDistributionResult.githubStoreDistributionResponseStatus } else { null }
     val distributionGithubStoreDistributionResponseStatusText = if(addDistributionResult != null) { addDistributionResult.githubStoreDistributionResponseStatusText } else { null }
+    logger.debug(s"distributionGithubStoreDistributionResponseStatus = $distributionGithubStoreDistributionResponseStatus")
+    logger.debug(s"distributionGithubStoreDistributionResponseStatusText = $distributionGithubStoreDistributionResponseStatusText")
 
+    if (distributionGithubStoreDistributionResponseStatus == null
+      || distributionGithubStoreDistributionResponseStatus < 200 || distributionGithubStoreDistributionResponseStatus >= 300) {
+      val errorMessage = s"failed to add the distribution file to GitHub. response status text = $distributionGithubStoreDistributionResponseStatusText"
+      errorOccured = true;
+      collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+    }
 
 
 
