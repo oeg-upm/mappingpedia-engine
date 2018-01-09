@@ -37,8 +37,8 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     val dataset = distribution.dataset;
     val organization = dataset.dctPublisher;
 
-    val (filename:String, fileContent:String) =
-      MappingPediaUtility.getFileNameAndContent(distribution.distributionFile, distribution.dcatDownloadURL, distribution.encoding);
+    val (filename:String, fileContent:String) = MappingPediaUtility.getFileNameAndContent(
+      distribution.distributionFile, distribution.dcatDownloadURL, distribution.encoding);
     val base64EncodedContent = GitHubUtility.encodeToBase64(fileContent)
 
 

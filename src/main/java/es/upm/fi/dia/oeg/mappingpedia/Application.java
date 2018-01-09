@@ -43,7 +43,7 @@ public class Application {
 					GitHubUtility githubClient = new GitHubUtility(properties.githubRepository(), properties.githubUser()
 							, properties.githubAccessToken()
 					);
-					logger.info(" githubClient = " + githubClient);
+					//logger.info(" githubClient = " + githubClient);
 					MappingPediaEngine.githubClient_$eq(githubClient);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -53,7 +53,7 @@ public class Application {
 			if(properties.ckanEnable()) {
 				try {
 					CKANUtility ckanClient = new CKANUtility(properties.ckanURL(), properties.ckanKey());
-					logger.info(" ckanClient = " + ckanClient);
+					//logger.info(" ckanClient = " + ckanClient);
 					MappingPediaEngine.ckanClient_$eq(ckanClient);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -69,7 +69,7 @@ public class Application {
 					 virtuosoClient = new VirtuosoClient(properties.virtuosoJDBC(), properties.virtuosoUser()
 							, properties.virtuosoPwd(), properties.graphName()
 					);
-					logger.info(" virtuosoClient = " + virtuosoClient);
+					//logger.info(" virtuosoClient = " + virtuosoClient);
 					MappingPediaEngine.virtuosoClient_$eq(virtuosoClient);
 				} catch(Exception e) {
 					e.printStackTrace();
@@ -81,7 +81,7 @@ public class Application {
 							MappingPediaConstant.SCHEMA_ORG_FILE(), MappingPediaConstant.FORMAT());
 					MappingPediaEngine.setOntologyModel(schemaOntology);
 					JenaClient jenaClient = new JenaClient(schemaOntology);
-					logger.info(" jenaClient = " + jenaClient);
+					//logger.info(" jenaClient = " + jenaClient);
 					MappingPediaEngine.jenaClient_$eq(jenaClient);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -105,6 +105,6 @@ public class Application {
 		}
 
 		SpringApplication.run(Application.class, args);
-		logger.info("Mappingpedia engine started.");
+		logger.info("Mappingpedia engine started.\n\n\n");
 	}
 }

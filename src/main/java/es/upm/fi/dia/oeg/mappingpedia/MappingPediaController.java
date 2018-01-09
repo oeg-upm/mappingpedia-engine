@@ -778,7 +778,7 @@ public class MappingPediaController {
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
             , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
             , @RequestParam(value="distributionDescription", required = false) String distributionDescription
-            , @RequestParam(value="distributionEncoding", required = false, defaultValue="UTF-8") String distributionEncoding
+            , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
     )
@@ -902,6 +902,7 @@ public class MappingPediaController {
             , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="datasetDescription", required = false) String distributionDescription
+            , @RequestParam(value="distribution_encoding", required = false) String distributionEncoding
     )
     {
         logger.info("[POST] /datasets/{organizationID}/{datasetID}");
@@ -936,6 +937,8 @@ public class MappingPediaController {
             distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
                     datasetMultipartFile , dataset.dctIdentifier()));
         }
+        logger.info("distributionEncoding = " + distributionEncoding);
+        distribution.encoding_$eq(distributionEncoding);
         dataset.addDistribution(distribution);
 
         return this.distributionController.addDistribution(distribution, manifestFileRef, generateManifestFile);
