@@ -36,15 +36,22 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
     val addNewManifestCommitMessage = s"Add manifest file for dataset: $datasetId"
 
-    logger.info(s"storing manifest file for the dataset $datasetId on github ... ")
+    logger.info(s"STORING MANIFEST FILE FOR DATASET $datasetId ON GITHUB ... ")
     val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
       , datasetId, manifestFileName, addNewManifestCommitMessage, file)
     logger.info(s"manifest file for the dataset $datasetId stored on github.")
     githubResponse
   }
 
-  def addDataset(dataset:Dataset, manifestFileRef:MultipartFile, generateManifestFile:String
+  def addDataset(dataset:Dataset, manifestFileRef:MultipartFile
+                 , generateManifestFile:String, pStoreToCKAN:String
                 ) : AddDatasetResult = {
+
+    val storeToCKAN = if("true".equalsIgnoreCase(pStoreToCKAN) || "yes".equalsIgnoreCase(pStoreToCKAN)) {
+      true
+    } else {
+      false
+    }
 
     //val organization: Organization = dataset.dctPublisher;
     val distribution = dataset.getDistribution();
@@ -53,9 +60,19 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
     //STORING DATASET AS PACKAGE ON CKAN
     val ckanAddPackageResponse:HttpResponse[JsonNode] = try {
-      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
-        logger.info("storing dataset as a package on CKAN ...")
-        ckanClient.addNewPackage(dataset);
+      if(MappingPediaEngine.mappingpediaProperties.ckanEnable && storeToCKAN) {
+        logger.info("STORING DATASET AS A PACKAGE ON CKAN ...")
+        val response = ckanClient.addNewPackage(dataset);
+        try {
+          dataset.ckanPackageId = response.getBody.getObject.getJSONObject("result").getString("id");
+          logger.info(s"dataset.ckanPackageId = ${dataset.ckanPackageId}");
+        } catch {
+          case e:Exception => {
+            logger.error("error obtaining ckan package id!")
+          }
+        }
+
+        response
       } else {
         null
       }
@@ -69,6 +86,8 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         null
       }
     }
+
+
 
     /*
     //STORING DISTRIBUTION FILE AS RESOURCE ON CKAN
@@ -97,9 +116,10 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     */
 
     //CALLING ADD DISTRIBUTION IN DISTRIBUTIONCONTROLLER
+    logger.info(s"distribution = " + distribution);
     val addDistributionResult = if(distribution != null) {
-      this.distributionController.addDistribution(
-        distribution, manifestFileRef:MultipartFile, generateManifestFile:String)
+      this.distributionController.addDistribution(distribution, manifestFileRef:MultipartFile
+        , generateManifestFile:String, storeToCKAN)
     } else {
       null
     }
@@ -108,12 +128,16 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     logger.debug(s"distributionGithubStoreDistributionResponseStatus = $distributionGithubStoreDistributionResponseStatus")
     logger.debug(s"distributionGithubStoreDistributionResponseStatusText = $distributionGithubStoreDistributionResponseStatusText")
 
-    if (distributionGithubStoreDistributionResponseStatus == null
-      || distributionGithubStoreDistributionResponseStatus < 200 || distributionGithubStoreDistributionResponseStatus >= 300) {
-      val errorMessage = s"failed to add the distribution file to GitHub. response status text = $distributionGithubStoreDistributionResponseStatusText"
-      errorOccured = true;
-      collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+    if(distribution != null) {
+      if (distributionGithubStoreDistributionResponseStatus == null
+        || distributionGithubStoreDistributionResponseStatus < 200 || distributionGithubStoreDistributionResponseStatus >= 300) {
+        val errorMessage = s"failed to add the distribution file to GitHub. response status text = $distributionGithubStoreDistributionResponseStatusText"
+        errorOccured = true;
+        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+      }
     }
+
+
 
 
 
@@ -198,7 +222,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     val addManifestVirtuosoResponse:String = try {
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         if(manifestFile != null) {
-          logger.info(s"storing manifest triples of the dataset ${dataset.dctIdentifier} on virtuoso ...")
+          logger.info(s"STORING TRIPLES OF THE MANIFEST OF DATASET ${dataset.dctIdentifier} ON VIRTUOSO ...")
           MappingPediaEngine.virtuosoClient.store(manifestFile)
           "OK"
         } else {
@@ -328,21 +352,21 @@ object DatasetController {
 
 
 
-/*
-  def storeManifestOnVirtuoso(manifestFile:File, message:String) = {
-    if(manifestFile != null) {
-      logger.info(s"storing manifest triples of the dataset ${dataset.dctIdentifier} on virtuoso ...")
-      MappingPediaEngine.virtuosoClient.store(manifestFile)
-      logger.info("manifest triples stored on virtuoso.")
-      "OK";
-    } else {
-      "No manifest file specified/generated!";
+  /*
+    def storeManifestOnVirtuoso(manifestFile:File, message:String) = {
+      if(manifestFile != null) {
+        logger.info(s"storing manifest triples of the dataset ${dataset.dctIdentifier} on virtuoso ...")
+        MappingPediaEngine.virtuosoClient.store(manifestFile)
+        logger.info("manifest triples stored on virtuoso.")
+        "OK";
+      } else {
+        "No manifest file specified/generated!";
+      }
     }
-  }
-*/
+  */
 
   def generateManifestFile(dataset: Dataset) = {
-    logger.info(s"Generating manifest file for dataset ${dataset.dctIdentifier} ...")
+    logger.info(s"GENERATING MANIFEST FILE FOR DATASET ${dataset.dctIdentifier} ...")
     try {
       val organization = dataset.dctPublisher;
       //val datasetDistribution = dataset.getDistribution();

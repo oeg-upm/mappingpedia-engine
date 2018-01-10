@@ -21,7 +21,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     val organization = dataset.dctPublisher;
 
 
-    logger.info(s"storing manifest file for distribution: ${distribution.dctIdentifier} - dataset: ${dataset.dctIdentifier} on github ...")
+    logger.info(s"STORING MANIFEST FILE FOR DISTRIBUTION: ${distribution.dctIdentifier} - DATASET: ${dataset.dctIdentifier} ON GITHUB ...")
     val addNewManifestCommitMessage = s"Add manifest file for distribution: ${distribution.dctIdentifier} - dataset: ${dataset.dctIdentifier} "
     val manifestFileName = file.getName
     val datasetId = dataset.dctIdentifier;
@@ -42,7 +42,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     val base64EncodedContent = GitHubUtility.encodeToBase64(fileContent)
 
 
-    logger.info("storing a distribution file on github ...")
+    logger.info("STORING DISTRIBUTION FILE ON GITHUB ...")
     //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
     val addNewDatasetCommitMessage = s"Add a new distribution file to dataset ${dataset.dctIdentifier}"
     val githubResponse = githubClient.putEncodedContent(organization.dctIdentifier
@@ -71,7 +71,8 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     githubResponse;
   }
 
-  def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile, generateManifestFile:String
+  def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile
+                      , generateManifestFile:String, storeToCKAN:Boolean
                 ) : AddDistributionResult = {
 
     //val dataset = distribution.dataset
@@ -161,8 +162,8 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
 
     //STORING DISTRIBUTION FILE AS RESOURCE ON CKAN
     val ckanAddResourceResponse = try {
-      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
-        logger.info("storing distribution file as a package on CKAN ...")
+      if(MappingPediaEngine.mappingpediaProperties.ckanEnable && storeToCKAN) {
+        logger.info("STORING DISTRIBUTION FILE AS A PACKAGE ON CKAN...")
 
         if(distribution != null
           && (distribution.distributionFile != null || distribution.dcatDownloadURL != null)) {
@@ -192,7 +193,8 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
         ckanAddResourceResponse.getStatusLine.getStatusCode
       }
     }
-    distribution.ckanResourceId = {
+
+/*    distribution.ckanResourceId = {
       if(ckanAddResourceResponse == null) {
         null
       } else {
@@ -201,7 +203,8 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
         val responseEntity = new JSONObject(entity);
         responseEntity.getJSONObject("result").getString("id");
       }
-    }
+    }*/
+    distribution.ckanResourceId = CKANUtility.getResultId(ckanAddResourceResponse);
 
     //MANIFEST FILE
     val manifestFile:File = try {
@@ -250,7 +253,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     val addManifestVirtuosoResponse:String = try {
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         if(manifestFile != null) {
-          logger.info(s"storing manifest triples of the distribution ${distribution.dctIdentifier} on virtuoso ...")
+          logger.info(s"STORING TRIPLES OF THE MANIFEST FILE FOR DISTRIBUTION ${distribution.dctIdentifier} ON VIRTUOSO...")
           MappingPediaEngine.virtuosoClient.store(manifestFile)
           "OK"
         } else {
@@ -347,7 +350,7 @@ object DistributionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def generateManifestFile(distribution: Distribution) = {
-    logger.info("Generating distribution manifest file ...")
+    logger.info("GENERATION MANIFEST FOR DISTRIBUTION ...")
     val dataset = distribution.dataset;
 
     try {

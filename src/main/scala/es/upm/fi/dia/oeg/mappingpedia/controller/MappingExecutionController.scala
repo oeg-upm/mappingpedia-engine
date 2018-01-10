@@ -302,7 +302,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
 
   }
 
-  def getInstances(aClass:String, jenaClient:JenaClient) : ListResult = {
+  def getInstances(aClass:String, jenaClient:JenaClient, maxMappingDocuments:Integer) : ListResult = {
     /*
     val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
       aClass, MappingPediaEngine.ontologyModel, outputType, inputType);
@@ -323,16 +323,19 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     */
 
 
-    val mappingDocuments = this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
-      aClass, null, true).results
+    val mappingDocuments =
+      this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
+        aClass, null, true).results
 
     var executedMappingDocuments:List[(String, String)]= Nil;
 
-    val executionResults:Iterable[ExecutionMappingResultSummary] = mappingDocuments.flatMap(mappingDocument => {
-      val md = mappingDocument.asInstanceOf[MappingDocument];
+    var i = 0;
+    val executionResults:Iterable[ExecutionMappingResultSummary] = mappingDocuments.flatMap(
+      mappingDocument => { val md = mappingDocument.asInstanceOf[MappingDocument];
 
       val mappingLanguage = md.mappingLanguage;
-      val distributionFieldSeparator = if(md.distributionFieldSeparator != null && md.distributionFieldSeparator.isDefined) {
+      val distributionFieldSeparator = if(md.distributionFieldSeparator != null
+        && md.distributionFieldSeparator.isDefined) {
         md.distributionFieldSeparator.get
       } else {
         null
@@ -347,35 +350,38 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       distribution.sha = md.dataset.getDistribution().sha
 
       logger.info(s"mapping document SHA = ${md.sha}");
-      logger.info(s"dataset distirubtion SHA = ${distribution.sha}");
+      logger.info(s"dataset distribution SHA = ${distribution.sha}");
       if(md.sha != null && distribution.sha != null) {
 
 
         if(executedMappingDocuments.contains((md.sha,distribution.sha))) {
           None
         } else {
+          if(i < maxMappingDocuments) {
+            val mappingExecution = new MappingExecution(md, dataset);
+            mappingExecution.setStoreToCKAN("false")
+            mappingExecution.queryFilePath = null;
+            mappingExecution.outputFileName = outputFilename;
 
+            //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
+            val executionResult = this.executeMapping(md, dataset, mappingExecution.queryFilePath, outputFilename
+              , false, true, false
+              , null
+            );
+            //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
-          val mappingExecution = new MappingExecution(md, dataset);
-          mappingExecution.setStoreToCKAN("false")
-          mappingExecution.queryFilePath = null;
-          mappingExecution.outputFileName = outputFilename;
+            executedMappingDocuments = (md.sha,distribution.sha) :: executedMappingDocuments;
 
-          //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-          val executionResult = this.executeMapping(md, dataset, mappingExecution.queryFilePath, outputFilename
-            , false, true, false
-            , null
-          );
-          //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
+            val executionResultAccessURL = executionResult.getMapping_execution_result_access_url()
+            val executionResultDownloadURL = executionResult.getMapping_execution_result_download_url
+            //executionResultURL;
 
-          executedMappingDocuments = (md.sha,distribution.sha) :: executedMappingDocuments;
-
-          val executionResultAccessURL = executionResult.getMapping_execution_result_access_url()
-          val executionResultDownloadURL = executionResult.getMapping_execution_result_download_url
-          //executionResultURL;
-
-          Some(new ExecutionMappingResultSummary(md, distribution, executionResultAccessURL, executionResultDownloadURL))
-          //mappingDocumentURL + " -- " + datasetDistributionURL
+            i +=1
+            Some(new ExecutionMappingResultSummary(md, distribution, executionResultAccessURL, executionResultDownloadURL))
+            //mappingDocumentURL + " -- " + datasetDistributionURL
+          } else {
+            None
+          }
         }
       } else {
         None

@@ -704,7 +704,8 @@ public class MappingPediaController {
         }
 
 
-        AddDatasetResult addDatasetResult = this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
+        AddDatasetResult addDatasetResult = this.datasetController.addDataset(
+                dataset, manifestFileRef, generateManifestFile, "true");
         int addDatasetResultStatusCode = addDatasetResult.getStatus_code();
         if(addDatasetResultStatusCode >= 200 && addDatasetResultStatusCode < 300) {
             MappingDocument mappingDocument = new MappingDocument();
@@ -765,9 +766,10 @@ public class MappingPediaController {
         }
     }
 
-    @RequestMapping(value = "/datasets/{organizationID}", method= RequestMethod.POST)
+    @RequestMapping(value = "/datasets/{organization_name}", method= RequestMethod.POST)
     public AddDatasetResult postDatasets(
-            @PathVariable("organizationID") String organizationID
+            @PathVariable("organization_name") String organizationName
+            , @RequestParam(value="dataset_id", required = false) String datasetID
             , @RequestParam(value="datasetFile", required = false) MultipartFile datasetMultipartFile
             , @RequestParam(value="distribution_file", required = false) MultipartFile distributionMultipartFile
             , @RequestParam(value="datasetTitle", required = false) String datasetTitle
@@ -781,12 +783,24 @@ public class MappingPediaController {
             , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+            , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
+            , @RequestParam(value="store_to_ckan", defaultValue = "true") String pStoreToCKAN
     )
     {
-        logger.info("[POST] /datasets/{organizationID}");
-        Organization organization = new Organization(organizationID);
+        logger.info("[POST] /datasets/{organization_name}");
+        logger.info("organization_name = " + organizationName);
+        logger.info("datasetID = " + datasetID);
+        logger.info("pStoreToCKAN = " + pStoreToCKAN);
 
-        Dataset dataset = new Dataset(organization);
+        Organization organization = new Organization(organizationName);
+
+        Dataset dataset;
+        if(datasetID == null) {
+            dataset = new Dataset(organization);
+        } else {
+            dataset = new Dataset(organization, datasetID);
+        }
+
         if(datasetTitle == null) {
             dataset.dctTitle_$eq(dataset.dctIdentifier());
         } else {
@@ -827,38 +841,41 @@ public class MappingPediaController {
             distribution.dcatMediaType_$eq(distributionMediaType);
             distribution.encoding_$eq(distributionEncoding);
             dataset.addDistribution(distribution);
-
         }
 
-
-        return this.datasetController.addDataset(dataset, manifestFileRef, generateManifestFile);
+        return this.datasetController.addDataset(dataset, manifestFileRef
+                , generateManifestFile, pStoreToCKAN);
     }
 
     //LEGACY ENDPOINT, use /distributions/{organizationID}/{datasetID} instead
-    @RequestMapping(value = "/datasets/{organizationID}/{datasetID}", method= RequestMethod.POST)
+    @RequestMapping(value = "/datasets/{organization_name}/{dataset_id}", method= RequestMethod.POST)
     public AddDistributionResult postDatasets(
-            @PathVariable("organizationID") String organizationID
-            , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+            @PathVariable("organization_name") String organizationName
+            , @PathVariable("dataset_id") String datasetId
             , @RequestParam(value="datasetFile", required = false) MultipartFile distributionFileRef
             , @RequestParam(value="datasetTitle", required = false) String distributionTitle
             , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
             , @RequestParam(value="datasetPublisher", required = false) String datasetPublisher
             , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
+            , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
             , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
-            , @PathVariable("datasetID") String datasetID
+
+
             , @RequestParam(value="datasetDescription", required = false) String distributionDescription
+            , @RequestParam(value="store_to_ckan", defaultValue = "true") String pStoreToCKAN
     )
     {
-        logger.info("[POST] /datasets/{organizationID}/{datasetID}");
-        logger.info("organizationID = " + organizationID);
-        logger.info("datasetID = " + datasetID);
+        logger.info("[POST] /datasets/{organization_name}/{dataset_id}");
+        logger.info("organization_name = " + organizationName);
+        logger.info("dataset_id = " + datasetId);
 
-        Organization organization = new Organization(organizationID);
+        Organization organization = new Organization(organizationName);
 
-        Dataset dataset = new Dataset(organization, datasetID);
+        Dataset dataset = new Dataset(organization, datasetId);
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
@@ -886,7 +903,14 @@ public class MappingPediaController {
         }
         dataset.addDistribution(distribution);
 
-        return this.distributionController.addDistribution(distribution, manifestFileRef, generateManifestFile);
+        boolean storeToCKAN = true;
+        if("false".equalsIgnoreCase("pStoreToCKAN")
+                || "true".equalsIgnoreCase(pStoreToCKAN)) {
+            storeToCKAN = false;
+        }
+
+        return this.distributionController.addDistribution(distribution, manifestFileRef
+                , generateManifestFile, storeToCKAN);
     }
 
     @RequestMapping(value = "/distributions/{organizationID}/{datasetID}", method= RequestMethod.POST)
@@ -906,6 +930,7 @@ public class MappingPediaController {
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="datasetDescription", required = false) String distributionDescription
             , @RequestParam(value="distribution_encoding", required = false) String distributionEncoding
+            , @RequestParam(value="store_to_ckan", defaultValue = "true") String pStoreToCKAN
     )
     {
         logger.info("[POST] /datasets/{organizationID}/{datasetID}");
@@ -944,7 +969,14 @@ public class MappingPediaController {
         distribution.encoding_$eq(distributionEncoding);
         dataset.addDistribution(distribution);
 
-        return this.distributionController.addDistribution(distribution, manifestFileRef, generateManifestFile);
+        boolean storeToCKAN = true;
+        if("false".equalsIgnoreCase("pStoreToCKAN")
+                || "true".equalsIgnoreCase(pStoreToCKAN)) {
+            storeToCKAN = false;
+        }
+
+        return this.distributionController.addDistribution(distribution, manifestFileRef
+                , generateManifestFile, storeToCKAN);
     }
 
     @RequestMapping(value = "/queries/{mappingpediaUsername}/{datasetID}", method= RequestMethod.POST)
@@ -999,15 +1031,19 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/ogd/instances", method= RequestMethod.GET)
-    public ListResult getOGDInstances(@RequestParam(value="aClass") String aClass,
-                                   @RequestParam(value="outputType", defaultValue = "0") String outputType,
-                                   @RequestParam(value="inputType", defaultValue = "0") String inputType
-
-
+    public ListResult getOGDInstances(@RequestParam(value="aClass") String aClass
+            ,@RequestParam(value="maximum_mapping_documents", defaultValue = "2") String pMaxMappingDocuments
     ) {
         logger.info("GET /ogd/instances ...");
         logger.info("Getting instances of the class:" + aClass);
-        ListResult result = mappingExecutionController.getInstances(aClass, jenaClient) ;
+
+        int maxMappingDocuments = 2;
+        try {
+            maxMappingDocuments = Integer.parseInt(pMaxMappingDocuments);
+        } catch (Exception e) {
+            logger.error("invalid value for maximum_mapping_documents!");
+        }
+        ListResult result = mappingExecutionController.getInstances(aClass, jenaClient, maxMappingDocuments) ;
         return result;
     }
 

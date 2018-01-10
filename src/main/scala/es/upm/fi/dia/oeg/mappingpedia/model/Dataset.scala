@@ -33,6 +33,8 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
   var manifestAccessURL:String = null;
   var manifestDownloadURL:String = null;
 
+  var ckanPackageId:String = null;
+
   //var mappingDocuments:List[MappingDocument] = Nil;
 
   //for the moment assume that only one distribution for each dataset

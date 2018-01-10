@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
 import scala.collection.JavaConversions
 import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
-import org.apache.http.client.methods.HttpPost
+import org.apache.http.client.methods.{CloseableHttpResponse, HttpPost}
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
@@ -177,6 +177,8 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       .header("Authorization", this.authorizationToken)
       .body(jsonObj)
       .asJson();
+    logger.info(s"response.getHeaders = ${response.getHeaders}")
+    logger.info(s"response.getBody = ${response.getBody}")
     response;
   }
 
@@ -246,4 +248,14 @@ object CKANUtility {
     new ListResult(datasetList.size, datasetList)
   }
 
+  def getResultId(response:CloseableHttpResponse) = {
+    if(response == null) {
+      null
+    } else {
+      val httpEntity  = response.getEntity
+      val entity = EntityUtils.toString(httpEntity)
+      val responseEntity = new JSONObject(entity);
+      responseEntity.getJSONObject("result").getString("id");
+    }
+  }
 }
