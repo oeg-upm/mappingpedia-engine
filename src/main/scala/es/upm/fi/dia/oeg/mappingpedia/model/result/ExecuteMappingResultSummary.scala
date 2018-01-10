@@ -3,7 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia.model.result
 import es.upm.fi.dia.oeg.mappingpedia.model.{Distribution, MappingDocument}
 
 //TODO Refactor this
-class ExecutionMappingResultSummary(
+class ExecuteMappingResultSummary(
                   //val errorCode:Integer, val status:String
                   val mappingDocument:MappingDocument
                   , val distribution:Distribution

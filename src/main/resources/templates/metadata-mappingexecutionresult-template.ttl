@@ -6,6 +6,7 @@
 
 mpimd:mappingExecutionResult-$mappingExecutionResultID a mpv:MappingExecutionResultEntity ;
     mpv:mappingExecutionResultIdentifier "mappingExecutionResult-$mappingExecutionResultID" ;
+    dcat:downloadURL $downloadURL ;
     dcterms:identifier "$mappingExecutionResultID" ;
     dcterms:title "$mappingExecutionResultTitle" ;
     dcterms:description "$mappingExecutionResultDescription" ;

@@ -7,7 +7,7 @@ import java.util.{Date, UUID}
 import com.mashape.unirest.http.{HttpResponse, JsonNode, Unirest}
 import es.upm.fi.dia.oeg.mappingpedia
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
-import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, ExecutionMappingResultSummary, GeneralResult, ListResult}
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, ExecuteMappingResultSummary, GeneralResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
@@ -330,7 +330,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
     var executedMappingDocuments:List[(String, String)]= Nil;
 
     var i = 0;
-    val executionResults:Iterable[ExecutionMappingResultSummary] = mappingDocuments.flatMap(
+    val executionResults:Iterable[ExecuteMappingResultSummary] = mappingDocuments.flatMap(
       mappingDocument => { val md = mappingDocument.asInstanceOf[MappingDocument];
 
       val mappingLanguage = md.mappingLanguage;
@@ -377,7 +377,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
             //executionResultURL;
 
             i +=1
-            Some(new ExecutionMappingResultSummary(md, distribution, executionResultAccessURL, executionResultDownloadURL))
+            Some(new ExecuteMappingResultSummary(md, distribution, executionResultAccessURL, executionResultDownloadURL))
             //mappingDocumentURL + " -- " + datasetDistributionURL
           } else {
             None
@@ -408,12 +408,19 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       val datasetDistributionDownloadURL:String = s"<${datasetDistribution.dcatDownloadURL}>";
       logger.info(s"datasetDistributionDownloadURL = ${datasetDistributionDownloadURL}")
 
+      val downloadURL = if(mappingExecutionResult.dcatDownloadURL == null) {
+        "<>"
+      } else {
+        s"<${mappingExecutionResult.dcatDownloadURL}>"
+      }
+
       val mapValues:Map[String,String] = Map(
         "$mappingExecutionResultID" -> mappingExecutionResult.dctIdentifier
         , "$mappingExecutionResultTitle" -> mappingExecutionResult.dctTitle
         , "$mappingExecutionResultDescription" -> mappingExecutionResult.dctDescription
         , "$datasetDistributionDownloadURL" -> datasetDistributionDownloadURL
         , "$mappingDocumentID" -> mappingDocument.dctIdentifier
+        , "$downloadURL" -> downloadURL
       );
 
       val filename = s"metadata-mappingexecutionresult-${mappingExecutionResult.dctIdentifier}.ttl";

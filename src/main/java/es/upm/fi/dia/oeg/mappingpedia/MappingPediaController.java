@@ -1036,6 +1036,8 @@ public class MappingPediaController {
     ) {
         logger.info("GET /ogd/instances ...");
         logger.info("Getting instances of the class:" + aClass);
+        logger.info("pMaxMappingDocuments = " + pMaxMappingDocuments);
+
 
         int maxMappingDocuments = 2;
         try {
