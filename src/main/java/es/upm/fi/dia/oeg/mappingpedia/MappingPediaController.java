@@ -845,14 +845,17 @@ public class MappingPediaController {
             , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
             , @RequestParam(value="datasetPublisher", required = false) String datasetPublisher
             , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
-            , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
-            , @RequestParam(value="distributionDownloadURL", required = false) String distributionDownloadURL
+            , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
+            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
             , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
             , @PathVariable("datasetID") String datasetID
             , @RequestParam(value="datasetDescription", required = false) String distributionDescription
     )
     {
         logger.info("[POST] /datasets/{organizationID}/{datasetID}");
+        logger.info("organizationID = " + organizationID);
+        logger.info("datasetID = " + datasetID);
+
         Organization organization = new Organization(organizationID);
 
         Dataset dataset = new Dataset(organization, datasetID);

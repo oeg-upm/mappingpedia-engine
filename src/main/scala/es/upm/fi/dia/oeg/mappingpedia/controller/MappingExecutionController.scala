@@ -346,10 +346,10 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       distribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
       distribution.sha = md.dataset.getDistribution().sha
 
-
+      logger.info(s"mapping document SHA = ${md.sha}");
+      logger.info(s"dataset distirubtion SHA = ${distribution.sha}");
       if(md.sha != null && distribution.sha != null) {
-        logger.info(s"mdSHA = ${md.sha}");
-        logger.info(s"mdDistributionSHA = ${distribution.sha}");
+
 
         if(executedMappingDocuments.contains((md.sha,distribution.sha))) {
           None

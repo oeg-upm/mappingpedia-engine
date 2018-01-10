@@ -82,7 +82,8 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
 
     //STORING DISTRIBUTION FILE ON GITHUB
     val addDistributionFileGitHubResponse:HttpResponse[JsonNode] = try {
-      if(distribution != null) {
+      if(distribution != null &&
+        (distribution.distributionFile != null || distribution.dcatDownloadURL != null)) {
         this.storeDatasetDistributionFileOnGitHub(distribution);
       } else {
         val statusMessage = "No distribution or distribution file has been provided"
@@ -163,7 +164,8 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
         logger.info("storing distribution file as a package on CKAN ...")
 
-        if(distribution != null) {
+        if(distribution != null
+          && (distribution.distributionFile != null || distribution.dcatDownloadURL != null)) {
           ckanClient.createResource(distribution, None);
         } else {
           null
@@ -359,19 +361,31 @@ object DistributionController {
 
       val mapValuesWithDistribution:Map[String,String] = {
         var distributionAccessURL = distribution.dcatAccessURL
-        if(distributionAccessURL != null && !distributionAccessURL.startsWith("<")) {
-          distributionAccessURL = "<" + distributionAccessURL;
+        if(distributionAccessURL == null) {
+          distributionAccessURL = "<>";
+        } else {
+          if(!distributionAccessURL.startsWith("<")) {
+            distributionAccessURL = "<" + distributionAccessURL;
+          }
+          if(!distributionAccessURL.endsWith(">")) {
+            distributionAccessURL = distributionAccessURL + ">";
+          }
         }
-        if(distributionAccessURL != null && !distributionAccessURL.endsWith(">")) {
-          distributionAccessURL = distributionAccessURL + ">";
-        }
+        logger.info(s"distributionAccessURL = ${distributionAccessURL}")
+
         var distributionDownloadURL = distribution.dcatDownloadURL
-        if(distributionDownloadURL != null && !distributionDownloadURL.startsWith("<")) {
-          distributionDownloadURL = "<" + distributionDownloadURL;
+        if(distributionDownloadURL == null) {
+          distributionDownloadURL = "<>";
+        } else {
+          if(!distributionDownloadURL.startsWith("<")) {
+            distributionDownloadURL = "<" + distributionDownloadURL;
+          }
+          if(!distributionDownloadURL.endsWith(">")) {
+            distributionDownloadURL = distributionDownloadURL + ">";
+          }
         }
-        if(distributionDownloadURL != null && !distributionDownloadURL.endsWith(">")) {
-          distributionDownloadURL = distributionDownloadURL + ">";
-        }
+        logger.info(s"distributionDownloadURL = ${distributionDownloadURL}")
+
         Map(
           "$datasetID" -> distribution.dataset.dctIdentifier
           , "$distributionTitle" -> distribution.dctTitle
