@@ -1,3 +1,5 @@
+#findTriplesMapsByMappedTable.rq
+
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
 prefix rr: <http://www.w3.org/ns/r2rml#>
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -17,6 +19,8 @@ WHERE {
 
     ?md mpv:hasTriplesMaps ?tm .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
+    OPTIONAL { ?md mpv:hasMappingLanguage ?mappingLanguage . }
+
     OPTIONAL {
         ?md mpv:hasDataset ?dataset .
         ?dataset dcterms:identifier ?datasetId .

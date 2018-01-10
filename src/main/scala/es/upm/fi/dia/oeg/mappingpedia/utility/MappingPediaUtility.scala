@@ -297,7 +297,7 @@ object MappingPediaUtility {
         logger.info(s"encoding = $encoding");
 
         val fileContentLines = fileContent.getLines;
-        
+
         val fileContentString = fileContentLines.mkString("\n")
         (file.getName, fileContentString)
       } else if(downloadURL!= null) {

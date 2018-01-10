@@ -542,7 +542,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-    logger.debug(s"queryString = $queryString")
+    logger.info(s"queryString = \n$queryString")
 
     var results: List[MappingDocument] = List.empty;
     try {

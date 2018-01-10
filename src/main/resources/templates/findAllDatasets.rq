@@ -1,3 +1,5 @@
+#findAllDatasets.rq
+
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
 prefix rr: <http://www.w3.org/ns/r2rml#>
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -10,10 +12,13 @@ WHERE {
     ?md mpv:hasDataset ?dataset .
     ?md dcterms:identifier ?mdID .
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
+    OPTIONAL { ?md mpv:hasMappingLanguage ?mappingLanguage . }
+
     ?dataset dcterms:identifier ?datasetID .
     OPTIONAL { ?dataset dcterms:title ?datasetTitle . }
     OPTIONAL { ?dataset dcterms:dateIssued ?dateIssued . }
     ?dataset dcat:distribution ?distribution .
+
     ?distribution dcterms:identifier ?distributionID .
     OPTIONAL { ?distribution dcat:accessURL ?distributionAccessURL . }
     OPTIONAL { ?distribution dcat:downloadURL ?distributionDownloadURL . }

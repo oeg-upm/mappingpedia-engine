@@ -1,3 +1,5 @@
+#findTriplesMapsByMappedClassAndProperty.rq
+
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
 prefix rr: <http://www.w3.org/ns/r2rml#>
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -38,9 +40,11 @@ WHERE {
     #OPTIONAL { ?md mpv:sha ?mdSHA . }
     ?md mpv:sha ?mdSHA .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
+    OPTIONAL { ?md mpv:hasMappingLanguage ?mappingLanguage . }
+    OPTIONAL { ?md mpv:hasDatasetId ?datasetId . }
     OPTIONAL {
         ?md mpv:hasDataset ?dataset .
-        ?dataset dcterms:identifier ?datasetId .
+        #?dataset dcterms:identifier ?datasetId .
         OPTIONAL { ?dataset dcat:distribution ?distribution . }
         OPTIONAL { ?distribution dcat:accessURL ?distributionAccessURL . }
         OPTIONAL { ?distribution dcat:downloadURL ?distributionDownloadURL . }

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.web.MultipartProperties;
 
 @SpringBootApplication
 public class Application {
@@ -105,6 +106,12 @@ public class Application {
 		}
 
 		SpringApplication.run(Application.class, args);
+
+		MultipartProperties multipartProperties = new MultipartProperties();
+		multipartProperties.setLocation("./mappingpediaenginetemporarydirectory");
+		String multiPartPropertiesLocation = multipartProperties.getLocation();
+		logger.info("multiPartPropertiesLocation = " + multiPartPropertiesLocation);
+
 		logger.info("Mappingpedia engine started.\n\n\n");
 	}
 }

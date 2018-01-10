@@ -1,3 +1,5 @@
+#metadata-mappingdocument-template.ttl
+
 mpv:MappingDocument rdfs:subClassOf dcterms:BibliographicResource .
 mpimd:mappingDocument-$mappingDocumentID a mpv:MappingDocument ;
     mpv:mappingDocumentIdentifier "mappingDocument-$mappingDocumentID" ;

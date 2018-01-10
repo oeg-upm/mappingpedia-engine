@@ -1,3 +1,5 @@
+#metadata-mappingexecutionresult-template.ttl
+
 #mpv:MappingExecutionResultEntity rdfs:subClassOf prov:Entity .
 #mpimd:mappingpediaAgent rdfs:subClassOf prov:Agent .
 #mpimd:mappingExecutionActivity rdfs:subClassOf prov:Activity .

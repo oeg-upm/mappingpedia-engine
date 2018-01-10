@@ -1,3 +1,5 @@
+#metadata-namespaces-template.ttl
+
 @base <http://mappingpedia.linkeddata.es/instance#> .
 @prefix dcterms: <http://purl.org/dc/elements/1.1/> .
 @prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#> .

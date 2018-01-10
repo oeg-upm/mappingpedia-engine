@@ -1,3 +1,5 @@
+#findAllMappedClassesByMappingDocumentId.rq
+
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
 prefix rr: <http://www.w3.org/ns/r2rml#>
 prefix rml: <http://semweb.mmlab.be/ns/rml#>
@@ -20,5 +22,7 @@ WHERE {
         ?pom rr:predicateMap ?pm . ?pm rr:constant rdf:type .
         ?pom rr:objectMap ?om . ?om rr:constant ?mappedClass .
     }
+    OPTIONAL { ?md mpv:hasMappingLanguage ?mappingLanguage . }
+
     FILTER regex(str(?mdId), "$mappingDocumentId", "i")
 }

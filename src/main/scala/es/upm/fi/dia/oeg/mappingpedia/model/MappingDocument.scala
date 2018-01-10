@@ -84,4 +84,6 @@ class MappingDocument(val dctIdentifier:String) {
   def getDateSubmitted = this.dctDateSubmitted;
   def getSHA = this.sha
   //def getDistribution_sha = this.distributionSHA
+
+  def getMapping_language = this.mappingLanguage;
 }
