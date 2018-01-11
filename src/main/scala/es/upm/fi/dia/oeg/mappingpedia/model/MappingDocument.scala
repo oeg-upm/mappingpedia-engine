@@ -90,4 +90,7 @@ class MappingDocument(val dctIdentifier:String) {
   //def getDistribution_sha = this.distributionSHA
 
   def getMapping_language = this.mappingLanguage;
+
+  def getCKAN_package_id = this.ckanPackageId
+  def getCKAN_resource_id = this.ckanResourceId
 }

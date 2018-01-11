@@ -44,4 +44,6 @@ class Distribution (val dataset: Dataset, val dctIdentifier:String){
   def getAccess_url = this.dcatAccessURL;
   def getDownload_url = this.dcatDownloadURL;
   def getSHA = this.sha;
+  def getCKAN_resource_id = this.ckanResourceId;
+
 }

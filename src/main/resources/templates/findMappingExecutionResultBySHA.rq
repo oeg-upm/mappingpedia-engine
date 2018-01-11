@@ -14,4 +14,4 @@ WHERE {
     ?s mpv:hasDatasetDistributionSHA "$datasetDistributionSHA"^^<http://www.w3.org/2001/XMLSchema#string> .
     ?s dcat:downloadURL ?downloadURL .
 }
-ORDER BY ASC(?dateIssued)
+ORDER BY DESC(?dateIssued)

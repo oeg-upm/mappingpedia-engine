@@ -39,4 +39,4 @@ WHERE {
     }
     FILTER regex(str(?datasetId), "$datasetId", "i")
 }
-ORDER BY ASC(?dateSubmitted)
+ORDER BY DESC(?dateSubmitted)

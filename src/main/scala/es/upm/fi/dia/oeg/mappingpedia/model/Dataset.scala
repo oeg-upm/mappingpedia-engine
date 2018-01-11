@@ -76,4 +76,6 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
   def getId = this.dctIdentifier;
 
   def getTitle = this.dctTitle
+
+  def getCKAN_package_id = this.ckanPackageId
 }

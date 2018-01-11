@@ -32,4 +32,4 @@ WHERE {
         ?distribution mpv:sha ?distributionSHA .
     FILTER (regex(str(?distributionId), "$distributionId", "i") || regex(str(?distributionCKANId), "$distributionId", "i")  )
 }
-ORDER BY ASC(?dateSubmitted)
+ORDER BY DESC(?dateSubmitted)

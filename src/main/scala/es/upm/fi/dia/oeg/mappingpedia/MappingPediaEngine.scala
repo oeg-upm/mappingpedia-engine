@@ -159,7 +159,6 @@ object MappingPediaEngine {
 				//logger.info("templateFiles.foldLeft" + (z, i))
 				z + this.generateStringFromTemplateFile(map, i) + "\n\n" ;
 			} }
-			logger.debug("manifestTriples = " + manifestTriples)
 
 			//def mappingDocumentLines = this.generateManifestLines(map, "templates/metadata-mappingdocument-template.ttl");
 			//logger.debug("mappingDocumentLines = " + mappingDocumentLines)
@@ -181,7 +180,7 @@ object MappingPediaEngine {
 
 			val file = new File(uuidDirectory + "/" + filename)
 			val bw = new BufferedWriter(new FileWriter(file))
-			logger.debug(s"manifestTriples = $manifestTriples")
+			//logger.info(s"manifestTriples = $manifestTriples")
 			bw.write(manifestTriples)
 			bw.close()
 			file
@@ -472,7 +471,7 @@ object MappingPediaEngine {
 			logger.info("Storing generated triples.");
 			val additionalTriples = this.generateAdditionalTriples(mappingLanguage
 				, manifestModel, mappingDocumentModel);
-			logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
+			//logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
 
 			this.virtuosoClient.store(additionalTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 		}

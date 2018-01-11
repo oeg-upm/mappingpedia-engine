@@ -572,14 +572,21 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
         md.mappingLanguage = MappingPediaUtility.getStringOrElse(qs, "mappingLanguage", null);
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
         md.sha = MappingPediaUtility.getStringOrElse(qs, "mdSHA", null);
+        md.ckanPackageId = MappingPediaUtility.getStringOrElse(qs, "packageId", null);
+        md.ckanResourceId = MappingPediaUtility.getStringOrElse(qs, "resourceId", null);
         val mdDownloadURL = MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null);
         md.setDownloadURL(mdDownloadURL);
         //logger.info(s"md.distributionSHA = ${md.distributionSHA}");
         //logger.info(s"md.sha = ${md.sha}");
 
         if(!retrievedMappings.contains(md.sha)) {
-          results = md :: results;
-          retrievedMappings = md.sha :: retrievedMappings
+          //logger.warn(s"retrieving mapping document with sha ${md.sha}.")
+          //results = md :: results;
+          results = results :+ md
+
+          retrievedMappings = retrievedMappings :+ md.sha
+        } else {
+          //logger.warn(s"mapping document with sha ${md.sha} has been retrived.")
         }
 
       }

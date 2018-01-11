@@ -43,4 +43,4 @@ WHERE {
     OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
     OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
 }
-ORDER BY ASC(?dateSubmitted)
+ORDER BY DESC(?dateSubmitted)
