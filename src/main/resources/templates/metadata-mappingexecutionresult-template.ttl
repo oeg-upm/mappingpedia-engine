@@ -10,8 +10,12 @@ mpimd:mappingExecutionResult-$mappingExecutionResultID a mpv:MappingExecutionRes
     dcterms:identifier "$mappingExecutionResultID" ;
     dcterms:title "$mappingExecutionResultTitle" ;
     dcterms:description "$mappingExecutionResultDescription" ;
+    dcterms:issued "$issued"^^xsd:dateTime;
+    dcterms:modified "$modified"^^xsd:dateTime;
     prov:wasGeneratedBy mpimd:mappingExecutionActivity ;
     prov:wasAttributedTo mpimd:mappingpediaAgent ;
     prov:wasDerivedFrom $datasetDistributionDownloadURL ;
     prov:hadPrimarySource mpimd:mappingDocument-$mappingDocumentID ;
+    mpv:hasMappingDocumentSHA "$mappingDocumentSHA" ;
+    mpv:hasDatasetDistributionSHA "$datasetDistributionSHA" ;
 .

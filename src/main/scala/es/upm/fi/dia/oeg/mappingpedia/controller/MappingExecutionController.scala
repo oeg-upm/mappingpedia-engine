@@ -24,6 +24,33 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mappingDocumentController:MappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
 
+  def findMappingExecutionURLBySHA(mdSHA:String, datasetDistributionSHA:String) = {
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$mdSHA" -> mdSHA
+      , "$datasetDistributionSHA" -> datasetDistributionSHA
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+      mapValues, "templates/findMappingExecutionResultBySHA.rq");
+    logger.info(s"queryString = ${queryString}");
+
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+
+    var results: List[String] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+        val mappedClass = qs.get("downloadURL").toString;
+        results = mappedClass :: results;
+      }
+    } finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
+
   @throws(classOf[Exception])
   def executeMapping(
                       md:MappingDocument
@@ -33,7 +60,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
 
                       , pStoreToCKAN:Boolean
                       , pStoreToGithub:Boolean
-                      , pStoreToVirtuoso:Boolean
+                      , pStoreExecutionResultToVirtuoso:Boolean
 
                       /*
                         , dbUserName:String, dbPassword:String
@@ -256,7 +283,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
 
     //STORING MANIFEST FILE AS TRIPLES ON VIRTUOSO
     val addManifestVirtuosoResponse:String = try {
-      if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled && pStoreToVirtuoso) {
+      if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         MappingExecutionController.storeManifestOnVirtuoso(manifestFile);
       } else {
         "Storing to Virtuoso is not enabled!";
@@ -414,6 +441,11 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
         s"<${mappingExecutionResult.dcatDownloadURL}>"
       }
 
+      val mappingDocumentSHA = if(mappingDocument.sha == null) { "" } else { mappingDocument.sha }
+      logger.info(s"mappingDocumentSHA = ${mappingDocumentSHA}")
+      val datasetDistributionSHA = if(datasetDistribution.sha == null) { ""} else {datasetDistribution.sha}
+      logger.info(s"datasetDistributionSHA = ${datasetDistributionSHA}")
+
       val mapValues:Map[String,String] = Map(
         "$mappingExecutionResultID" -> mappingExecutionResult.dctIdentifier
         , "$mappingExecutionResultTitle" -> mappingExecutionResult.dctTitle
@@ -421,6 +453,11 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
         , "$datasetDistributionDownloadURL" -> datasetDistributionDownloadURL
         , "$mappingDocumentID" -> mappingDocument.dctIdentifier
         , "$downloadURL" -> downloadURL
+        , "$mappingDocumentSHA" -> mappingDocumentSHA
+        , "$datasetDistributionSHA" -> datasetDistributionSHA
+        , "$issued" -> mappingExecutionResult.dctIssued
+        , "$modified" -> mappingExecutionResult.dctModified
+
       );
 
       val filename = s"metadata-mappingexecutionresult-${mappingExecutionResult.dctIdentifier}.ttl";
@@ -544,5 +581,9 @@ object MappingExecutionController {
     } else {
       "No manifest file specified/generated!";
     }
+  }
+
+  def getMappingExecutionResultURL(mdSHA:String, datasetDistributionSHA:String) = {
+
   }
 }

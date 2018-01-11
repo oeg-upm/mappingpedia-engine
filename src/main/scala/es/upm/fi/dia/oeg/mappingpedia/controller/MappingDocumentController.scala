@@ -26,7 +26,8 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       MappingPediaUtility.getFileNameAndContent(mappingDocument.mappingDocumentFile, mappingDocumentDownloadURL, "UTF-8");
     val base64EncodedContent = GitHubUtility.encodeToBase64(mappingDocumentFileContent)
 
-    val mappingDocumentFilePath = s"${organization.dctIdentifier}/${dataset.dctIdentifier}/${mappingDocument.dctIdentifier}/${mappingDocumentFileName}";
+    //val mappingDocumentFilePath = s"${organization.dctIdentifier}/${dataset.dctIdentifier}/${mappingDocument.dctIdentifier}/${mappingDocumentFileName}";
+    val mappingDocumentFilePath = s"${organization.dctIdentifier}/${dataset.dctIdentifier}/${mappingDocumentFileName}";
     logger.info(s"mappingDocumentFilePath = $mappingDocumentFilePath")
 
     val commitMessage = s"add a new mapping document file ${mappingDocumentFileName}"

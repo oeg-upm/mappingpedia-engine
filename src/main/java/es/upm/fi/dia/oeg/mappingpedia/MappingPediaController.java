@@ -56,6 +56,18 @@ public class MappingPediaController {
                 String.format(template, name));
     }
 
+    @RequestMapping(value="/mappingexecutions", method= RequestMethod.GET)
+    public ListResult getGreeting(@RequestParam(value="mapping_document_sha", defaultValue="") String mappingDocumentSHA
+    , @RequestParam(value="dataset_distribution_sha", defaultValue="") String datasetDistributionSHA) {
+
+        logger.info("GET /mappingexecutions ...");
+        logger.info("mappingDocumentSHA = " + mappingDocumentSHA);
+        logger.info("datasetDistributionSHA = " + datasetDistributionSHA);
+
+        return this.mappingExecutionController.findMappingExecutionURLBySHA(
+                mappingDocumentSHA, datasetDistributionSHA);
+    }
+
     @RequestMapping(value="/greeting/{name}", method= RequestMethod.PUT)
     public Greeting putGreeting(@PathVariable("name") String name) {
         logger.info("/greeting(PUT) ...");
