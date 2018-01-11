@@ -631,6 +631,9 @@ object MappingDocumentController {
       , "$mappingLanguage" -> mappingDocument.mappingLanguage
       , "$sha" -> mappingDocument.sha
 
+      , "$ckanPackageID" -> mappingDocument.ckanPackageId
+      , "$ckanResourceID" -> mappingDocument.ckanResourceId
+
       //, "$datasetTitle" -> datasetTitle
       //, "$datasetKeywords" -> datasetKeywords
       //, "$datasetPublisher" -> datasetPublisher

@@ -550,18 +550,24 @@ public class MappingPediaController {
             , @RequestParam(value="mappingDocumentCreator", defaultValue="") String mappingDocumentCreator
             , @RequestParam(value="mappingDocumentSubjects", defaultValue="") String mappingDocumentSubjects
             , @RequestParam(value="mappingLanguage", required = false) String pMappingLanguage
-
+            , @RequestParam(value="ckan_package_id", required = false, defaultValue="") String ckanPackageId
+            , @RequestParam(value="ckan_resource_id", required = false, defaultValue="") String ckanResourceId
     )
     {
         logger.info("[POST] /mappings/{organizationID}/{datasetID}");
         logger.info("organizationID = " + organizationID);
         logger.info("datasetID = " + datasetID);
         logger.info("pMappingLanguage = " + pMappingLanguage);
+        logger.info("ckanPackageId = " + ckanPackageId);
+        logger.info("ckanResourceId = " + ckanResourceId);
 
         Organization organization = new Organization(organizationID);
         Dataset dataset = new Dataset(organization, datasetID);
+        dataset.ckanPackageId_$eq(ckanPackageId);
 
         MappingDocument mappingDocument = new MappingDocument();
+        mappingDocument.ckanPackageId_$eq(ckanPackageId);
+        mappingDocument.ckanResourceId_$eq(ckanResourceId);
         logger.info("mappingDocument.dctIdentifier() = " + mappingDocument.dctIdentifier());
         mappingDocument.dctSubject_$eq(mappingDocumentSubjects);
         mappingDocument.dctCreator_$eq(mappingDocumentCreator);

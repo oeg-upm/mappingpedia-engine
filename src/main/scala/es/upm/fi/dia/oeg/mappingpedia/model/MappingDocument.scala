@@ -44,6 +44,10 @@ class MappingDocument(val dctIdentifier:String) {
   var manifestAccessURL:String = null;
   var manifestDownloadURL:String = null;
 
+  //FIELDS FOR CKAN
+  var ckanPackageId:String = null;
+  var ckanResourceId:String = null;
+
   def setDownloadURL(pDownloadURL:String) = {
     downloadURL = if(pDownloadURL != null && pDownloadURL.startsWith("<") && pDownloadURL.endsWith(">")) {
       pDownloadURL.substring(1, pDownloadURL.length-1)
