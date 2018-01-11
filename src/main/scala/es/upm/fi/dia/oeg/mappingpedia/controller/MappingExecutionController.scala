@@ -20,7 +20,10 @@ import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRun
 
 import scala.collection.JavaConversions._
 
-class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient, val jenaClient:JenaClient) {
+class MappingExecutionController(val ckanClient:CKANUtility
+                                 , val githubClient:GitHubUtility
+                                 , val virtuosoClient: VirtuosoClient
+                                 , val jenaClient:JenaClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mappingDocumentController:MappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
 
@@ -329,27 +332,7 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
 
   }
 
-  def getInstances(aClass:String, jenaClient:JenaClient, maxMappingDocuments:Integer) : ListResult = {
-    /*
-    val subclassesListResult = MappingPediaUtility.getSubclassesDetail(
-      aClass, MappingPediaEngine.ontologyModel, outputType, inputType);
-    logger.info(s"subclassesListResult = subclassesListResult")
-
-    val subclassesURIs:Iterable[String] = subclassesListResult.results.map(
-      result => result.asInstanceOf[OntologyClass].getURI).toList.distinct
-    //		val subclassesInList:Iterable[String] = subclassesListResult.results.values.map(
-    //      result => result.asInstanceOf[OntologyClass].aClass).toList.distinct
-
-    logger.debug("subclassesInList" + subclassesURIs)
-    //new ListResult(subclassesInList.size, subclassesInList);
-    val queryFile:String = null;
-
-    val mappingDocuments = subclassesURIs.flatMap(subclassURI => {
-        MappingDocumentController.findMappingDocumentsByMappedClass(subclassURI).getResults();
-    }).asInstanceOf[Iterable[MappingDocument]];
-    */
-
-
+  def getInstances(aClass:String, maxMappingDocuments:Integer) : ListResult = {
     val mappingDocuments =
       this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
         aClass, null, true).results
@@ -379,33 +362,42 @@ class MappingExecutionController(val ckanClient:CKANUtility, val githubClient:Gi
       logger.info(s"mapping document SHA = ${md.sha}");
       logger.info(s"dataset distribution SHA = ${distribution.sha}");
       if(md.sha != null && distribution.sha != null) {
-
-
         if(executedMappingDocuments.contains((md.sha,distribution.sha))) {
           None
         } else {
           if(i < maxMappingDocuments) {
-            val mappingExecution = new MappingExecution(md, dataset);
-            mappingExecution.setStoreToCKAN("false")
-            mappingExecution.queryFilePath = null;
-            mappingExecution.outputFileName = outputFilename;
+            val mappingExecutionURLs = this.findMappingExecutionURLBySHA(md.sha,distribution.sha);
+            if(mappingExecutionURLs != null && mappingExecutionURLs.results.size > 0) {
+              val cachedMappingExecutionResultURL:String = mappingExecutionURLs.results.iterator.next().toString;
+              logger.info(s"cachedMappingExecutionResultURL = " + cachedMappingExecutionResultURL)
 
-            //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-            val executionResult = this.executeMapping(md, dataset, mappingExecution.queryFilePath, outputFilename
-              , false, true, false
-              , null
-            );
-            //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
+              i +=1
+              Some(new ExecuteMappingResultSummary(md, distribution
+                , cachedMappingExecutionResultURL, cachedMappingExecutionResultURL))
+            } else {
+              val mappingExecution = new MappingExecution(md, dataset);
+              mappingExecution.setStoreToCKAN("false")
+              mappingExecution.queryFilePath = null;
+              mappingExecution.outputFileName = outputFilename;
 
-            executedMappingDocuments = (md.sha,distribution.sha) :: executedMappingDocuments;
+              //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
+              val executionResult = this.executeMapping(md, dataset, mappingExecution.queryFilePath, outputFilename
+                , false, true, false
+                , null
+              );
+              //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
-            val executionResultAccessURL = executionResult.getMapping_execution_result_access_url()
-            val executionResultDownloadURL = executionResult.getMapping_execution_result_download_url
-            //executionResultURL;
+              executedMappingDocuments = (md.sha,distribution.sha) :: executedMappingDocuments;
 
-            i +=1
-            Some(new ExecuteMappingResultSummary(md, distribution, executionResultAccessURL, executionResultDownloadURL))
-            //mappingDocumentURL + " -- " + datasetDistributionURL
+              val executionResultAccessURL = executionResult.getMapping_execution_result_access_url()
+              val executionResultDownloadURL = executionResult.getMapping_execution_result_download_url
+              //executionResultURL;
+
+              i +=1
+              Some(new ExecuteMappingResultSummary(md, distribution, executionResultAccessURL, executionResultDownloadURL))
+              //mappingDocumentURL + " -- " + datasetDistributionURL
+            }
+
           } else {
             None
           }

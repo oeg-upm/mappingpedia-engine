@@ -1050,7 +1050,7 @@ public class MappingPediaController {
 
     @RequestMapping(value="/ogd/instances", method= RequestMethod.GET)
     public ListResult getOGDInstances(@RequestParam(value="aClass") String aClass
-            ,@RequestParam(value="maximum_mapping_documents", defaultValue = "2") String pMaxMappingDocuments
+            ,@RequestParam(value="maximum_results", defaultValue = "2") String pMaxMappingDocuments
     ) {
         logger.info("GET /ogd/instances ...");
         logger.info("Getting instances of the class:" + aClass);
@@ -1063,7 +1063,7 @@ public class MappingPediaController {
         } catch (Exception e) {
             logger.error("invalid value for maximum_mapping_documents!");
         }
-        ListResult result = mappingExecutionController.getInstances(aClass, jenaClient, maxMappingDocuments) ;
+        ListResult result = mappingExecutionController.getInstances(aClass, maxMappingDocuments) ;
         return result;
     }
 
