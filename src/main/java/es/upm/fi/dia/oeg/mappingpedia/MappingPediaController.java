@@ -548,10 +548,11 @@ public class MappingPediaController {
         );
     }
 
-    @RequestMapping(value = "/mappings/{organizationID}/{datasetID}", method= RequestMethod.POST)
+    @RequestMapping(value = "/mappings/{organization_id}/{dataset_id}", method= RequestMethod.POST)
     public AddMappingDocumentResult postMappings(
-            @PathVariable("organizationID") String organizationID
-            , @PathVariable("datasetID") String datasetID
+            @PathVariable("organization_id") String organizationID
+            , @PathVariable("dataset_id") String datasetID
+            , @RequestParam(value="dataset_name", required = false) String datasetName
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileMultipartFile
             , @RequestParam(value="mapping_document_file", required = false) MultipartFile mappingDocumentFileMultipartFile
@@ -569,6 +570,7 @@ public class MappingPediaController {
         logger.info("[POST] /mappings/{organizationID}/{datasetID}");
         logger.info("organizationID = " + organizationID);
         logger.info("datasetID = " + datasetID);
+        logger.info("datasetName = " + datasetName);
         logger.info("pMappingLanguage = " + pMappingLanguage);
         logger.info("ckanPackageId = " + ckanPackageId);
         logger.info("ckanResourceId = " + ckanResourceId);
