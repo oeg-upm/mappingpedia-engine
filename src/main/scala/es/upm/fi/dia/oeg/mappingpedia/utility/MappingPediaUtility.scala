@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg.mappingpedia.utility
 
 import java.io._
 import java.nio.channels.FileChannel
+import java.security.MessageDigest
 import java.util.UUID
 
 import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
@@ -283,7 +284,34 @@ object MappingPediaUtility {
     result;
   }
 
+  def calculateHash(downloadURL:String, encoding:String) = {
+    logger.info(s"calculating hash value of ${downloadURL}");
 
+    val hashValue = try {
+      if (downloadURL != null) {
+        val downloadURLContent = scala.io.Source.fromURL(downloadURL, encoding).mkString
+        //logger.info(s"downloadURLContent ${downloadURLContent}");
+
+        //val downloadURLContentBase64 = GitHubUtility.encodeToBase64(downloadURLContent);
+        //logger.info(s"downloadURLContentBase64 ${downloadURLContentBase64}");
+
+        //MessageDigest.getInstance("SHA").digest(downloadURLContentBase64.getBytes).toString
+
+        downloadURLContent.hashCode.toString;
+
+      } else {
+        null
+      }
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+        null
+      }
+    }
+
+    logger.info(s"hash value of of ${downloadURL} = ${hashValue}");
+    hashValue
+  }
 
 
   def getFileNameAndContent(file: File, downloadURL:String, encoding:String) = {

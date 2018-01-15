@@ -49,8 +49,10 @@ class MappingExecutionController(val ckanClient:CKANUtility
         results = mappedClass :: results;
       }
     } finally qexec.close
-
+    
     val listResult = new ListResult(results.length, results);
+
+
     listResult
   }
 
@@ -78,144 +80,94 @@ class MappingExecutionController(val ckanClient:CKANUtility
     val organization = dataset.dctPublisher;
     val datasetDistribution = dataset.getDistribution();
     val datasetDistributionDownloadURL = datasetDistribution.dcatDownloadURL;
+    val datasetDistributionSHA = datasetDistribution.sha;
 
     val mdDownloadURL = md.getDownloadURL();
-    val mappingLanguage = if (md.mappingLanguage == null) {
-      MappingPediaConstant.MAPPING_LANGUAGE_R2RML
-    } else {
-      md.mappingLanguage
-    }
+    val mdSHA = md.sha;
 
-    val organizationId = if(organization != null) {
-      organization.dctIdentifier
-    } else {
-      UUID.randomUUID.toString
-    }
+    val cacheExecutionURL = this.findMappingExecutionURLBySHA(mdSHA, datasetDistributionSHA);
+    logger.info(s"cacheExecutionURL = ${cacheExecutionURL}");
 
-    val datasetId = if(dataset != null) {
-      dataset.dctIdentifier
-    } else {
-      UUID.randomUUID.toString
-    }
-
-    val mappingExecutionId = UUID.randomUUID.toString;
-
-    /*
-    val mappingExecutionDirectory = if(organization != null && dataset != null) {
-      organization.dctIdentifier + File.separator + dataset.dctIdentifier
-    } else { UUID.randomUUID.toString }
-    */
-
-    val mappingExecutionDirectory = s"executions/$organizationId/$datasetId/$mappingExecutionId";
-
-    val outputFileName = if (pOutputFilename == null) {
-      UUID.randomUUID.toString + ".txt"
-    } else {
-      pOutputFilename;
-    }
-    val outputFilepath:String = s"$mappingExecutionDirectory/$outputFileName"
-    val outputFile: File = new File(outputFilepath)
-
-    //EXECUTING MAPPING
-    try {
-      if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
-        if(datasetDistribution.dcatMediaType == null) {
-          datasetDistribution.dcatMediaType = "text/csv"
-        }
-        logger.info(s"datasetDistribution.dcatMediaType = ${datasetDistribution.dcatMediaType}")
-
-        if("text/csv".equalsIgnoreCase(datasetDistribution.dcatMediaType)) {
-          MappingExecutionController.executeR2RMLMappingWithCSV(md, dataset, outputFilepath, queryFileName);
-        } else {
-          MappingExecutionController.executeR2RMLMappingWithRDB(md, dataset, outputFilepath, queryFileName, jdbcConnection);
-        }
-      } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
-        MappingExecutionController.executeRMLMapping(md, dataset, outputFilepath);
-      } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
-        throw new Exception(mappingLanguage + " Language is not supported yet");
+    if(cacheExecutionURL == null || cacheExecutionURL.results.isEmpty) {
+      val mappingLanguage = if (md.mappingLanguage == null) {
+        MappingPediaConstant.MAPPING_LANGUAGE_R2RML
       } else {
-        throw new Exception(mappingLanguage + " Language is not supported yet");
+        md.mappingLanguage
       }
-      logger.info("mapping execution success!")
-    }
-    catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "Error executing mapping: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-      }
-    }
 
-    //STORING MAPPING EXECUTION RESULT ON GITHUB
-    val githubResponse = if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
+      val organizationId = if(organization != null) {
+        organization.dctIdentifier
+      } else {
+        UUID.randomUUID.toString
+      }
+
+      val datasetId = if(dataset != null) {
+        dataset.dctIdentifier
+      } else {
+        UUID.randomUUID.toString
+      }
+
+      val mappingExecutionId = UUID.randomUUID.toString;
+
+      /*
+      val mappingExecutionDirectory = if(organization != null && dataset != null) {
+        organization.dctIdentifier + File.separator + dataset.dctIdentifier
+      } else { UUID.randomUUID.toString }
+      */
+
+      val mappingExecutionDirectory = s"executions/$organizationId/$datasetId/$mappingExecutionId";
+
+      val outputFileName = if (pOutputFilename == null) {
+        UUID.randomUUID.toString + ".txt"
+      } else {
+        pOutputFilename;
+      }
+      val outputFilepath:String = s"$mappingExecutionDirectory/$outputFileName"
+      val outputFile: File = new File(outputFilepath)
+
+      //EXECUTING MAPPING
       try {
-        val response = githubClient.encodeAndPutFile(outputFilepath
-          , "add mapping execution result by mappingpedia engine", outputFile);
-        response
-      } catch {
+        if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
+          if(datasetDistribution.dcatMediaType == null) {
+            datasetDistribution.dcatMediaType = "text/csv"
+          }
+          logger.info(s"datasetDistribution.dcatMediaType = ${datasetDistribution.dcatMediaType}")
+
+          if("text/csv".equalsIgnoreCase(datasetDistribution.dcatMediaType)) {
+            MappingExecutionController.executeR2RMLMappingWithCSV(md, dataset, outputFilepath, queryFileName);
+          } else {
+            MappingExecutionController.executeR2RMLMappingWithRDB(md, dataset, outputFilepath, queryFileName, jdbcConnection);
+          }
+        } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
+          MappingExecutionController.executeRMLMapping(md, dataset, outputFilepath);
+        } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
+          throw new Exception(mappingLanguage + " Language is not supported yet");
+        } else {
+          throw new Exception(mappingLanguage + " Language is not supported yet");
+        }
+        logger.info("mapping execution success!")
+      }
+      catch {
         case e: Exception => {
-          e.printStackTrace()
           errorOccured = true;
-          val errorMessage = "Error storing mapping execution result on GitHub: " + e.getMessage
+          e.printStackTrace()
+          val errorMessage = "Error executing mapping: " + e.getMessage
           logger.error(errorMessage)
           collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-          null
         }
       }
-    } else {
-      null
-    }
 
-
-    val mappingExecutionResultURL = if(githubResponse != null) {
-      if (HttpURLConnection.HTTP_CREATED == githubResponse.getStatus || HttpURLConnection.HTTP_OK == githubResponse.getStatus) {
-        githubResponse.getBody.getObject.getJSONObject("content").getString("url");
-      } else {
-        errorOccured = true;
-        val errorMessage = "Error storing mapping execution result on GitHub: " + githubResponse.getStatus
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
-      }
-    } else {
-      null
-    }
-
-    val mappingExecutionResultDownloadURL = if(mappingExecutionResultURL != null) {
-      try {
-        val response = Unirest.get(mappingExecutionResultURL).asJson();
-        response.getBody.getObject.getString("download_url");
-      } catch {
-        case e:Exception => mappingExecutionResultURL
-      }
-    } else {
-      null
-    }
-    logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL")
-
-
-    val mappingExecutionResultDistribution = new Distribution(dataset)
-    mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
-    mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
-    mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
-    mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
-    mappingExecutionResultDistribution.distributionFile = outputFile;
-
-    //GENERATING MANIFEST FILE
-    val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
-
-    //STORING MANIFEST ON GITHUB
-    val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
-      if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
+      //STORING MAPPING EXECUTION RESULT ON GITHUB
+      val githubResponse = if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
         try {
-          this.storeManifestFileOnGitHub(manifestFile, dataset, md);
+          val response = githubClient.encodeAndPutFile(outputFilepath
+            , "add mapping execution result by mappingpedia engine", outputFile);
+          response
         } catch {
           case e: Exception => {
-            errorOccured = true;
             e.printStackTrace()
-            val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
+            errorOccured = true;
+            val errorMessage = "Error storing mapping execution result on GitHub: " + e.getMessage
             logger.error(errorMessage)
             collectiveErrorMessage = errorMessage :: collectiveErrorMessage
             null
@@ -224,105 +176,178 @@ class MappingExecutionController(val ckanClient:CKANUtility
       } else {
         null
       }
-    val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
-    val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
-
-    val mappedClass:String = try {
-      this.mappingDocumentController.findAllMappedClassesByMappingDocumentId(md.dctIdentifier).results.iterator.next().toString
-    } catch {
-      case e:Exception => null
-    }
-    logger.info(s"mappedClass = $mappedClass")
-
-    //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
-    val ckanAddResourceResponse = try {
-      if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
-        logger.info("storing mapping execution result on CKAN ...")
 
 
-        //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
-        //            , resourceMediaType, resourceFileRef, resourceDownloadURL)
-        //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
-
-        val mapTextBody:Map[String, String] = Map(
-          MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> datasetDistribution.dcatDownloadURL
-          , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
-          , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> manifestDownloadURL
-          , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClass
-        )
-        ckanClient.createResource(mappingExecutionResultDistribution, Some(mapTextBody));
-
-        /*
-        mappingExecutionResultDistribution.ckanResourceId = addNewResourceEntity.getJSONObject("result").getString("id");
-        mappingExecutionResultDistribution.dctTitle = s"Annotated Dataset ${mappingExecutionResultDistribution.dctIdentifier}"
-        addNewResourceStatus.getStatusCode
-        */
+      val mappingExecutionResultURL = if(githubResponse != null) {
+        if (HttpURLConnection.HTTP_CREATED == githubResponse.getStatus || HttpURLConnection.HTTP_OK == githubResponse.getStatus) {
+          githubResponse.getBody.getObject.getJSONObject("content").getString("url");
+        } else {
+          errorOccured = true;
+          val errorMessage = "Error storing mapping execution result on GitHub: " + githubResponse.getStatus
+          logger.error(errorMessage)
+          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+          null
+        }
       } else {
         null
       }
-    }
-    catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "Error storing mapping execution result on CKAN: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+
+      val mappingExecutionResultDownloadURL = if(mappingExecutionResultURL != null) {
+        try {
+          val response = Unirest.get(mappingExecutionResultURL).asJson();
+          response.getBody.getObject.getString("download_url");
+        } catch {
+          case e:Exception => mappingExecutionResultURL
+        }
+      } else {
         null
       }
-    }
-    val ckanAddResourceResponseStatusCode:Integer = {
-      if(ckanAddResourceResponse == null) {
-        null
+      logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL")
+
+
+      val mappingExecutionResultDistribution = new Distribution(dataset)
+      mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
+      mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
+      mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
+      mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
+      mappingExecutionResultDistribution.distributionFile = outputFile;
+
+      //GENERATING MANIFEST FILE
+      val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
+
+      //STORING MANIFEST ON GITHUB
+      val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
+        if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
+          try {
+            this.storeManifestFileOnGitHub(manifestFile, dataset, md);
+          } catch {
+            case e: Exception => {
+              errorOccured = true;
+              e.printStackTrace()
+              val errorMessage = "error storing manifest file on GitHub: " + e.getMessage
+              logger.error(errorMessage)
+              collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+              null
+            }
+          }
+        } else {
+          null
+        }
+      val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
+      val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
+
+      val mappedClass:String = try {
+        this.mappingDocumentController.findAllMappedClassesByMappingDocumentId(md.dctIdentifier).results.iterator.next().toString
+      } catch {
+        case e:Exception => null
+      }
+      logger.info(s"mappedClass = $mappedClass")
+
+      //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
+      val ckanAddResourceResponse = try {
+        if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
+          logger.info("storing mapping execution result on CKAN ...")
+
+
+          //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
+          //            , resourceMediaType, resourceFileRef, resourceDownloadURL)
+          //val addNewResourceResponse = CKANUtility.addNewResource(distribution);
+
+          val mapTextBody:Map[String, String] = Map(
+            MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> datasetDistribution.dcatDownloadURL
+            , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
+            , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> manifestDownloadURL
+            , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClass
+          )
+          ckanClient.createResource(mappingExecutionResultDistribution, Some(mapTextBody));
+
+          /*
+          mappingExecutionResultDistribution.ckanResourceId = addNewResourceEntity.getJSONObject("result").getString("id");
+          mappingExecutionResultDistribution.dctTitle = s"Annotated Dataset ${mappingExecutionResultDistribution.dctIdentifier}"
+          addNewResourceStatus.getStatusCode
+          */
+        } else {
+          null
+        }
+      }
+      catch {
+        case e: Exception => {
+          errorOccured = true;
+          e.printStackTrace()
+          val errorMessage = "Error storing mapping execution result on CKAN: " + e.getMessage
+          logger.error(errorMessage)
+          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+          null
+        }
+      }
+      val ckanAddResourceResponseStatusCode:Integer = {
+        if(ckanAddResourceResponse == null) {
+          null
+        } else {
+          ckanAddResourceResponse.getStatusLine.getStatusCode
+        }
+      }
+
+
+
+
+
+
+      //STORING MANIFEST FILE AS TRIPLES ON VIRTUOSO
+      val addManifestVirtuosoResponse:String = try {
+        if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
+          MappingExecutionController.storeManifestOnVirtuoso(manifestFile);
+        } else {
+          "Storing to Virtuoso is not enabled!";
+        }
+      } catch {
+        case e: Exception => {
+          errorOccured = true;
+          e.printStackTrace()
+          val errorMessage = "error storing manifest file of a mapping execution result on Virtuoso: " + e.getMessage
+          val manifestFileInString = scala.io.Source.fromFile(manifestFile).getLines.reduceLeft(_+_)
+          logger.error(errorMessage);
+          logger.error(s"manifestFileInString = $manifestFileInString");
+          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+          e.getMessage
+        }
+      }
+
+
+      val (responseStatus, responseStatusText) = if(errorOccured) {
+        (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
       } else {
-        ckanAddResourceResponse.getStatusLine.getStatusCode
+        (HttpURLConnection.HTTP_OK, "OK")
       }
-    }
 
+      logger.info("\n")
 
-
-
-
-
-    //STORING MANIFEST FILE AS TRIPLES ON VIRTUOSO
-    val addManifestVirtuosoResponse:String = try {
-      if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
-        MappingExecutionController.storeManifestOnVirtuoso(manifestFile);
-      } else {
-        "Storing to Virtuoso is not enabled!";
-      }
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "error storing manifest file of a mapping execution result on Virtuoso: " + e.getMessage
-        val manifestFileInString = scala.io.Source.fromFile(manifestFile).getLines.reduceLeft(_+_)
-        logger.error(errorMessage);
-        logger.error(s"manifestFileInString = $manifestFileInString");
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        e.getMessage
-      }
-    }
-
-
-    val (responseStatus, responseStatusText) = if(errorOccured) {
-      (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
+      new ExecuteMappingResult(
+        responseStatus, responseStatusText
+        , datasetDistributionDownloadURL
+        , mdDownloadURL
+        , queryFileName
+        , mappingExecutionResultURL, mappingExecutionResultDownloadURL
+        , ckanAddResourceResponseStatusCode
+        , mappingExecutionResultDistribution.dctIdentifier
+        , manifestAccessURL, manifestDownloadURL
+      )
     } else {
-      (HttpURLConnection.HTTP_OK, "OK")
+      val mappingExecutionResultURL = cacheExecutionURL.results.iterator.next().toString;
+
+      new ExecuteMappingResult(
+        HttpURLConnection.HTTP_OK, "OK"
+        , datasetDistributionDownloadURL
+        , mdDownloadURL
+        , queryFileName
+        , mappingExecutionResultURL, mappingExecutionResultURL
+        , null
+        , null
+        , null, null
+      )
     }
 
-    logger.info("\n")
 
-    new ExecuteMappingResult(
-      responseStatus, responseStatusText
-      , datasetDistributionDownloadURL
-      , mdDownloadURL
-      , queryFileName
-      , mappingExecutionResultURL, mappingExecutionResultDownloadURL
-      , ckanAddResourceResponseStatusCode
-      , mappingExecutionResultDistribution.dctIdentifier
-      , manifestAccessURL, manifestDownloadURL
-    )
 
     /*
     new GeneralResult(null
