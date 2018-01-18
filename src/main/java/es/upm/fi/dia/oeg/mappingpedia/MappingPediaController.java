@@ -555,48 +555,81 @@ public class MappingPediaController {
     @RequestMapping(value = "/mappings/{organization_id}", method= RequestMethod.POST)
     public AddMappingDocumentResult postMappings(
             @PathVariable("organization_id") String organizationID
+
+            , @RequestParam(value="dataset_id", required = false) String pDatasetID
+            , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
+            , @RequestParam(value="ckan_package_name", required = false) String ckanPackageName
+
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileRef
+            , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileMultipartFile
+            , @RequestParam(value="mapping_document_file", required = false) MultipartFile mappingDocumentFileMultipartFile
+            , @RequestParam(value="mappingDocumentDownloadURL", required = false) String mappingDocumentDownloadURL
+
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
-            , @RequestParam(value="generateManifestFile", defaultValue="false") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
             , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
             , @RequestParam(value="mappingDocumentCreator", defaultValue="") String mappingDocumentCreator
             , @RequestParam(value="mappingDocumentSubjects", defaultValue="") String mappingDocumentSubjects
-            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String mappingLanguage
+            , @RequestParam(value="mappingLanguage", required = false, defaultValue="r2rml") String pMappingLanguage
 
+            , @RequestParam(value="ckan_resource_id", required = false, defaultValue="") String ckanResourceId
     )
     {
         logger.info("[POST] /mappings/{organization_id}");
-        Organization organization = new Organization(organizationID);
-        Dataset dataset = new Dataset(organization);
-        MappingDocument mappingDocument = new MappingDocument();
-        mappingDocument.dctSubject_$eq(mappingDocumentSubjects);
-        mappingDocument.dctCreator_$eq(mappingDocumentCreator);
-        if(mappingDocumentTitle == null) {
-            mappingDocument.dctTitle_$eq(dataset.dctIdentifier());
-        } else {
-            mappingDocument.dctTitle_$eq(mappingDocumentTitle);
-        }
-        if(mappingLanguage == null) {
-            mappingDocument.mappingLanguage_$eq(MappingPediaConstant.MAPPING_LANGUAGE_R2RML());
-        } else {
-            mappingDocument.mappingLanguage_$eq(mappingLanguage);
-        }
-        if(mappingFileRef != null) {
-            File mappingDocumentFile = MappingPediaUtility.multipartFileToFile(mappingFileRef , dataset.dctIdentifier());
-            mappingDocument.mappingDocumentFile_$eq(mappingDocumentFile);
-        }
+        logger.info("organization_id = " + organizationID);
+        logger.info("dataset_id = " + pDatasetID);
+        logger.info("ckan_package_id = " + ckanPackageId);
+        logger.info("ckan_package_name = " + ckanPackageName);
 
-        return mappingDocumentController.addNewMappingDocument(dataset, manifestFileRef
-                , replaceMappingBaseURI, generateManifestFile, mappingDocument
-        );
+
+        try {
+            String datasetId = pDatasetID;
+
+            if(datasetId == null) {
+                if(ckanPackageId != null) {
+                    ListResult datasetsByCKANPackageId = this.datasetController.findDatasetsByCKANPackageId(ckanPackageId);
+                    if(datasetsByCKANPackageId != null && datasetsByCKANPackageId.results().size() > 0) {
+                        Dataset dataset = (Dataset) datasetsByCKANPackageId.results().iterator().next();
+                        datasetId =  dataset.getId();
+                    }
+                }
+            }
+
+            if(datasetId == null) {
+                ListResult datasetsByCKANPackageName = this.datasetController.findDatasetsByCKANPackageName(ckanPackageName);
+                if(datasetsByCKANPackageName != null && datasetsByCKANPackageName.results().size() > 0) {
+                    Dataset dataset = (Dataset) datasetsByCKANPackageName.results().iterator().next();
+                    datasetId =  dataset.getId();
+                }
+            }
+
+            if(datasetId == null) {
+                logger.info("datasetId = " + datasetId);
+            }
+
+
+            return this.postMappings(organizationID, datasetId, manifestFileRef
+                    , mappingFileMultipartFile, mappingDocumentFileMultipartFile
+                    , mappingDocumentDownloadURL, replaceMappingBaseURI, generateManifestFile
+                    , mappingDocumentTitle, mappingDocumentCreator, mappingDocumentSubjects
+                    , pMappingLanguage, ckanPackageId, ckanResourceId);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AddMappingDocumentResult(
+                    HttpURLConnection.HTTP_INTERNAL_ERROR, e.getMessage()
+                    , null
+                    , null, null
+            );
+        }
     }
+
+
 
     @RequestMapping(value = "/mappings/{organization_id}/{dataset_id}", method= RequestMethod.POST)
     public AddMappingDocumentResult postMappings(
             @PathVariable("organization_id") String organizationID
             , @PathVariable("dataset_id") String datasetID
-            , @RequestParam(value="dataset_name", required = false) String datasetName
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileMultipartFile
             , @RequestParam(value="mapping_document_file", required = false) MultipartFile mappingDocumentFileMultipartFile
@@ -614,7 +647,6 @@ public class MappingPediaController {
         logger.info("[POST] /mappings/{organization_id}/{dataset_id}");
         logger.info("organization_id = " + organizationID);
         logger.info("dataset_id = " + datasetID);
-        logger.debug("dataset_name = " + datasetName);
         logger.debug("pMappingLanguage = " + pMappingLanguage);
         logger.debug("ckanPackageId = " + ckanPackageId);
         logger.debug("ckanResourceId = " + ckanResourceId);
@@ -672,6 +704,8 @@ public class MappingPediaController {
                     , replaceMappingBaseURI, generateManifestFile, mappingDocument
             );
         } catch (Exception e) {
+            e.printStackTrace();
+
             return new AddMappingDocumentResult(
                     HttpURLConnection.HTTP_INTERNAL_ERROR, e.getMessage()
                     , null

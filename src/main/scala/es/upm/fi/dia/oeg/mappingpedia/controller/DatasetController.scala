@@ -77,7 +77,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     var results: List[Dataset] = List.empty;
     try {
       val rs = qexec.execSelect
-      logger.info("Obtaining result from executing query=\n" + queryString)
+      //logger.info("Obtaining result from executing query=\n" + queryString)
       while (rs.hasNext) {
 
         val qs = rs.nextSolution
