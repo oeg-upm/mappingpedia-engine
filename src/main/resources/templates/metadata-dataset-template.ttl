@@ -11,4 +11,5 @@ mpids:dataset-$datasetID a mpv:Dataset ;
     dcterms:language <http://id.loc.gov/vocabulary/iso639-1/$datasetLanguage> ;
     mpv:datasetIdentifier "dataset-$datasetID" ;
     mpv:ckanPackageId "$ckanPackageId" ;
+    mpv:ckanPackageName "$ckanPackageName" ;
 .

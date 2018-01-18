@@ -14,19 +14,99 @@ import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility, VirtuosoClient}
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.util.EntityUtils
 import org.json.JSONObject
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
+
 import scala.collection.JavaConversions._
 
-class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtility)  {
+class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient)  {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val distributionController = new DistributionController(ckanClient, githubClient);
 
+  def findAllDatasets(): ListResult = {
+    logger.info("findDatasets")
+    val queryTemplateFile = "templates/findAllDatasets.rq";
 
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findDatasets(queryString);
+  }
+
+  def findDatasetsByCKANPackageId(ckanPackageId:String): ListResult = {
+    logger.info("findDatasetsByCKANPackageId")
+    val queryTemplateFile = "templates/findDatasetByCKANPackageId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$ckanPackageId" -> ckanPackageId
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findDatasets(queryString);
+  }
+
+  def findDatasetsByCKANPackageName(ckanPackageName:String): ListResult = {
+    logger.info("findDatasetsByCKANPackageName")
+    val queryTemplateFile = "templates/findDatasetByCKANPackageName.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$ckanPackageName" -> ckanPackageName
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findDatasets(queryString);
+  }
+
+  def findDatasets(queryString: String): ListResult = {
+    logger.info(s"queryString = $queryString");
+
+/*    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)*/
+
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+
+    var results: List[Dataset] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      logger.info("Obtaining result from executing query=\n" + queryString)
+      while (rs.hasNext) {
+
+        val qs = rs.nextSolution
+        val datasetID = qs.get("datasetID").toString;
+        val dataset = new Dataset(datasetID);
+        dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null)
+        val distributionID = MappingPediaUtility.getStringOrElse(qs, "distributionID", null)
+        val distribution = new Distribution(dataset, distributionID);
+        distribution.dcatAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null)
+        distribution.dcatDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null)
+
+        val mdID = MappingPediaUtility.getStringOrElse(qs, "mdID", null)
+        val md = new MappingDocument(mdID);
+        md.setDownloadURL(MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null))
+
+        results = dataset :: results;
+      }
+    }
+    catch {
+      case e:Exception => {
+        e.printStackTrace()
+        logger.error(s"Error execution query: ${e.getMessage}")
+      }
+    }
+    finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
 
   def storeManifestFileOnGitHub(file:File, dataset:Dataset) = {
     val organization = dataset.dctPublisher;
@@ -78,16 +158,22 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         null
       }
     }
-    dataset.ckanPackageId = try {
-      ckanAddPackageResponse.getBody.getObject.getJSONObject("result").getString("id");
+    val ckanAddPackageResponseResult = try {
+      ckanAddPackageResponse.getBody.getObject.getJSONObject("result");
     } catch {
       case e:Exception => {
-        e.printStackTrace()
-        logger.error(s"error obtaining ckan package id: ${e.getMessage}")
-        ""
+        logger.error(s"error obtaining ckanAddPackageResponseResult: ${e.getMessage}")
+        null
       }
     }
+
+    if(ckanAddPackageResponseResult != null) {
+      dataset.ckanPackageId = ckanAddPackageResponseResult.getString("id");
+      dataset.ckanPackageName = ckanAddPackageResponseResult.getString("name");
+    }
+
     logger.info(s"dataset.ckanPackageId = ${dataset.ckanPackageId}");
+    logger.info(s"dataset.ckanPackageName = ${dataset.ckanPackageName}");
 
 
 
@@ -397,6 +483,7 @@ object DatasetController {
         , "$datasetIssued" -> dataset.dctIssued
         , "$datasetModified" -> dataset.dctModified
         , "$ckanPackageId" -> dataset.ckanPackageId
+        , "$ckanPackageName" -> dataset.ckanPackageName
       );
 
       /*
@@ -454,68 +541,7 @@ object DatasetController {
   }
 
 
-  def findAllDatasets(): ListResult = {
-    logger.info("findDatasets")
-    val queryTemplateFile = "templates/findAllDatasets.rq";
 
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-    );
 
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    DatasetController.findDatasets(queryString);
-  }
 
-  def findDatasetsByCKANPackageId(ckanPackageId:String): ListResult = {
-    logger.info("findDatasetsByCKANPackageId")
-    val queryTemplateFile = "templates/findDatasetByCKANPackageId.rq";
-
-    val mapValues: Map[String, String] = Map(
-      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$ckanPackageId" -> ckanPackageId
-    );
-
-    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    DatasetController.findDatasets(queryString);
-  }
-
-  def findDatasets(queryString: String): ListResult = {
-    logger.info(s"queryString = $queryString");
-    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
-      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
-
-    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
-    var results: List[Dataset] = List.empty;
-    try {
-      val rs = qexec.execSelect
-      logger.info("Obtaining result from executing query=\n" + queryString)
-      while (rs.hasNext) {
-
-        val qs = rs.nextSolution
-        val datasetID = qs.get("datasetID").toString;
-        val dataset = new Dataset(datasetID);
-        dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null)
-        val distributionID = MappingPediaUtility.getStringOrElse(qs, "distributionID", null)
-        val distribution = new Distribution(dataset, distributionID);
-        distribution.dcatAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null)
-        distribution.dcatDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null)
-
-        val mdID = MappingPediaUtility.getStringOrElse(qs, "mdID", null)
-        val md = new MappingDocument(mdID);
-        md.setDownloadURL(MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null))
-
-        results = dataset :: results;
-      }
-    }
-    catch {
-      case e:Exception => {
-        e.printStackTrace()
-        logger.error(s"Error execution query: ${e.getMessage}")
-      }
-    }
-    finally qexec.close
-
-    val listResult = new ListResult(results.length, results);
-    listResult
-  }
 }

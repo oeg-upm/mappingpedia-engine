@@ -44,7 +44,7 @@ public class MappingPediaController {
     private JenaClient jenaClient = MappingPediaEngine.jenaClient();
     private VirtuosoClient virtuosoClient = MappingPediaEngine.virtuosoClient();
 
-    private DatasetController datasetController = new DatasetController(ckanClient, githubClient);
+    private DatasetController datasetController = new DatasetController(ckanClient, githubClient, virtuosoClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
     private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
     private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient, virtuosoClient, jenaClient);
@@ -217,14 +217,20 @@ public class MappingPediaController {
     @RequestMapping(value="/datasets", method= RequestMethod.GET)
     public ListResult getDatasets(
             @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
+            , @RequestParam(value="ckan_package_name", required = false) String ckanPackageName
     ) {
         logger.info("/datasets ...");
+        logger.info("ckan_package_id = " + ckanPackageId);
+        logger.info("ckan_package_name = " + ckanPackageName);
+
         ListResult listResult;
 
-        if(ckanPackageId != null) {
-            listResult = DatasetController.findDatasetsByCKANPackageId(ckanPackageId);
+        if(ckanPackageId != null && ckanPackageName == null) {
+            listResult = this.datasetController.findDatasetsByCKANPackageId(ckanPackageId);
+        } else if(ckanPackageId == null && ckanPackageName != null) {
+            listResult = this.datasetController.findDatasetsByCKANPackageName(ckanPackageName);
         } else {
-            listResult = DatasetController.findAllDatasets();
+            listResult = this.datasetController.findAllDatasets();
         }
         logger.info("datasets result = " + listResult);
 

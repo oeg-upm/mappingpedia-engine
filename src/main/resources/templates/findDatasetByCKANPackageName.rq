@@ -1,0 +1,17 @@
+#findDatasetByCKANPackageId.rq
+
+prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
+prefix rr: <http://www.w3.org/ns/r2rml#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dcterms: <http://purl.org/dc/elements/1.1/>
+prefix dct: <http://purl.org/dc/elements/1.1/>
+
+SELECT DISTINCT *
+FROM <$graphURL>
+WHERE {
+    ?dataset a mpv:Dataset .
+    ?dataset mpv:ckanPackageName ?ckanPackageName .
+    ?dataset dcterms:identifier ?datasetID .
+    FILTER regex(str(?ckanPackageName), "$ckanPackageName", "i")
+}

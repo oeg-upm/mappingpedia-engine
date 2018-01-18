@@ -34,6 +34,7 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
   var manifestDownloadURL:String = null;
 
   var ckanPackageId:String = null;
+  var ckanPackageName:String = null;
 
   //var mappingDocuments:List[MappingDocument] = Nil;
 
