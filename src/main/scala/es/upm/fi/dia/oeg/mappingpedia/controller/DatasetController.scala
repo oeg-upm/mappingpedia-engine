@@ -34,7 +34,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     val manifestFileName = file.getName
     val organizationId = organization.dctIdentifier;
 
-    val addNewManifestCommitMessage = s"Add manifest file for dataset: $datasetId"
+    val addNewManifestCommitMessage = s"Add dataset manifest file: $datasetId"
 
     logger.info(s"STORING MANIFEST FILE FOR DATASET $datasetId ON GITHUB ... ")
     val githubResponse = githubClient.encodeAndPutFile(organization.dctIdentifier
@@ -42,6 +42,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     logger.info(s"manifest file for the dataset $datasetId stored on github.")
     githubResponse
   }
+
 
   def addDataset(dataset:Dataset, manifestFileRef:MultipartFile
                  , generateManifestFile:String, pStoreToCKAN:String
@@ -63,15 +64,6 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && storeToCKAN) {
         logger.info("STORING DATASET AS A PACKAGE ON CKAN ...")
         val response = ckanClient.addNewPackage(dataset);
-        try {
-          dataset.ckanPackageId = response.getBody.getObject.getJSONObject("result").getString("id");
-          logger.info(s"dataset.ckanPackageId = ${dataset.ckanPackageId}");
-        } catch {
-          case e:Exception => {
-            logger.error("error obtaining ckan package id!")
-          }
-        }
-
         response
       } else {
         null
@@ -86,6 +78,17 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         null
       }
     }
+    dataset.ckanPackageId = try {
+      ckanAddPackageResponse.getBody.getObject.getJSONObject("result").getString("id");
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+        logger.error(s"error obtaining ckan package id: ${e.getMessage}")
+        ""
+      }
+    }
+    logger.info(s"dataset.ckanPackageId = ${dataset.ckanPackageId}");
+
 
 
 
@@ -393,6 +396,7 @@ object DatasetController {
         , "$datasetLanguage" -> dataset.dctLanguage
         , "$datasetIssued" -> dataset.dctIssued
         , "$datasetModified" -> dataset.dctModified
+        , "$ckanPackageId" -> dataset.ckanPackageId
       );
 
       /*
@@ -450,7 +454,7 @@ object DatasetController {
   }
 
 
-  def findDatasets(): ListResult = {
+  def findAllDatasets(): ListResult = {
     logger.info("findDatasets")
     val queryTemplateFile = "templates/findAllDatasets.rq";
 
@@ -462,12 +466,23 @@ object DatasetController {
     DatasetController.findDatasets(queryString);
   }
 
+  def findDatasetsByCKANPackageId(ckanPackageId:String): ListResult = {
+    logger.info("findDatasetsByCKANPackageId")
+    val queryTemplateFile = "templates/findDatasetByCKANPackageId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$ckanPackageId" -> ckanPackageId
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    DatasetController.findDatasets(queryString);
+  }
+
   def findDatasets(queryString: String): ListResult = {
     logger.info(s"queryString = $queryString");
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
-
-
 
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     var results: List[Dataset] = List.empty;
@@ -480,20 +495,25 @@ object DatasetController {
         val datasetID = qs.get("datasetID").toString;
         val dataset = new Dataset(datasetID);
         dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null)
-        val distributionID = qs.get("distributionID").toString;
+        val distributionID = MappingPediaUtility.getStringOrElse(qs, "distributionID", null)
         val distribution = new Distribution(dataset, distributionID);
         distribution.dcatAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null)
         distribution.dcatDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null)
 
-        val mdID = qs.get("mdID").toString;
+        val mdID = MappingPediaUtility.getStringOrElse(qs, "mdID", null)
         val md = new MappingDocument(mdID);
         md.setDownloadURL(MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null))
-        //dataset.mappingDocuments = List(md)
-
 
         results = dataset :: results;
       }
-    } finally qexec.close
+    }
+    catch {
+      case e:Exception => {
+        e.printStackTrace()
+        logger.error(s"Error execution query: ${e.getMessage}")
+      }
+    }
+    finally qexec.close
 
     val listResult = new ListResult(results.length, results);
     listResult

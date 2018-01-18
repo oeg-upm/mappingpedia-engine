@@ -284,8 +284,9 @@ object MappingPediaUtility {
     result;
   }
 
-  def calculateHash(downloadURL:String, encoding:String) = {
+  def calculateHash(downloadURL:String, pEncoding:String) = {
     logger.info(s"calculating hash value of ${downloadURL}");
+    val encoding = if(pEncoding == null) { "UTF-8" } else { pEncoding }
 
     val hashValue = try {
       if (downloadURL != null) {

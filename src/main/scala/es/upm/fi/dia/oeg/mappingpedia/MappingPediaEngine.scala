@@ -124,7 +124,7 @@ object MappingPediaEngine {
 			val generatedLines = map.foldLeft(templateLines)( (acc, kv) => {
 				val mapValue:String = map.get(kv._1).getOrElse("");
 				if(mapValue ==null){
-					logger.warn("the input value for " + kv._1 + " is null");
+					logger.debug("the input value for " + kv._1 + " is null");
 					acc.replaceAllLiterally(kv._1, "")
 				} else {
 					acc.replaceAllLiterally(kv._1, mapValue)
@@ -471,7 +471,7 @@ object MappingPediaEngine {
 			logger.info("Storing generated triples.");
 			val additionalTriples = this.generateAdditionalTriples(mappingLanguage
 				, manifestModel, mappingDocumentModel);
-			//logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
+			logger.info("additionalTriples = " + additionalTriples.mkString("\n"));
 
 			this.virtuosoClient.store(additionalTriples, true, MappingPediaConstant.MAPPINGPEDIA_INSTANCE_NS);
 		}

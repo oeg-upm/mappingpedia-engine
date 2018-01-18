@@ -33,7 +33,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val commitMessage = s"add a new mapping document file ${mappingDocumentFileName}"
     //val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
 
-    logger.info("Storing mapping file on GitHub ...")
+    logger.info("STORING MAPPING DOCUMENT FILE ON GITHUB ...")
     val response = githubClient.putEncodedContent(
       mappingDocumentFilePath, commitMessage, base64EncodedContent)
     val responseStatus = response.getStatus
@@ -108,7 +108,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
     val virtuosoStoreMappingStatus = if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
       try {
-        logger.info("Storing mapping and manifest file on Virtuoso ...")
+        logger.info("STORING MAPPING DOCUMENT AND ITS MANIFEST ON VIRTUOSO ...")
         val manifestFilePath: String = if (manifestFile == null) {
           null
         } else {
@@ -140,7 +140,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     //STORING MANIFEST FILE ON GITHUB
     val addNewManifestResponse = try {
       if (manifestFile != null) {
-        logger.info("Storing manifest file on GitHub ...")
+        logger.info("STORING MANIFEST FILE ON GITHUB ...")
         val addNewManifestCommitMessage = s"Add a new manifest file for mapping document: ${mappingDocument.dctIdentifier}"
 
         val mappingDocumentManifestFilePath = s"${organization.dctIdentifier}/${dataset.dctIdentifier}/${mappingDocument.dctIdentifier}/${manifestFile.getName}";
@@ -600,28 +600,9 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
 object MappingDocumentController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  //val githubClient = MappingPediaEngine.githubClient;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   def generateManifestFile(mappingDocument: MappingDocument, dataset: Dataset) = {
-    logger.info("Generating mapping document manifest file ...")
+    logger.info("GENERATING MANIFEST FILE FOR MAPPING DOCUMENT ...")
     val templateFiles = List(
       MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
       , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);

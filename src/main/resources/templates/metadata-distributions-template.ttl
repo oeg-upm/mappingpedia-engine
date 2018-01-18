@@ -9,8 +9,8 @@ mpidd:distribution-$distributionID a dcat:Distribution;
     dcterms:description "$distributionDescription" ;
     dcterms:issued "$distributionIssued"^^xsd:dateTime;
     dcterms:modified "$distributionModified"^^xsd:dateTime;
-    dcat:accessURL $distributionAccessURL ;
-    dcat:downloadURL $distributionDownloadURL ;
+    dcat:accessURL <$distributionAccessURL> ;
+    dcat:downloadURL <$distributionDownloadURL> ;
     dcat:mediaType "$distributionMediaType" ;
     mpv:sha "$sha" ;
 .

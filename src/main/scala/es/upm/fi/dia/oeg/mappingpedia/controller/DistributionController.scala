@@ -22,7 +22,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
 
 
     logger.info(s"STORING MANIFEST FILE FOR DISTRIBUTION: ${distribution.dctIdentifier} - DATASET: ${dataset.dctIdentifier} ON GITHUB ...")
-    val addNewManifestCommitMessage = s"Add manifest file for distribution: ${distribution.dctIdentifier} - dataset: ${dataset.dctIdentifier} "
+    val addNewManifestCommitMessage = s"Add distribution manifest file: ${distribution.dctIdentifier}"
     val manifestFileName = file.getName
     val datasetId = dataset.dctIdentifier;
     val organizationId = organization.dctIdentifier;
@@ -44,14 +44,14 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
 
     logger.info("STORING DISTRIBUTION FILE ON GITHUB ...")
     //val datasetFile = MappingPediaUtility.multipartFileToFile(distribution.ckanFileRef, dataset.dctIdentifier)
-    val addNewDatasetCommitMessage = s"Add a new distribution file to dataset ${dataset.dctIdentifier}"
+    val addNewDatasetCommitMessage = s"Add distribution file to dataset: ${dataset.dctIdentifier}"
     val githubResponse = githubClient.putEncodedContent(organization.dctIdentifier
       , dataset.dctIdentifier, filename, addNewDatasetCommitMessage, base64EncodedContent)
 
     if(githubResponse != null) {
       val responseStatus = githubResponse.getStatus;
       if (HttpURLConnection.HTTP_OK == responseStatus || HttpURLConnection.HTTP_CREATED == responseStatus) {
-        logger.info("Dataset stored on GitHub")
+        logger.info("Distribution file stored on GitHub")
         if(distribution.dcatAccessURL == null) {
           distribution.dcatAccessURL =
             githubResponse.getBody.getObject.getJSONObject("content").getString("url")
@@ -205,6 +205,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
       }
     }*/
     distribution.ckanResourceId = CKANUtility.getResultId(ckanAddResourceResponse);
+    logger.info(s"distribution.ckanResourceId = ${distribution.ckanResourceId}");
 
     //MANIFEST FILE
     val manifestFile:File = try {
@@ -363,30 +364,14 @@ object DistributionController {
 
 
       val mapValuesWithDistribution:Map[String,String] = {
-        var distributionAccessURL = distribution.dcatAccessURL
-        if(distributionAccessURL == null) {
-          distributionAccessURL = "<>";
-        } else {
-          if(!distributionAccessURL.startsWith("<")) {
-            distributionAccessURL = "<" + distributionAccessURL;
-          }
-          if(!distributionAccessURL.endsWith(">")) {
-            distributionAccessURL = distributionAccessURL + ">";
-          }
-        }
+        val distributionAccessURL = if(distribution.dcatAccessURL == null) { ""; }
+        else { distribution.dcatAccessURL }
+
         logger.info(s"distributionAccessURL = ${distributionAccessURL}")
 
-        var distributionDownloadURL = distribution.dcatDownloadURL
-        if(distributionDownloadURL == null) {
-          distributionDownloadURL = "<>";
-        } else {
-          if(!distributionDownloadURL.startsWith("<")) {
-            distributionDownloadURL = "<" + distributionDownloadURL;
-          }
-          if(!distributionDownloadURL.endsWith(">")) {
-            distributionDownloadURL = distributionDownloadURL + ">";
-          }
-        }
+        val distributionDownloadURL = if(distribution.dcatDownloadURL == null) { ""; }
+        else { distribution.dcatDownloadURL }
+
         logger.info(s"distributionDownloadURL = ${distributionDownloadURL}")
 
         Map(

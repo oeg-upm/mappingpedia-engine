@@ -68,8 +68,8 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       if(textBodyMap != null && textBodyMap.isDefined) {
 
         for((key, value) <- textBodyMap.get) {
-          logger.debug(s"textBodyMap key = $key")
-          logger.debug(s"textBodyMap value = $value")
+          logger.info(s"textBodyMap key = $key")
+          logger.info(s"textBodyMap value = $value")
 
           builder.addTextBody(key, value)
         }
@@ -177,8 +177,8 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       .header("Authorization", this.authorizationToken)
       .body(jsonObj)
       .asJson();
-    logger.info(s"response.getHeaders = ${response.getHeaders}")
-    logger.info(s"response.getBody = ${response.getBody}")
+    logger.debug(s"response.getHeaders = ${response.getHeaders}")
+    logger.debug(s"response.getBody = ${response.getBody}")
     response;
   }
 
@@ -250,7 +250,7 @@ object CKANUtility {
 
   def getResultId(response:CloseableHttpResponse) = {
     if(response == null) {
-      null
+      ""
     } else {
       val httpEntity  = response.getEntity
       val entity = EntityUtils.toString(httpEntity)

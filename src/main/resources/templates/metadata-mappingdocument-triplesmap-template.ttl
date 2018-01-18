@@ -1,0 +1,3 @@
+#metadata-mappingdocument-triplesmap-template.ttl
+
+mpimd:mappingDocument-$mappingDocumentID mpv:hasTriplesMap <$TriplesMap> .

@@ -49,7 +49,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
         results = mappedClass :: results;
       }
     } finally qexec.close
-    
+
     val listResult = new ListResult(results.length, results);
 
 
@@ -81,9 +81,17 @@ class MappingExecutionController(val ckanClient:CKANUtility
     val datasetDistribution = dataset.getDistribution();
     val datasetDistributionDownloadURL = datasetDistribution.dcatDownloadURL;
     val datasetDistributionSHA = datasetDistribution.sha;
+    if (datasetDistribution.sha == null && datasetDistribution.dcatDownloadURL != null ) {
+      val hashValue = MappingPediaUtility.calculateHash(datasetDistribution.dcatDownloadURL, datasetDistribution.encoding);
+      datasetDistribution.sha = hashValue
+    }
 
     val mdDownloadURL = md.getDownloadURL();
     val mdSHA = md.sha;
+    if (md.sha == null && mdDownloadURL != null ) {
+      val hashValue = MappingPediaUtility.calculateHash(mdDownloadURL, "UTF-8");
+      datasetDistribution.sha = hashValue
+    }
 
     val cacheExecutionURL = this.findMappingExecutionURLBySHA(mdSHA, datasetDistributionSHA);
     logger.info(s"cacheExecutionURL = ${cacheExecutionURL}");
@@ -368,25 +376,30 @@ class MappingExecutionController(val ckanClient:CKANUtility
     val executionResults:Iterable[ExecuteMappingResultSummary] = mappingDocuments.flatMap(
       mappingDocument => { val md = mappingDocument.asInstanceOf[MappingDocument];
 
-      val mappingLanguage = md.mappingLanguage;
-      val distributionFieldSeparator = if(md.distributionFieldSeparator != null
-        && md.distributionFieldSeparator.isDefined) {
-        md.distributionFieldSeparator.get
-      } else {
-        null
-      }
-      val outputFilename = UUID.randomUUID.toString + ".nt"
-      //val mappingDocumentDownloadURL = md.getDownloadURL();
+        val mappingLanguage = md.mappingLanguage;
+        val distributionFieldSeparator = if(md.distributionFieldSeparator != null
+          && md.distributionFieldSeparator.isDefined) {
+          md.distributionFieldSeparator.get
+        } else {
+          null
+        }
+        val outputFilename = UUID.randomUUID.toString + ".nt"
+        //val mappingDocumentDownloadURL = md.getDownloadURL();
 
-      val dataset = new Dataset(new Organization());
-      val distribution = new Distribution(dataset);
-      dataset.addDistribution(distribution);
-      distribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
-      distribution.sha = md.dataset.getDistribution().sha
+        val dataset = new Dataset(new Organization());
+        val distribution = new Distribution(dataset);
+        dataset.addDistribution(distribution);
+        distribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
+        distribution.sha = md.dataset.getDistribution().sha
+        if (distribution.sha == null && distribution.dcatDownloadURL != null ) {
+          val hashValue = MappingPediaUtility.calculateHash(distribution.dcatDownloadURL, distribution.encoding);
+          distribution.sha = hashValue
+        }
 
-      logger.info(s"mapping document SHA = ${md.sha}");
-      logger.info(s"dataset distribution SHA = ${distribution.sha}");
-      if(md.sha != null && distribution.sha != null) {
+
+        logger.info(s"mapping document SHA = ${md.sha}");
+        logger.info(s"dataset distribution SHA = ${distribution.sha}");
+
         if(executedMappingDocuments.contains((md.sha,distribution.sha))) {
           None
         } else {
@@ -427,12 +440,10 @@ class MappingExecutionController(val ckanClient:CKANUtility
             None
           }
         }
-      } else {
-        None
-      }
 
 
-    })
+
+      })
     new ListResult(executionResults.size, executionResults);
 
   }
@@ -449,14 +460,13 @@ class MappingExecutionController(val ckanClient:CKANUtility
         , "templates/metadata-mappingexecutionresult-template.ttl"
       );
 
-      val datasetDistributionDownloadURL:String = s"<${datasetDistribution.dcatDownloadURL}>";
+      val datasetDistributionDownloadURL:String = if( datasetDistribution.dcatDownloadURL == null) { ""}
+      else { datasetDistribution.dcatDownloadURL }
       logger.info(s"datasetDistributionDownloadURL = ${datasetDistributionDownloadURL}")
 
-      val downloadURL = if(mappingExecutionResult.dcatDownloadURL == null) {
-        "<>"
-      } else {
-        s"<${mappingExecutionResult.dcatDownloadURL}>"
-      }
+      val downloadURL = if(mappingExecutionResult.dcatDownloadURL == null) { "" }
+      else { mappingExecutionResult.dcatDownloadURL }
+      logger.info(s"downloadURL = ${downloadURL}")
 
       val mappingDocumentSHA = if(mappingDocument.sha == null) { "" } else { mappingDocument.sha }
       logger.info(s"mappingDocumentSHA = ${mappingDocumentSHA}")
