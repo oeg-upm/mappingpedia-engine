@@ -10,16 +10,16 @@ import scala.collection.JavaConverters._
 
 //based on dcat:Dataset
 //see also ckan:Package
-class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
+class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val createdDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date())
 
-  def this(dctPublisher:Organization) {
+  def this(dctPublisher:Agent) {
     this(dctPublisher, UUID.randomUUID.toString)
   }
 
   def this(dctIdentifier:String) {
-    this(new Organization(), dctIdentifier)
+    this(new Agent(), dctIdentifier)
   }
 
   var dctTitle:String = null;
@@ -35,6 +35,11 @@ class Dataset(val dctPublisher:Organization, val dctIdentifier:String){
 
   var ckanPackageId:String = null;
   var ckanPackageName:String = null;
+  var ckanSource:String = null;
+  var ckanVersion:String = null;
+  var ckanAuthor:Agent = null;
+  var ckanMaintener:Agent = null;
+
 
   //var mappingDocuments:List[MappingDocument] = Nil;
 

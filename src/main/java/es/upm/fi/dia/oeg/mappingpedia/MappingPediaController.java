@@ -7,9 +7,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.DistributionController;
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController;
@@ -179,23 +176,27 @@ public class MappingPediaController {
     @RequestMapping(value="/mappings", method= RequestMethod.GET)
     public ListResult getMappings(
             @RequestParam(value="dataset_id", defaultValue = "", required = false) String datasetId
+            , @RequestParam(value="ckan_package_id", defaultValue = "", required = false) String ckanPackageId
+            , @RequestParam(value="ckan_package_name", defaultValue = "", required = false) String ckanPackageName
             , @RequestParam(value="distribution_id", defaultValue = "", required = false) String distributionId
     ) {
+        logger.info("GET /mappings");
+        logger.info("dataset_id = " + datasetId);
+        logger.info("ckan_package_id = " + ckanPackageId);
+        logger.info("ckan_package_name = " + ckanPackageName);
+        logger.info("distribution_id = " + distributionId);
+
         ListResult listResult = null;
-        if(!"".equalsIgnoreCase(datasetId.trim())) {
-            logger.info("/findMappingDocumentsByDatasetId...");
-            logger.info("dataset_id = " + datasetId);
+        if(!"".equals(datasetId.trim())
+                || !"".equals(ckanPackageId.trim())
+                || !"".equals(ckanPackageName.trim())
+                ) {
 
-
-            listResult = this.mappingDocumentController.findMappingDocumentsByDatasetId(datasetId);
+            listResult = this.mappingDocumentController.findMappingDocumentsByDatasetId(
+                    datasetId, ckanPackageId, ckanPackageName);
         } else if(!"".equalsIgnoreCase(distributionId.trim())) {
-            logger.info("/findMappingDocumentsByDistributionId...");
-            logger.info("distribution_id = " + distributionId);
-
-
             listResult = this.mappingDocumentController.findMappingDocumentsByDistributionId(distributionId);
         }
-
 
         return listResult;
     }
@@ -329,6 +330,9 @@ public class MappingPediaController {
             , @RequestParam(value="jdbc_url", required = false) String jdbc_url
             , @RequestParam(value="database_driver", required = false) String databaseDriver
             , @RequestParam(value="database_type", required = false) String databaseType
+
+            , @RequestParam(value="use_cache", required = false) String pUseCache
+
     )
     {
         try {
@@ -340,11 +344,11 @@ public class MappingPediaController {
             logger.info("distribution_encoding = " + distributionEncoding);
 
 
-            Organization organization;
+            Agent organization;
             if(organizationId == null) {
-                organization = new Organization();
+                organization = new Agent();
             } else {
-                organization = new Organization(organizationId);
+                organization = new Agent(organizationId);
             }
 
             Dataset dataset;
@@ -421,11 +425,12 @@ public class MappingPediaController {
                     , databaseDriver, databaseType);
 
 
+            Boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
 
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
                     , true, true, true
-                    , null);
+                    , null, useCache);
 
             /*
         MappingExecution mappingExecution = new MappingExecution(md, dataset);
@@ -479,13 +484,14 @@ public class MappingPediaController {
             , @RequestParam(value="database_driver", required = false) String databaseDriver
             , @RequestParam(value="database_type", required = false) String databaseType
 
+            , @RequestParam(value="use_cache", required = false) String pUseCache
             //, @PathVariable("mappingFilename") String mappingFilename
     )
     {
         logger.info("POST /executions1/{organizationId}/{datasetId}/{mappingDocumentId}");
         logger.info("mapping_document_id = " + mappingDocumentId);
 
-        Organization organization = new Organization(organizationId);
+        Agent organization = new Agent(organizationId);
 
         Dataset dataset = new Dataset(organization, datasetId);
         Distribution distribution = new Distribution(dataset);
@@ -530,10 +536,13 @@ public class MappingPediaController {
                 , databaseDriver, databaseType);
 
 
+        Boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
         try {
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
                     , true, true, true, jdbcConnection
+                    , useCache
+
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -604,7 +613,7 @@ public class MappingPediaController {
             }
 
             if(datasetId == null) {
-                logger.info("datasetId = " + datasetId);
+                logger.warn("datasetId = " + datasetId);
             }
 
 
@@ -652,7 +661,7 @@ public class MappingPediaController {
         logger.debug("ckanResourceId = " + ckanResourceId);
 
         try {
-            Organization organization = new Organization(organizationID);
+            Agent organization = new Agent(organizationID);
             Dataset dataset = new Dataset(organization, datasetID);
             dataset.ckanPackageId_$eq(ckanPackageId);
 
@@ -767,11 +776,13 @@ public class MappingPediaController {
 
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+
+            , @RequestParam(value="use_cache", required = false, defaultValue="true") String pUseCache
     )
     {
         logger.info("[POST] /datasets_mappings_execute");
 
-        Organization organization = new Organization(organizationID);
+        Agent organization = new Agent(organizationID);
 
         Dataset dataset = new Dataset(organization);
         if(datasetTitle == null) {
@@ -834,6 +845,8 @@ public class MappingPediaController {
             AddMappingDocumentResult addMappingDocumentResult = mappingDocumentController.addNewMappingDocument(dataset, manifestFileRef
                     , "true", generateManifestFile, mappingDocument);
             int addMappingDocumentResultStatusCode = addMappingDocumentResult.getStatus_code();
+
+            boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
             if("true".equalsIgnoreCase(executeMapping)) {
                 if(addMappingDocumentResultStatusCode >= 200 && addMappingDocumentResultStatusCode < 300) {
                     try {
@@ -848,6 +861,8 @@ public class MappingPediaController {
                                 , true
 
                                 , null
+                                , useCache
+
                         );
 
                         return new AddDatasetMappingExecuteResult (HttpURLConnection.HTTP_OK, addDatasetResult, addMappingDocumentResult, executeMappingResult);
@@ -900,7 +915,7 @@ public class MappingPediaController {
         logger.info("distribution_file = " + distributionMultipartFile);
 
         try {
-            Organization organization = new Organization(organizationId);
+            Agent organization = new Agent(organizationId);
 
             Dataset dataset;
             if(datasetID == null) {
@@ -992,7 +1007,7 @@ public class MappingPediaController {
         logger.info("organization_id = " + organizationId);
         logger.info("dataset_id = " + datasetId);
 
-        Organization organization = new Organization(organizationId);
+        Agent organization = new Agent(organizationId);
 
         Dataset dataset = new Dataset(organization, datasetId);
         dataset.dcatKeyword_$eq(datasetKeywords);
@@ -1053,7 +1068,7 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets/{organizationID}/{datasetID}");
-        Organization organization = new Organization(organizationID);
+        Agent organization = new Agent(organizationID);
 
         Dataset dataset = new Dataset(organization, datasetID);
         dataset.dcatKeyword_$eq(datasetKeywords);
@@ -1152,19 +1167,26 @@ public class MappingPediaController {
     @RequestMapping(value="/ogd/instances", method= RequestMethod.GET)
     public ListResult getOGDInstances(@RequestParam(value="aClass") String aClass
             ,@RequestParam(value="maximum_results", defaultValue = "2") String pMaxMappingDocuments
+            ,@RequestParam(value="use_cache", defaultValue = "true") String pUseCache
+
     ) {
         logger.info("GET /ogd/instances ...");
         logger.info("Getting instances of the class:" + aClass);
         logger.info("pMaxMappingDocuments = " + pMaxMappingDocuments);
+        logger.info("use_cache = " + pUseCache);
 
 
         int maxMappingDocuments = 2;
+        boolean useCache = true;
         try {
             maxMappingDocuments = Integer.parseInt(pMaxMappingDocuments);
+            useCache = MappingPediaUtility.stringToBoolean(pUseCache);
+
         } catch (Exception e) {
             logger.error("invalid value for maximum_mapping_documents!");
         }
-        ListResult result = mappingExecutionController.getInstances(aClass, maxMappingDocuments) ;
+        ListResult result = mappingExecutionController.getInstances(
+                aClass, maxMappingDocuments, useCache) ;
         return result;
     }
 

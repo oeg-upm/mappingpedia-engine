@@ -38,5 +38,7 @@ WHERE {
 
     }
     FILTER regex(str(?datasetId), "$datasetId", "i")
+    #FILTER (regex(str(?datasetId), "$datasetId", "i") || regex(str(?datasetId), "$ckanPackageName", "i") || regex(str(?datasetId), "$ckanPackageId", "i"))
+
 }
 ORDER BY DESC(?dateSubmitted)

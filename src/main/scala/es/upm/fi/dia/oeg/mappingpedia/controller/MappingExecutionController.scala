@@ -67,12 +67,9 @@ class MappingExecutionController(val ckanClient:CKANUtility
                       , pStoreToGithub:Boolean
                       , pStoreExecutionResultToVirtuoso:Boolean
 
-                      /*
-                        , dbUserName:String, dbPassword:String
-                        , dbName:String, jdbc_url:String
-                        , databaseDriver:String, databaseType:String
-                        */
                       , jdbcConnection: JDBCConnection
+
+                      , useCache:Boolean
                     ) : ExecuteMappingResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
@@ -365,7 +362,9 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
   }
 
-  def getInstances(aClass:String, maxMappingDocuments:Integer) : ListResult = {
+  def getInstances(aClass:String, maxMappingDocuments:Integer, useCache:Boolean) : ListResult = {
+    logger.info(s"useCache = ${useCache}");
+
     val mappingDocuments =
       this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
         aClass, null, true).results
@@ -386,7 +385,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
         val outputFilename = UUID.randomUUID.toString + ".nt"
         //val mappingDocumentDownloadURL = md.getDownloadURL();
 
-        val dataset = new Dataset(new Organization());
+        val dataset = new Dataset(new Agent());
         val distribution = new Distribution(dataset);
         dataset.addDistribution(distribution);
         distribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
@@ -404,8 +403,10 @@ class MappingExecutionController(val ckanClient:CKANUtility
           None
         } else {
           if(i < maxMappingDocuments) {
-            val mappingExecutionURLs = this.findMappingExecutionURLBySHA(md.sha,distribution.sha);
-            if(mappingExecutionURLs != null && mappingExecutionURLs.results.size > 0) {
+            val mappingExecutionURLs = if(useCache) { this.findMappingExecutionURLBySHA(md.sha,distribution.sha); }
+            else { null }
+
+            if(useCache && mappingExecutionURLs != null && mappingExecutionURLs.results.size > 0) {
               val cachedMappingExecutionResultURL:String = mappingExecutionURLs.results.iterator.next().toString;
               logger.info(s"cachedMappingExecutionResultURL = " + cachedMappingExecutionResultURL)
 
@@ -422,6 +423,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
               val executionResult = this.executeMapping(md, dataset, mappingExecution.queryFilePath, outputFilename
                 , false, true, false
                 , null
+                , useCache
               );
               //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 

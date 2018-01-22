@@ -233,17 +233,7 @@ object MappingPediaUtility {
     file;
   }
 
-  def stringToBoolean(aString:String) : Boolean = {
-    if(aString != null) {
-      if(aString.equalsIgnoreCase("true") || aString.equalsIgnoreCase("yes")) {
-        true;
-      } else {
-        false
-      }
-    } else {
-      false
-    }
-  }
+
 
   def readFromResourcesDirectory(filePath:String) : String = {
     //var lines: String = Source.fromResource(templateFilePath).getLines.mkString("\n");
@@ -377,5 +367,41 @@ object MappingPediaUtility {
       pClass
     }
     classIRI
+  }
+
+  /*  def stringToBoolean(aString:String) : Boolean = {
+    if(aString != null) {
+      if(aString.equalsIgnoreCase("true") || aString.equalsIgnoreCase("yes")) {
+        true;
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+  }*/
+
+  def stringToBoolean(inputString:String) : Boolean = {
+    try {
+      val listOfTrueString = List("true", "yes");
+
+      val result = if(inputString == null) {
+        false
+      } else {
+        if(listOfTrueString.contains(inputString)) {
+          true
+        } else {
+          false
+        }
+      }
+
+      result
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+        false
+      }
+    }
+
   }
 }

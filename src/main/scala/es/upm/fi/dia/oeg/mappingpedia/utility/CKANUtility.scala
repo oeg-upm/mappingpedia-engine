@@ -7,7 +7,7 @@ import java.util.Properties
 
 import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Agent}
 import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaEngine, MappingPediaProperties}
 import eu.trentorise.opendata.jackan.CkanClient
@@ -138,7 +138,7 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   }
 
 
-  def addNewOrganization(organization:Organization) = {
+  def addNewOrganization(organization:Agent) = {
     val jsonObj = new JSONObject();
     jsonObj.put("name", organization.foafName);
 

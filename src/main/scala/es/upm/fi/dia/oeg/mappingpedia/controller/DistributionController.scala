@@ -6,7 +6,7 @@ import java.net.HttpURLConnection
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, AddDistributionResult}
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Organization}
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Agent}
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
 import org.apache.http.util.EntityUtils
 import org.json.JSONObject
@@ -76,7 +76,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
                 ) : AddDistributionResult = {
 
     //val dataset = distribution.dataset
-    val organization: Organization = distribution.dataset.dctPublisher;
+    val organization: Agent = distribution.dataset.dctPublisher;
     var errorOccured = false;
     var collectiveErrorMessage:List[String] = Nil;
 

@@ -403,13 +403,32 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     result;
   }
 
-  def findMappingDocumentsByDatasetId(datasetId: String): ListResult = {
-    logger.info("findMappingDocumentsByDatasetId:" + datasetId)
+  def findMappingDocumentsByDatasetId(pDatasetId: String, pCKANPackageId:String
+                                      , pCKANPackageName:String): ListResult = {
+    logger.info("findMappingDocumentsByDatasetId")
+    logger.info(s"pDatasetId = ${pDatasetId}")
+    logger.info(s"pCKANPackageId = ${pCKANPackageId}")
+    logger.info(s"pCKANPackageName = ${pCKANPackageName}")
+
     val queryTemplateFile = "templates/findAllMappingDocumentsByDatasetId.rq";
+
+    val datasetId = if(pDatasetId != null) {
+      pDatasetId
+    } else { "" }
+
+    val ckanPackageId = if(pCKANPackageId != null) {
+      pCKANPackageId
+    } else { "" }
+
+    val ckanPackageName = if(pCKANPackageName != null) {
+      pCKANPackageName
+    } else { "" }
 
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
       , "$datasetId" -> datasetId
+      , "$ckanPackageName" -> ckanPackageId
+      , "$ckanPackageId" -> ckanPackageName
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
