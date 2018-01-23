@@ -11,3 +11,12 @@ class Agent(val dctIdentifier:String) {
   var foafMbox:String = null;
 
 }
+
+object Agent {
+  def apply(name:String, email:String) = {
+    val newAgent:Agent = new Agent();
+    newAgent.foafName = name;
+    newAgent.foafMbox = email;
+    newAgent
+  }
+}

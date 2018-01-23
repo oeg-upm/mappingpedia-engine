@@ -12,4 +12,13 @@ mpids:dataset-$datasetID a mpv:Dataset ;
     mpv:datasetIdentifier "dataset-$datasetID" ;
     mpv:ckanPackageId "$ckanPackageId" ;
     mpv:ckanPackageName "$ckanPackageName" ;
+    mpv:ckanSource "$ckanSource";
+    mpv:ckanVersion "$ckanVersion" ;
+    mpv:ckanAuthor "$ckanAuthor" ;
+    mpv:ckanAuthorEmail "$ckanAuthorEmail" ;
+    mpv:ckanMaintainer "$ckanMaintainer" ;
+    mpv:ckanMaintainerEmail "$ckanMaintainerEmail" ;
+    mpv:ckanTemporal "$ckanTemporal" ;
+    mpv:ckanSpatial "$ckanSpatial" ;
+    mpv:ckanAccrualPeriodicity "$ckanAccrualPeriodicity" ;
 .

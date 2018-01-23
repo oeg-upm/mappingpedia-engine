@@ -28,15 +28,11 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def createResource(distribution: Distribution, textBodyMap:Option[Map[String, String]]) = {
-    val dataset = distribution.dataset;
+    //val dataset = distribution.dataset;
 
-    val packageId = dataset.dctIdentifier;
+    val packageId = distribution.dataset.dctIdentifier;
     logger.debug(s"packageId = $packageId")
     logger.debug(s"url = ${distribution.dcatDownloadURL}")
-    logger.debug(s"description = ${distribution.dctDescription}")
-    logger.debug(s"mimetype = ${distribution.dcatMediaType}")
-    logger.debug(s"upload = ${distribution.distributionFile}")
-    logger.debug(s"dataset.dctLanguage = ${dataset.dctLanguage}")
 
     val httpClient = HttpClientBuilder.create.build
     try {
@@ -51,19 +47,22 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
         .addTextBody("url", distribution.dcatDownloadURL)
       ;
 
+      logger.info(s"distribution.dctDescription = ${distribution.dctDescription}")
       if(distribution.dctDescription != null) {
         builder.addTextBody("description", distribution.dctDescription)
       }
 
+      logger.info(s"dataset.dcatMediaType = ${distribution.dcatMediaType}")
       if(distribution.dcatMediaType != null) {
         builder.addTextBody("mimetype", distribution.dcatMediaType)
       }
+
+      logger.info(s"dataset.distributionFile = ${distribution.distributionFile}")
       if(distribution.distributionFile != null) {
         builder.addBinaryBody("upload", distribution.distributionFile)
       }
-      if(dataset.dctLanguage != null) {
-        builder.addTextBody("language", dataset.dctLanguage)
-      }
+
+
 
       if(textBodyMap != null && textBodyMap.isDefined) {
 
@@ -75,6 +74,8 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
         }
 
       }
+
+      logger.info(s"builder = ${builder}")
 
       val mpEntity = builder.build();
       httpPostRequest.setEntity(mpEntity)
@@ -168,6 +169,56 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     }
     if(dataset.dctLanguage != null) {
       jsonObj.put("language", dataset.dctLanguage);
+    }
+
+    logger.info(s"dataset.dctLanguage = ${dataset.dctLanguage}")
+    if(dataset.dctLanguage != null && !"".equals(dataset.dctLanguage)) {
+      jsonObj.put("language", dataset.dctLanguage)
+    }
+
+    logger.info(s"dataset.ckanSource = ${dataset.ckanSource}")
+    if(dataset.ckanSource != null && !"".equals(dataset.ckanSource)) {
+      jsonObj.put("source", dataset.ckanSource)
+    }
+
+    logger.info(s"dataset.ckanVersion = ${dataset.ckanVersion}")
+    if(dataset.ckanVersion != null && !"".equals(dataset.ckanVersion)) {
+      jsonObj.put("version", dataset.ckanVersion)
+    }
+
+    logger.info(s"dataset.getAuthor_name = ${dataset.getAuthor_name}")
+    if(dataset.getAuthor_name != null && !"".equals(dataset.getAuthor_name)) {
+      jsonObj.put("author", dataset.getAuthor_name)
+    }
+
+    logger.info(s"dataset.getAuthor_email = ${dataset.getAuthor_email}")
+    if(dataset.getAuthor_email != null && !"".equals(dataset.getAuthor_email)) {
+      jsonObj.put("author_email", dataset.getAuthor_email)
+    }
+
+    logger.info(s"dataset.getMaintainer_name = ${dataset.getMaintainer_name}")
+    if(dataset.getMaintainer_name != null && !"".equals(dataset.getMaintainer_name)) {
+      jsonObj.put("maintainer", dataset.getMaintainer_name)
+    }
+
+    logger.info(s"dataset.getMaintainer_email = ${dataset.getMaintainer_email}")
+    if(dataset.getMaintainer_email != null && !"".equals(dataset.getMaintainer_email)) {
+      jsonObj.put("maintainer_email", dataset.getMaintainer_email)
+    }
+
+    logger.info(s"dataset.ckanTemporal = ${dataset.ckanTemporal}")
+    if(dataset.ckanTemporal != null && !"".equals(dataset.ckanTemporal)) {
+      jsonObj.put("temporal", dataset.ckanTemporal)
+    }
+
+    logger.info(s"dataset.ckanSpatial = ${dataset.ckanSpatial}")
+    if(dataset.ckanSpatial != null && !"".equals(dataset.ckanSpatial)) {
+      jsonObj.put("spatial", dataset.ckanSpatial)
+    }
+
+    logger.info(s"dataset.ckanAccrualPeriodicity = ${dataset.ckanAccrualPeriodicity}")
+    if(dataset.ckanAccrualPeriodicity != null && !"".equals(dataset.ckanAccrualPeriodicity)) {
+      jsonObj.put("accrual_periodicity", dataset.ckanAccrualPeriodicity)
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate

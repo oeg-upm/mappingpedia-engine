@@ -892,10 +892,14 @@ public class MappingPediaController {
             , @RequestParam(value="dataset_id", required = false) String datasetID
             , @RequestParam(value="datasetFile", required = false) MultipartFile datasetMultipartFile
             , @RequestParam(value="distribution_file", required = false) MultipartFile distributionMultipartFile
-            , @RequestParam(value="datasetTitle", required = false) String datasetTitle
-            , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
-            , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
-            , @RequestParam(value="datasetDescription", required = false) String datasetDescription
+            , @RequestParam(value="dataset_title", required = false) String pDatasetTitle1
+            , @RequestParam(value="datasetTitle", required = false) String pDatasetTitle2
+            , @RequestParam(value="dataset_keywords", required = false) String pDatasetKeywords1
+            , @RequestParam(value="datasetKeywords", required = false) String pDatasetKeywords2
+            , @RequestParam(value="dataset_language", required = false) String pDatasetLanguage1
+            , @RequestParam(value="datasetLanguage", required = false) String pDatasetLanguage2
+            , @RequestParam(value="dataset_description", required = false) String pDdatasetDescription1
+            , @RequestParam(value="datasetDescription", required = false) String pDatasetDescription2
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
             , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
@@ -904,7 +908,17 @@ public class MappingPediaController {
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
             , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
-            , @RequestParam(value="store_to_ckan", defaultValue = "true") String pStoreToCKAN
+            , @RequestParam(value="store_to_ckan", required = false, defaultValue = "true") String pStoreToCKAN
+
+            , @RequestParam(value="source", required = false, defaultValue = "") String ckanSource
+            , @RequestParam(value="version", required = false, defaultValue = "") String ckanVersion
+            , @RequestParam(value="author_name", required = false, defaultValue = "") String ckanAuthorName
+            , @RequestParam(value="author_email", required = false, defaultValue = "") String ckanAuthorEmail
+            , @RequestParam(value="maintainer_name", required = false, defaultValue = "") String ckanMaintainerName
+            , @RequestParam(value="maintainer_email", required = false, defaultValue = "") String ckanMaintainerEmail
+            , @RequestParam(value="temporal", required = false, defaultValue = "") String ckanTemporal
+            , @RequestParam(value="spatial", required = false, defaultValue = "") String ckanSpatial
+            , @RequestParam(value="accrual_periodicity", required = false, defaultValue = "") String ckanAccrualPeriodicity
     )
     {
         logger.info("[POST] /datasets/{organization_id}");
@@ -925,18 +939,48 @@ public class MappingPediaController {
             }
             logger.info("dataset.getId() = " + dataset.getId());
 
-            if(datasetTitle == null) {
+            if(pDatasetTitle1 != null && !"".equals(pDatasetTitle1)) {
+                dataset.dctTitle_$eq(pDatasetTitle1);
+            } else if(pDatasetTitle2 != null  && !"".equals(pDatasetTitle2)) {
+                dataset.dctTitle_$eq(pDatasetTitle2);
+            } else {
                 dataset.dctTitle_$eq(dataset.dctIdentifier());
-            } else {
-                dataset.dctTitle_$eq(datasetTitle);
             }
-            if(datasetDescription == null) {
+
+            if(pDdatasetDescription1 != null && !"".equals(pDdatasetDescription1)) {
+                dataset.dctDescription_$eq(pDdatasetDescription1);
+            } else if(pDatasetDescription2 != null  && !"".equals(pDatasetDescription2)) {
+                dataset.dctDescription_$eq(pDatasetDescription2);
+            } else {
                 dataset.dctDescription_$eq(dataset.dctIdentifier());
-            } else {
-                dataset.dctDescription_$eq(datasetDescription);
             }
-            dataset.dcatKeyword_$eq(datasetKeywords);
-            dataset.dctLanguage_$eq(datasetLanguage);
+
+            if(pDatasetKeywords1 != null && !"".equals(pDatasetKeywords1)) {
+                dataset.dcatKeyword_$eq(pDatasetKeywords1);
+            } else if(pDatasetKeywords2 != null && !"".equals(pDatasetKeywords2)) {
+                dataset.dcatKeyword_$eq(pDatasetKeywords2);
+            }
+
+            if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
+                dataset.dctLanguage_$eq(pDatasetLanguage1);
+            } else if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
+                dataset.dctLanguage_$eq(pDatasetLanguage2);
+            } else {
+                dataset.dctLanguage_$eq("");
+            }
+
+            dataset.ckanSource_$eq(ckanSource);
+            dataset.ckanVersion_$eq(ckanVersion);
+            Agent author = Agent.apply(ckanAuthorName, ckanAuthorEmail);
+            dataset.ckanAuthor_$eq(author);
+            Agent maintainer = Agent.apply(ckanMaintainerName, ckanMaintainerEmail);
+            dataset.ckanMaintener_$eq(maintainer);
+            dataset.ckanTemporal_$eq(ckanTemporal);
+            dataset.ckanSpatial_$eq(ckanSpatial);
+            dataset.ckanAccrualPeriodicity_$eq(ckanAccrualPeriodicity);
+
+
+
 
             if(distributionDownloadURL != null || datasetMultipartFile != null || distributionMultipartFile != null) {
                 Distribution distribution = new Distribution(dataset);

@@ -39,6 +39,9 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
   var ckanVersion:String = null;
   var ckanAuthor:Agent = null;
   var ckanMaintener:Agent = null;
+  var ckanTemporal:String = null;
+  var ckanSpatial:String = null;
+  var ckanAccrualPeriodicity:String = null;
 
 
   //var mappingDocuments:List[MappingDocument] = Nil;
@@ -84,4 +87,11 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
   def getTitle = this.dctTitle
 
   def getCKAN_package_id = this.ckanPackageId
+
+  def getAuthor_name = if(this.ckanAuthor == null) { null } else { this.ckanAuthor.foafName}
+  def getAuthor_email = if(this.ckanAuthor == null) { null } else { this.ckanAuthor.foafMbox}
+
+  def getMaintainer_name = if(this.ckanMaintener == null) { null } else { this.ckanMaintener.foafName}
+  def getMaintainer_email = if(this.ckanMaintener == null) { null } else { this.ckanMaintener.foafMbox}
+
 }

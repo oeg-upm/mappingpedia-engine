@@ -484,6 +484,18 @@ object DatasetController {
         , "$datasetModified" -> dataset.dctModified
         , "$ckanPackageId" -> dataset.ckanPackageId
         , "$ckanPackageName" -> dataset.ckanPackageName
+
+        , "$ckanSource" -> dataset.ckanSource
+        , "$ckanVersion" -> dataset.ckanVersion
+        , "$ckanAuthor" -> dataset.getAuthor_name
+        , "$ckanAuthorEmail" -> dataset.getAuthor_email
+        , "$ckanMaintainer" -> dataset.getMaintainer_name
+        , "$ckanMaintainerEmail" -> dataset.getMaintainer_email
+        , "$ckanTemporal" -> dataset.ckanTemporal
+        , "$ckanSpatial" -> dataset.ckanSpatial
+        , "$ckanAccrualPeriodicity" -> dataset.ckanAccrualPeriodicity
+
+
       );
 
       /*
