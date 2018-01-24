@@ -4,11 +4,11 @@ import es.upm.fi.dia.oeg.mappingpedia.model.{Distribution, MappingDocument}
 
 //TODO Refactor this
 class ExecuteMappingResultSummary(
-                  //val errorCode:Integer, val status:String
-                  val mappingDocument:MappingDocument
-                  , val distribution:Distribution
-                  , val mappingExecutionResultAccessURL:String, val mappingExecutionResultDownloadURL:String
-                )
+                                   //val errorCode:Integer, val status:String
+                                   val mappingDocument:MappingDocument
+                                   , val distribution:Distribution
+                                   , val mappingExecutionResultAccessURL:String, val mappingExecutionResultDownloadURL:String
+                                 )
 {
   def getDistribution_download_url = distribution.dcatDownloadURL
   def getMapping_document_download_url = mappingDocument.getDownloadURL()

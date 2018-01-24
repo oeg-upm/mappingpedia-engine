@@ -247,7 +247,7 @@ public class MappingPediaController {
         logger.info("prefix = " + prefix);
         ListResult listResult = null;
         if(mappingDocumentId != null) {
-            listResult = this.mappingDocumentController.findAllMappedClassesByMappingDocumentId(mappingDocumentId);
+            listResult = this.mappingDocumentController.findMappedClassesByMappingDocumentId(mappingDocumentId);
         } else if(mappedTable != null) {
             listResult = this.mappingDocumentController.findAllMappedClassesByTableName(prefix, mappedTable);
         } else {
@@ -302,10 +302,8 @@ public class MappingPediaController {
     }
 
 
-
-    //TODO REFACTOR THIS; MERGE /executions with /executions2
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
-    public ExecuteMappingResult postExecutions2(
+    public ExecuteMappingResult postExecutions(
             @RequestParam(value="organization_id", required = false) String organizationId
 
             , @RequestParam(value="dataset_id", required = false) String datasetId
@@ -342,7 +340,7 @@ public class MappingPediaController {
             logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
             logger.info("distributionDownloadURL = " + distributionDownloadURL);
             logger.info("distribution_encoding = " + distributionEncoding);
-
+            logger.info("use_cache = " + pUseCache);
 
             Agent organization;
             if(organizationId == null) {
@@ -357,7 +355,7 @@ public class MappingPediaController {
             } else {
                 dataset = new Dataset(organization, datasetId);
             }
-            Distribution distribution = new Distribution(dataset);
+            Distribution distribution = new UnannotatedDistribution(dataset);
             if(distributionAccessURL != null) {
                 distribution.dcatAccessURL_$eq(distributionAccessURL);
             }
@@ -445,18 +443,12 @@ public class MappingPediaController {
             logger.error("mapping execution failed: " + errorMessage);
             ExecuteMappingResult executeMappingResult = new ExecuteMappingResult(
                     HttpURLConnection.HTTP_INTERNAL_ERROR, e.getMessage()
-                    , null, null
-                    , null
-                    , null, null
-                    , null
-                    , null
-                    , null, null
             );
             return executeMappingResult;
         }
     }
 
-    //TODO REFACTOR THIS; MERGE /executions with /executions2
+/*    //TODO REFACTOR THIS; MERGE /executions with /executions2
     //@RequestMapping(value="/executions1/{organizationId}/{datasetId}/{mappingFilename:.+}"
 //            , method= RequestMethod.POST)
     @RequestMapping(value="/executions1/{organizationId}/{datasetId}/{mappingDocumentId}"
@@ -559,7 +551,7 @@ public class MappingPediaController {
             );
             return executeMappingResult;
         }
-    }
+    }*/
 
     @RequestMapping(value = "/mappings/{organization_id}", method= RequestMethod.POST)
     public AddMappingDocumentResult postMappings(
@@ -799,7 +791,7 @@ public class MappingPediaController {
         dataset.dctLanguage_$eq(datasetLanguage);
 
         if(distributionDownloadURL != null ||  distributionMultipartFile != null) {
-            Distribution distribution = new Distribution(dataset);
+            Distribution distribution = new UnannotatedDistribution(dataset);
 
             if(distributionAccessURL == null) {
                 distribution.dcatAccessURL_$eq(distributionDownloadURL);
@@ -983,7 +975,7 @@ public class MappingPediaController {
 
 
             if(distributionDownloadURL != null || datasetMultipartFile != null || distributionMultipartFile != null) {
-                Distribution distribution = new Distribution(dataset);
+                Distribution distribution = new UnannotatedDistribution(dataset);
 
                 if(distributionAccessURL == null) {
                     distribution.dcatAccessURL_$eq(distributionDownloadURL);
@@ -1057,7 +1049,7 @@ public class MappingPediaController {
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
-        Distribution distribution = new Distribution(dataset);
+        Distribution distribution = new UnannotatedDistribution(dataset);
         if(distributionTitle == null) {
             distribution.dctTitle_$eq(distribution.dctIdentifier());
         } else {
@@ -1118,7 +1110,7 @@ public class MappingPediaController {
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
-        Distribution distribution = new Distribution(dataset);
+        Distribution distribution = new UnannotatedDistribution(dataset);
         if(distributionTitle == null) {
             distribution.dctTitle_$eq(distribution.dctIdentifier());
         } else {

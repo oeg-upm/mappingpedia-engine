@@ -248,14 +248,14 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     listResult
   }
 
-  def findAllMappedClassesByMappingDocumentId(mappingDocumentId:String): ListResult = {
+  def findMappedClassesByMappingDocumentId(mappingDocumentId:String): ListResult = {
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
       "$mappingDocumentId" -> mappingDocumentId
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
-      mapValues, "templates/findAllMappedClassesByMappingDocumentId.rq")
+      mapValues, "templates/findMappedClassesByMappingDocumentId.rq")
 
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
     logger.info(s"queryString = \n$queryString")
@@ -294,7 +294,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
-      mapValues, "templates/findAllMappedClassesByMappedTable.rq")
+      mapValues, "templates/findMappedClassesByMappedTable.rq")
 
     //logger.info(s"queryString = $queryString");
     /*
@@ -410,7 +410,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     logger.info(s"pCKANPackageId = ${pCKANPackageId}")
     logger.info(s"pCKANPackageName = ${pCKANPackageName}")
 
-    val queryTemplateFile = "templates/findAllMappingDocumentsByDatasetId.rq";
+    val queryTemplateFile = "templates/findMappingDocumentsByDatasetId.rq";
 
     val datasetId = if(pDatasetId != null) {
       pDatasetId
@@ -488,7 +488,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
   def findMappingDocumentsByDistributionId(distributionId: String): ListResult = {
     logger.info("findMappingDocumentsByDistributionId:" + distributionId)
-    val queryTemplateFile = "templates/findAllMappingDocumentsByDistributionId.rq";
+    val queryTemplateFile = "templates/findMappingDocumentsByDistributionId.rq";
 
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
@@ -501,7 +501,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
   def findMappingDocumentsByMappingDocumentId(mappingDocumentId: String): MappingDocument = {
     logger.info("findMappingDocumentsByMappingDocumentId:" + mappingDocumentId)
-    val queryTemplateFile = "templates/findAllMappingDocumentsByMappingDocumentId.rq";
+    val queryTemplateFile = "templates/findMappingDocumentsByMappingDocumentId.rq";
 
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
@@ -580,7 +580,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
         val datasetId = MappingPediaUtility.getStringOrElse(qs, "datasetId", null);
         md.dataset = new Dataset(datasetId)
         md.dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null);
-        val distribution = new Distribution(md.dataset);
+        val distribution = new UnannotatedDistribution(md.dataset);
         distribution.dcatAccessURL= MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null);
         distribution.dcatDownloadURL= MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null);
         distribution.sha = MappingPediaUtility.getStringOrElse(qs, "distributionSHA", null);

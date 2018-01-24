@@ -67,15 +67,15 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       if(textBodyMap != null && textBodyMap.isDefined) {
 
         for((key, value) <- textBodyMap.get) {
-          logger.info(s"textBodyMap key = $key")
-          logger.info(s"textBodyMap value = $value")
 
-          builder.addTextBody(key, value)
+          if(key != null && value != null) {
+            builder.addTextBody(key, value)
+          } else {
+            logger.warn(s"textBodyMap key,value = ${key},${value}")
+          }
         }
-
       }
 
-      logger.info(s"builder = ${builder}")
 
       val mpEntity = builder.build();
       httpPostRequest.setEntity(mpEntity)

@@ -1,24 +1,27 @@
 package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.io.File
-import java.net.HttpURLConnection
+import java.net.{HttpURLConnection, URL}
 import java.util.{Date, UUID}
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode, Unirest}
-import es.upm.fi.dia.oeg.mappingpedia
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{logger, sdf}
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, ExecuteMappingResultSummary, GeneralResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
-import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
-import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logger
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility._
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory, MorphRDBProperties, MorphRDBRunnerFactory}
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.query.QueryFactory
+import org.apache.jena.query.QueryExecutionFactory
+import java.io.InputStream
 
-import scala.collection.JavaConversions._
+import org.eclipse.rdf4j.model.impl.LinkedHashModel
+import org.eclipse.rdf4j.rio.helpers.StatementCollector
+import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
+
 
 class MappingExecutionController(val ckanClient:CKANUtility
                                  , val githubClient:GitHubUtility
@@ -90,7 +93,9 @@ class MappingExecutionController(val ckanClient:CKANUtility
       datasetDistribution.sha = hashValue
     }
 
-    val cacheExecutionURL = this.findMappingExecutionURLBySHA(mdSHA, datasetDistributionSHA);
+
+    val cacheExecutionURL = if(useCache) { this.findMappingExecutionURLBySHA(mdSHA, datasetDistributionSHA);}
+    else { null }
     logger.info(s"cacheExecutionURL = ${cacheExecutionURL}");
 
     if(cacheExecutionURL == null || cacheExecutionURL.results.isEmpty) {
@@ -210,15 +215,15 @@ class MappingExecutionController(val ckanClient:CKANUtility
       logger.info(s"mappingExecutionResultDownloadURL = $mappingExecutionResultDownloadURL")
 
 
-      val mappingExecutionResultDistribution = new Distribution(dataset)
-      mappingExecutionResultDistribution.dcatAccessURL = mappingExecutionResultURL;
-      mappingExecutionResultDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
-      mappingExecutionResultDistribution.dcatMediaType = null //TODO FIXME
-      mappingExecutionResultDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
-      mappingExecutionResultDistribution.distributionFile = outputFile;
+      val annotatedDistribution = new AnnotatedDistribution(dataset)
+      annotatedDistribution.dcatAccessURL = mappingExecutionResultURL;
+      annotatedDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
+      annotatedDistribution.dcatMediaType = null //TODO FIXME
+      annotatedDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
+      annotatedDistribution.distributionFile = outputFile;
 
       //GENERATING MANIFEST FILE
-      val manifestFile = this.generateManifestFile(mappingExecutionResultDistribution, datasetDistribution, md)
+      val manifestFile = this.generateManifestFile(annotatedDistribution, datasetDistribution, md)
 
       //STORING MANIFEST ON GITHUB
       val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
@@ -241,11 +246,92 @@ class MappingExecutionController(val ckanClient:CKANUtility
       val manifestAccessURL = this.githubClient.getAccessURL(addManifestFileGitHubResponse);
       val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
 
-      val mappedClass:String = try {
-        this.mappingDocumentController.findAllMappedClassesByMappingDocumentId(md.dctIdentifier).results.iterator.next().toString
+      val mappedClassByMappingId:String = try {
+        this.mappingDocumentController.findMappedClassesByMappingDocumentId(
+          md.dctIdentifier).results.iterator.next().toString
       } catch {
         case e:Exception => null
       }
+
+      /*
+      val mappedClassByDownloadURL:String = try {
+        if(mappedClassByMappingId == null) {
+          val documentUrl = new URL("http://example.org/example.ttl")
+          val inputStream = documentUrl.openStream
+          val rdfParser = Rio.createParser(RDFFormat.TURTLE)
+          val model = new LinkedHashModel()
+          rdfParser.setRDFHandler(new StatementCollector(model))
+
+          try {
+            rdfParser.parse(inputStream, documentUrl.toString)
+            logger.info(s"model = ${model}");
+          } catch {
+            case e: Exception => {
+              e.printStackTrace()
+            }
+          } finally { inputStream.close }
+
+          mappedClassByMappingId
+        } else {
+          mappedClassByMappingId
+        }
+      }  catch {
+        case e:Exception => {
+          mappedClassByMappingId
+        }
+      }
+      */
+
+
+
+
+
+
+/*      val mappedClassByDownloadURL:String = if(mappedClassByMappingId == null) {
+        val model = ModelFactory.createDefaultModel();
+        model.read(md.getDownloadURL(), "TURTLE");
+        logger.info(s"model = ${model}");
+
+        val mapValues: Map[String, String] = Map(
+          "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+        );
+
+        val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
+          mapValues, "templates/findMappedClasses.rq")
+        logger.info(s"queryString = ${queryString}");
+
+        val query = QueryFactory.create(queryString)
+
+        val qexec = QueryExecutionFactory.create(query, model)
+        try {
+          val results = qexec.execSelect
+
+          if ( { results.hasNext }) {
+            val soln = results.nextSolution
+            val solnMappedClass = soln.get("mappedClass")
+            logger.info(s"solnMappedClass = ${solnMappedClass}");
+
+            // Get a result variable - must be a resource
+            val mappedClassLiteral = soln.getLiteral("mappedClass") // Get a result variable - must be a literal
+            logger.info(s"mappedClassLiteral = ${mappedClassLiteral}");
+
+            // Get a result variable by name.
+            val mappedClassResource = soln.getResource("mappedClass")
+            logger.info(s"mappedClassResource = ${mappedClassResource}");
+
+            solnMappedClass.toString
+          } else {
+            null
+          }
+
+        } finally if (qexec != null) qexec.close()
+
+      } else {
+        mappedClassByMappingId
+      }
+      logger.info(s"mappedClassByDownloadURL = $mappedClassByDownloadURL")*/
+
+      val mappedClass = mappedClassByMappingId;
       logger.info(s"mappedClass = $mappedClass")
 
       //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
@@ -264,7 +350,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
             , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> manifestDownloadURL
             , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClass
           )
-          ckanClient.createResource(mappingExecutionResultDistribution, Some(mapTextBody));
+          ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
 
           /*
           mappingExecutionResultDistribution.ckanResourceId = addNewResourceEntity.getJSONObject("result").getString("id");
@@ -329,12 +415,12 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
       new ExecuteMappingResult(
         responseStatus, responseStatusText
-        , datasetDistributionDownloadURL
-        , mdDownloadURL
+        , datasetDistributionDownloadURL, datasetDistribution
+        , mdDownloadURL, md
         , queryFileName
         , mappingExecutionResultURL, mappingExecutionResultDownloadURL
         , ckanAddResourceResponseStatusCode
-        , mappingExecutionResultDistribution.dctIdentifier
+        , annotatedDistribution.dctIdentifier
         , manifestAccessURL, manifestDownloadURL
       )
     } else {
@@ -342,8 +428,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
       new ExecuteMappingResult(
         HttpURLConnection.HTTP_OK, "OK"
-        , datasetDistributionDownloadURL
-        , mdDownloadURL
+        , datasetDistributionDownloadURL, datasetDistribution
+        , mdDownloadURL, md
         , queryFileName
         , mappingExecutionResultURL, mappingExecutionResultURL
         , null
@@ -386,24 +472,24 @@ class MappingExecutionController(val ckanClient:CKANUtility
         //val mappingDocumentDownloadURL = md.getDownloadURL();
 
         val dataset = new Dataset(new Agent());
-        val distribution = new Distribution(dataset);
-        dataset.addDistribution(distribution);
-        distribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
-        distribution.sha = md.dataset.getDistribution().sha
-        if (distribution.sha == null && distribution.dcatDownloadURL != null ) {
-          val hashValue = MappingPediaUtility.calculateHash(distribution.dcatDownloadURL, distribution.encoding);
-          distribution.sha = hashValue
+        val unannotatedDistribution = new UnannotatedDistribution(dataset);
+        dataset.addDistribution(unannotatedDistribution);
+        unannotatedDistribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
+        unannotatedDistribution.sha = md.dataset.getDistribution().sha
+        if (unannotatedDistribution.sha == null && unannotatedDistribution.dcatDownloadURL != null ) {
+          val hashValue = MappingPediaUtility.calculateHash(unannotatedDistribution.dcatDownloadURL, unannotatedDistribution.encoding);
+          unannotatedDistribution.sha = hashValue
         }
 
 
         logger.info(s"mapping document SHA = ${md.sha}");
-        logger.info(s"dataset distribution SHA = ${distribution.sha}");
+        logger.info(s"dataset distribution SHA = ${unannotatedDistribution.sha}");
 
-        if(executedMappingDocuments.contains((md.sha,distribution.sha))) {
+        if(executedMappingDocuments.contains((md.sha,unannotatedDistribution.sha))) {
           None
         } else {
           if(i < maxMappingDocuments) {
-            val mappingExecutionURLs = if(useCache) { this.findMappingExecutionURLBySHA(md.sha,distribution.sha); }
+            val mappingExecutionURLs = if(useCache) { this.findMappingExecutionURLBySHA(md.sha,unannotatedDistribution.sha); }
             else { null }
 
             if(useCache && mappingExecutionURLs != null && mappingExecutionURLs.results.size > 0) {
@@ -411,7 +497,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
               logger.info(s"cachedMappingExecutionResultURL = " + cachedMappingExecutionResultURL)
 
               i +=1
-              Some(new ExecuteMappingResultSummary(md, distribution
+              Some(new ExecuteMappingResultSummary(md, unannotatedDistribution
                 , cachedMappingExecutionResultURL, cachedMappingExecutionResultURL))
             } else {
               val mappingExecution = new MappingExecution(md, dataset);
@@ -427,14 +513,15 @@ class MappingExecutionController(val ckanClient:CKANUtility
               );
               //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
-              executedMappingDocuments = (md.sha,distribution.sha) :: executedMappingDocuments;
+              executedMappingDocuments = (md.sha,unannotatedDistribution.sha) :: executedMappingDocuments;
 
               val executionResultAccessURL = executionResult.getMapping_execution_result_access_url()
               val executionResultDownloadURL = executionResult.getMapping_execution_result_download_url
               //executionResultURL;
 
               i +=1
-              Some(new ExecuteMappingResultSummary(md, distribution, executionResultAccessURL, executionResultDownloadURL))
+              Some(new ExecuteMappingResultSummary(md, unannotatedDistribution, executionResultAccessURL
+                , executionResultDownloadURL))
               //mappingDocumentURL + " -- " + datasetDistributionURL
             }
 
