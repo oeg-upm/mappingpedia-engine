@@ -741,7 +741,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets_mappings_execute", method= RequestMethod.POST)
-    public AddDatasetMappingExecuteResult postDatastsMappingsExecute(
+    public AddDatasetMappingExecuteResult postDatasetsAndMappingsThenExecute(
             @RequestParam("organization_id") String organizationID
 
             , @RequestParam(value="dataset_title", required = false) String datasetTitle
@@ -890,7 +890,7 @@ public class MappingPediaController {
             , @RequestParam(value="datasetKeywords", required = false) String pDatasetKeywords2
             , @RequestParam(value="dataset_language", required = false) String pDatasetLanguage1
             , @RequestParam(value="datasetLanguage", required = false) String pDatasetLanguage2
-            , @RequestParam(value="dataset_description", required = false) String pDdatasetDescription1
+            , @RequestParam(value="dataset_description", required = false) String pDatasetDescription1
             , @RequestParam(value="datasetDescription", required = false) String pDatasetDescription2
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
@@ -919,6 +919,9 @@ public class MappingPediaController {
         logger.debug("pStoreToCKAN = " + pStoreToCKAN);
         logger.info("distribution_download_url = " + distributionDownloadURL);
         logger.info("distribution_file = " + distributionMultipartFile);
+        logger.info("dataset_description = " + pDatasetDescription1);
+        logger.info("datasetDescription = " + pDatasetDescription2);
+
 
         try {
             Agent organization = new Agent(organizationId);
@@ -939,8 +942,8 @@ public class MappingPediaController {
                 dataset.dctTitle_$eq(dataset.dctIdentifier());
             }
 
-            if(pDdatasetDescription1 != null && !"".equals(pDdatasetDescription1)) {
-                dataset.dctDescription_$eq(pDdatasetDescription1);
+            if(pDatasetDescription1 != null && !"".equals(pDatasetDescription1)) {
+                dataset.dctDescription_$eq(pDatasetDescription1);
             } else if(pDatasetDescription2 != null  && !"".equals(pDatasetDescription2)) {
                 dataset.dctDescription_$eq(pDatasetDescription2);
             } else {
@@ -955,7 +958,7 @@ public class MappingPediaController {
 
             if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
                 dataset.dctLanguage_$eq(pDatasetLanguage1);
-            } else if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
+            } else if(pDatasetLanguage2 != null && !"".equals(pDatasetLanguage2)) {
                 dataset.dctLanguage_$eq(pDatasetLanguage2);
             } else {
                 dataset.dctLanguage_$eq("");
