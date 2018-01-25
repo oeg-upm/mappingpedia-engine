@@ -62,7 +62,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
   @throws(classOf[Exception])
   def executeMapping(
                       md:MappingDocument
-                      , dataset:Dataset
+                      //, dataset:Dataset
+                    , unannotatedDistribution: UnannotatedDistribution
                       , queryFileName:String
                       , pOutputFilename: String
 
@@ -77,8 +78,12 @@ class MappingExecutionController(val ckanClient:CKANUtility
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
 
+
+
+    val dataset = unannotatedDistribution.dataset
     val organization = dataset.dctPublisher;
-    val unannotatedDistribution = dataset.getDistribution().asInstanceOf[UnannotatedDistribution];
+
+    //val unannotatedDistribution = dataset.getDistribution().asInstanceOf[UnannotatedDistribution];
     val datasetDistributionDownloadURL = unannotatedDistribution.dcatDownloadURL;
     logger.info(s"datasetDistributionDownloadURL = ${datasetDistributionDownloadURL}");
 
@@ -112,11 +117,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
         UUID.randomUUID.toString
       }
 
-      val datasetId = if(dataset != null) {
-        dataset.dctIdentifier
-      } else {
-        UUID.randomUUID.toString
-      }
+      val datasetId = dataset.dctIdentifier
 
       val mappingExecutionId = UUID.randomUUID.toString;
       val annotatedDistribution = new AnnotatedDistribution(dataset, mappingExecutionId)
@@ -516,7 +517,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
               mappingExecution.outputFileName = outputFilename;
 
               //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-              val executionResult = this.executeMapping(md, dataset, mappingExecution.queryFilePath, outputFilename
+              val executionResult = this.executeMapping(md, unannotatedDistribution, mappingExecution.queryFilePath, outputFilename
                 , false, true, false
                 , null
                 , useCache

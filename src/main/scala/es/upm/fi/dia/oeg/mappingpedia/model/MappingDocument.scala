@@ -56,19 +56,12 @@ class MappingDocument(val dctIdentifier:String) {
     }
   }
 
-  /*
-  def getDownloadURL() = {
-    this.downloadURL
-  }
-  */
 
   def getDownloadURL() = {
     if (downloadURL != null) {
       downloadURL
     } else {
-      if(accessURL == null) {
-        null
-      } else {
+      if(accessURL != null) {
         try {
           val response = Unirest.get(accessURL).asJson();
           downloadURL = response.getBody.getObject.getString("download_url");
@@ -76,21 +69,21 @@ class MappingDocument(val dctIdentifier:String) {
         } catch {
           case e: Exception => accessURL
         }
+
+      } else {
+        null
       }
     }
   }
 
+  def getSHA = this.sha
   def getId = this.dctIdentifier;
   def getTitle = this.dctTitle;
-  def getDataset = this.dataset;
   def getCreator = this.dctCreator;
-
   def getDateSubmitted = this.dctDateSubmitted;
-  def getSHA = this.sha
-  //def getDistribution_sha = this.distributionSHA
 
   def getMapping_language = this.mappingLanguage;
-
   def getCKAN_package_id = this.ckanPackageId
   def getCKAN_resource_id = this.ckanResourceId
+  def getDataset = this.dataset;
 }

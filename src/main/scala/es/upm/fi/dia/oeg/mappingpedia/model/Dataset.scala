@@ -47,11 +47,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
   //var mappingDocuments:List[MappingDocument] = Nil;
 
   //for the moment assume that only one distribution for each dataset
-  def getDistribution() = if(dcatDistributions == Nil) {
-    null
-  } else {
-    this.dcatDistributions.iterator.next()
-  }
+
 
   /*
   def getMapping_documents() = {
@@ -82,8 +78,8 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
     }
   }
 
-  def getId = this.dctIdentifier;
 
+  def getId = this.dctIdentifier;
   def getTitle = this.dctTitle
 
   def getCKAN_package_id = this.ckanPackageId
@@ -93,5 +89,13 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
 
   def getMaintainer_name = if(this.ckanMaintener == null) { null } else { this.ckanMaintener.foafName}
   def getMaintainer_email = if(this.ckanMaintener == null) { null } else { this.ckanMaintener.foafMbox}
+
+  def getDistribution() = if(dcatDistributions == Nil) {
+    null
+  } else {
+    this.dcatDistributions.iterator.next()
+  }
+
+
 
 }

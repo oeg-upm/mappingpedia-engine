@@ -355,32 +355,32 @@ public class MappingPediaController {
             } else {
                 dataset = new Dataset(organization, datasetId);
             }
-            Distribution distribution = new UnannotatedDistribution(dataset);
+            UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(dataset);
             if(distributionAccessURL != null) {
-                distribution.dcatAccessURL_$eq(distributionAccessURL);
+                unannotatedDistribution.dcatAccessURL_$eq(distributionAccessURL);
             }
             if(distributionDownloadURL != null) {
-                distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+                unannotatedDistribution.dcatDownloadURL_$eq(distributionDownloadURL);
             } else {
-                distribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
+                unannotatedDistribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
             }
             if(fieldSeparator != null) {
-                distribution.cvsFieldSeparator_$eq(fieldSeparator);
+                unannotatedDistribution.cvsFieldSeparator_$eq(fieldSeparator);
             }
-            distribution.dcatMediaType_$eq(distributionMediaType);
+            unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
 
             if(distributionHash != null) {
-                distribution.sha_$eq(distributionHash);
+                unannotatedDistribution.sha_$eq(distributionHash);
             } else {
                 if(distributionDownloadURL != null) {
                     String hashValue = MappingPediaUtility.calculateHash(distributionDownloadURL
                             , distributionEncoding);
-                    distribution.sha_$eq(hashValue);
+                    unannotatedDistribution.sha_$eq(hashValue);
                 }
             }
-            logger.info("distribution.sha() = " + distribution.sha());
+            logger.info("distribution.sha() = " + unannotatedDistribution.sha());
 
-            dataset.addDistribution(distribution);
+            dataset.addDistribution(unannotatedDistribution);
 
 
             MappingDocument md;
@@ -426,8 +426,9 @@ public class MappingPediaController {
             Boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
 
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset, queryFile, outputFilename
-                    , true, true, true
+            return mappingExecutionController.executeMapping(md, unannotatedDistribution
+                    , queryFile, outputFilename, true, true
+                    , true
                     , null, useCache);
 
             /*
@@ -790,25 +791,26 @@ public class MappingPediaController {
         dataset.dcatKeyword_$eq(datasetKeywords);
         dataset.dctLanguage_$eq(datasetLanguage);
 
+        UnannotatedDistribution unannotatedDistribution = null;
         if(distributionDownloadURL != null ||  distributionMultipartFile != null) {
-            Distribution distribution = new UnannotatedDistribution(dataset);
+            unannotatedDistribution = new UnannotatedDistribution(dataset);
 
             if(distributionAccessURL == null) {
-                distribution.dcatAccessURL_$eq(distributionDownloadURL);
+                unannotatedDistribution.dcatAccessURL_$eq(distributionDownloadURL);
             } else {
-                distribution.dcatAccessURL_$eq(distributionAccessURL);
+                unannotatedDistribution.dcatAccessURL_$eq(distributionAccessURL);
             }
-            distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+            unannotatedDistribution.dcatDownloadURL_$eq(distributionDownloadURL);
 
             if(distributionMultipartFile != null) {
-                distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
+                unannotatedDistribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
                         distributionMultipartFile , dataset.dctIdentifier()));
             }
 
-            distribution.dctDescription_$eq("Distribution for the dataset: " + dataset.dctIdentifier());
-            distribution.dcatMediaType_$eq(distributionMediaType);
-            distribution.encoding_$eq(distributionEncoding);
-            dataset.addDistribution(distribution);
+            unannotatedDistribution.dctDescription_$eq("Distribution for the dataset: " + dataset.dctIdentifier());
+            unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
+            unannotatedDistribution.encoding_$eq(distributionEncoding);
+            dataset.addDistribution(unannotatedDistribution);
         }
 
 
@@ -844,7 +846,7 @@ public class MappingPediaController {
                     try {
                         ExecuteMappingResult executeMappingResult = this.mappingExecutionController.executeMapping(
                                 mappingDocument
-                                , dataset
+                                , unannotatedDistribution
                                 , queryFileDownloadURL
                                 , outputFilename
 
