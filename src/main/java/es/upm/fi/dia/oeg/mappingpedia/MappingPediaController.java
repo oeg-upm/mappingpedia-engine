@@ -1013,8 +1013,6 @@ public class MappingPediaController {
                     , null
                     , null, null
                     , null, null
-                    , null
-                    , null, null
             );
         }
 

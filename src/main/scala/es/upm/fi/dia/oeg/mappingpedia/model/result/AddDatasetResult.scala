@@ -2,11 +2,13 @@ package es.upm.fi.dia.oeg.mappingpedia.model.result
 
 import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution}
 
-class AddDatasetResult(val errorCode:Integer, val status:String, val dataset:Dataset
+class AddDatasetResult(val errorCode:Integer, val status:String
+                       , val dataset:Dataset
                         , val storeManifestResponseStatus:Integer, val storeManifestResponseStatusText:String
-                        , val storeDatasetResponseStatus:Integer, val storeDatasetResponseStatusText:String
+                        //, val storeDatasetResponseStatus:Integer, val storeDatasetResponseStatusText:String
                         , val virtuosoStoreManifestResponseStatusText:String
-                        , val ckanStorePackageStatus:Integer, val ckanStoreResourceStatus:Integer
+                        , val ckanStorePackageStatus:Integer
+                       //, val ckanStoreResourceStatus:Integer
                       ) {
 
 
@@ -26,7 +28,7 @@ class AddDatasetResult(val errorCode:Integer, val status:String, val dataset:Dat
   def getCKAN_store_package_status = this.ckanStorePackageStatus;
 
   //def getCKANStoreResourceStatus = this.ckanStoreResourceStatus
-  def getCKAN_store_resource_status = this.ckanStoreResourceStatus
+  //def getCKAN_store_resource_status = this.ckanStoreResourceStatus
 
   def getDatasetId = dataset.dctIdentifier
   def getDataset_id = dataset.dctIdentifier

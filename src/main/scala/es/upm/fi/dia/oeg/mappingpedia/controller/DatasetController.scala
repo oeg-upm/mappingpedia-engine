@@ -68,9 +68,9 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   def findDatasets(queryString: String): ListResult = {
     logger.info(s"queryString = $queryString");
 
-/*    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
-      , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
-    val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)*/
+    /*    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
+          , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
+        val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)*/
 
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
 
@@ -135,7 +135,9 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     }
 
     //val organization: Organization = dataset.dctPublisher;
-    val distribution = dataset.getDistribution();
+    //val distribution = dataset.getDistribution();
+    val distributions = dataset.dcatDistributions;
+
     var errorOccured = false;
     var collectiveErrorMessage:List[String] = Nil;
 
@@ -204,27 +206,41 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     }
     */
 
-    //CALLING ADD DISTRIBUTION IN DISTRIBUTIONCONTROLLER
-    logger.info(s"distribution = " + distribution);
-    val addDistributionResult = if(distribution != null) {
-      this.distributionController.addDistribution(distribution, manifestFileRef:MultipartFile
-        , generateManifestFile:String, storeToCKAN)
-    } else {
-      null
-    }
-    val distributionGithubStoreDistributionResponseStatus = if(addDistributionResult != null) { addDistributionResult.githubStoreDistributionResponseStatus } else { null }
-    val distributionGithubStoreDistributionResponseStatusText = if(addDistributionResult != null) { addDistributionResult.githubStoreDistributionResponseStatusText } else { null }
-    logger.debug(s"distributionGithubStoreDistributionResponseStatus = $distributionGithubStoreDistributionResponseStatus")
-    logger.debug(s"distributionGithubStoreDistributionResponseStatusText = $distributionGithubStoreDistributionResponseStatusText")
+    if(distributions != null) {
+      distributions.map(distribution => {
+        //CALLING ADD DISTRIBUTION IN DISTRIBUTIONCONTROLLER
+        logger.info(s"distribution = " + distribution);
+        val addDistributionResult = if(distribution != null) {
+          this.distributionController.addDistribution(distribution, manifestFileRef:MultipartFile
+            , generateManifestFile:String, storeToCKAN)
+        } else {
+          null
+        }
 
-    if(distribution != null) {
-      if (distributionGithubStoreDistributionResponseStatus == null
-        || distributionGithubStoreDistributionResponseStatus < 200 || distributionGithubStoreDistributionResponseStatus >= 300) {
-        val errorMessage = s"failed to add the distribution file to GitHub. response status text = $distributionGithubStoreDistributionResponseStatusText"
-        errorOccured = true;
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-      }
+        val responseStatus = if(addDistributionResult != null) {
+          addDistributionResult.errorCode;
+        } else {
+          null
+        }
+
+
+        val responseStatusText = if(addDistributionResult != null) {
+          addDistributionResult.status
+        } else {
+          null
+        }
+
+          logger.debug(s"responseStatus = $responseStatus")
+          logger.debug(s"responseStatusText = $responseStatusText")
+
+          if (responseStatus == null || responseStatus < 200 || responseStatus >= 300) {
+            val errorMessage = s"failed to add a distribution file: ${responseStatusText}"
+            errorOccured = true;
+            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+          }
+        });
     }
+
 
 
 
@@ -394,7 +410,8 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         ckanAddPackageResponse.getStatus
       }
     }
-    val ckanAddResourceResponseStatusCode:Integer = if(addDistributionResult == null) { null } else { addDistributionResult.ckanStoreResourceStatus }
+/*    val ckanAddResourceResponseStatusCode:Integer = if(addDistributionResult == null) {
+      null } else { addDistributionResult.ckanStoreResourceStatus }*/
     //distribution.ckanResourceId = if(addDistributionResult == null) { null } else {addDistributionResult.getDistribution_id }
     //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;
 
@@ -414,9 +431,10 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     val addDatasetResult:AddDatasetResult = new AddDatasetResult(responseStatus, responseStatusText
       , dataset
       , addManifestFileGitHubResponseStatus, addManifestFileGitHubResponseStatusText
-      , distributionGithubStoreDistributionResponseStatus, distributionGithubStoreDistributionResponseStatusText
+      //, distributionGithubStoreDistributionResponseStatus, distributionGithubStoreDistributionResponseStatusText
       , addManifestVirtuosoResponse
-      , ckanAddPackageResponseStatusCode, ckanAddResourceResponseStatusCode
+      , ckanAddPackageResponseStatusCode
+      //, ckanAddResourceResponseStatusCode
     )
     addDatasetResult
 

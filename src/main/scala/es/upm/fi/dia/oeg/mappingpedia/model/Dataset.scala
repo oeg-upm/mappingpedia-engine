@@ -28,7 +28,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
   var dctModified:String = createdDate;
   var dcatKeyword:String = null;
   var dctLanguage:String = null;
-  var dcatDistribution:List[Distribution] = Nil;
+  var dcatDistributions:List[Distribution] = Nil;
 
   var manifestAccessURL:String = null;
   var manifestDownloadURL:String = null;
@@ -47,10 +47,10 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
   //var mappingDocuments:List[MappingDocument] = Nil;
 
   //for the moment assume that only one distribution for each dataset
-  def getDistribution() = if(dcatDistribution == Nil) {
+  def getDistribution() = if(dcatDistributions == Nil) {
     null
   } else {
-    this.dcatDistribution.iterator.next()
+    this.dcatDistributions.iterator.next()
   }
 
   /*
@@ -73,11 +73,11 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
   */
 
   def addDistribution(distribution: Distribution) = {
-    if(this.dcatDistribution == null) {
-      this.dcatDistribution = List(distribution);
+    if(this.dcatDistributions == null) {
+      this.dcatDistributions = List(distribution);
     } else {
-      if(!this.dcatDistribution.contains(distribution)) {
-        this.dcatDistribution = distribution :: this.dcatDistribution;
+      if(!this.dcatDistributions.contains(distribution)) {
+        this.dcatDistributions = distribution :: this.dcatDistributions;
       }
     }
   }
