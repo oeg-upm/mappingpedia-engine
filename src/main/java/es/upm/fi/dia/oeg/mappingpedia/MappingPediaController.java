@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -42,7 +43,7 @@ public class MappingPediaController {
     private VirtuosoClient virtuosoClient = MappingPediaEngine.virtuosoClient();
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient, virtuosoClient);
-    private DistributionController distributionController = new DistributionController(ckanClient, githubClient);
+    private DistributionController distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient);
     private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
     private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient, virtuosoClient, jenaClient);
 
@@ -238,6 +239,20 @@ public class MappingPediaController {
         return listResult;
     }
 
+    @RequestMapping(value="/distributions", method= RequestMethod.GET)
+    public ListResult getDistributions(
+            @RequestParam(value="ckan_resource_id", required = false) String ckanResourceId
+    ) {
+        logger.info("/distributions ...");
+        logger.info("ckan_resource_id = " + ckanResourceId);
+
+        ListResult listResult = this.distributionController.findDistributionByCKANResourceId(ckanResourceId);
+
+        logger.info("/distributions listResult = " + listResult);
+
+        return listResult;
+    }
+
     @RequestMapping(value="/mapped_classes", method= RequestMethod.GET)
     public ListResult getMappedClasses(@RequestParam(value="prefix", required = false, defaultValue="schema.org") String prefix
             , @RequestParam(value="mapped_table", required = false) String mappedTable
@@ -305,10 +320,11 @@ public class MappingPediaController {
     @RequestMapping(value="/executions2", method= RequestMethod.POST)
     public ExecuteMappingResult postExecutions(
             @RequestParam(value="organization_id", required = false) String organizationId
-
             , @RequestParam(value="dataset_id", required = false) String datasetId
+
+            , @RequestParam(value="ckan_resources_ids", required = false) String ckanResourcesIds
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
-            , @RequestParam(value="distribution_download_url", required = true) String distributionDownloadURL
+            , @RequestParam(value="distribution_download_url", required = false) String pDistributionDownloadURL
             , @RequestParam(value="distribution_mediatype", required = false, defaultValue="text/csv") String distributionMediaType
             , @RequestParam(value="distribution_hash", required = false) String distributionHash
             , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
@@ -334,11 +350,22 @@ public class MappingPediaController {
     )
     {
         try {
-
             logger.info("POST /executions2");
+            logger.info("organization_id = " + organizationId);
+            logger.info("dataset_id = " + datasetId);
+            logger.info("ckan_resources_ids = " + ckanResourcesIds);
+            logger.info("distributionDownloadURL = " + pDistributionDownloadURL);
             logger.info("mapping_document_id = " + mappingDocumentId);
             logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
-            logger.info("distributionDownloadURL = " + distributionDownloadURL);
+
+            String[] arrayDistributionDownloadURLs = null;
+            if(pDistributionDownloadURL != null) {
+                arrayDistributionDownloadURLs = pDistributionDownloadURL.split(",");
+            }
+            logger.info("arrayDistributionDownloadURLs = " + Arrays.toString(arrayDistributionDownloadURLs));
+
+
+
             logger.info("distribution_encoding = " + distributionEncoding);
             logger.info("use_cache = " + pUseCache);
 
@@ -349,38 +376,49 @@ public class MappingPediaController {
                 organization = new Agent(organizationId);
             }
 
-            Dataset dataset;
+            Dataset originalDataset;
             if(datasetId == null) {
-                dataset = new Dataset(organization);
+                originalDataset = new Dataset(organization);
             } else {
-                dataset = new Dataset(organization, datasetId);
+                originalDataset = new Dataset(organization, datasetId);
             }
-            UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(dataset);
-            if(distributionAccessURL != null) {
-                unannotatedDistribution.dcatAccessURL_$eq(distributionAccessURL);
-            }
-            if(distributionDownloadURL != null) {
-                unannotatedDistribution.dcatDownloadURL_$eq(distributionDownloadURL);
-            } else {
-                unannotatedDistribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
-            }
-            if(fieldSeparator != null) {
-                unannotatedDistribution.cvsFieldSeparator_$eq(fieldSeparator);
-            }
-            unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
 
-            if(distributionHash != null) {
-                unannotatedDistribution.sha_$eq(distributionHash);
-            } else {
-                if(distributionDownloadURL != null) {
-                    String hashValue = MappingPediaUtility.calculateHash(distributionDownloadURL
-                            , distributionEncoding);
-                    unannotatedDistribution.sha_$eq(hashValue);
+            Dataset unannotatedDataset = new Dataset(organization);
+            unannotatedDataset.superset_$eq(originalDataset);
+
+            for(String distributionDownloadURL:arrayDistributionDownloadURLs) {
+                String distributionDownloadURLTrimmed = distributionDownloadURL.trim();
+                logger.info("distributionDownloadURLTrimmed = " + distributionDownloadURLTrimmed);
+
+                UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(unannotatedDataset);
+                if(distributionAccessURL != null) {
+                    unannotatedDistribution.dcatAccessURL_$eq(distributionAccessURL);
                 }
-            }
-            logger.info("distribution.sha() = " + unannotatedDistribution.sha());
+                if(distributionDownloadURLTrimmed != null) {
+                    unannotatedDistribution.dcatDownloadURL_$eq(distributionDownloadURLTrimmed);
+                } else {
+                    unannotatedDistribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
+                }
+                if(fieldSeparator != null) {
+                    unannotatedDistribution.csvFieldSeparator_$eq(fieldSeparator);
+                }
+                unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
 
-            dataset.addDistribution(unannotatedDistribution);
+                if(distributionHash != null) {
+                    unannotatedDistribution.sha_$eq(distributionHash);
+                } else {
+                    if(distributionDownloadURLTrimmed != null) {
+                        String hashValue = MappingPediaUtility.calculateHash(distributionDownloadURLTrimmed
+                                , distributionEncoding);
+                        unannotatedDistribution.sha_$eq(hashValue);
+                    }
+                }
+                logger.info("distribution.sha() = " + unannotatedDistribution.sha());
+
+                unannotatedDataset.addDistribution(unannotatedDistribution);
+            }
+
+
 
 
             MappingDocument md;
@@ -395,8 +433,6 @@ public class MappingPediaController {
                 if(mappingDocumentId != null) {
                     MappingDocument foundMappingDocument = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
                     md.setDownloadURL(foundMappingDocument.getDownloadURL());
-                } else {
-                    //I don't know that to do here, Ahmad will handle
                 }
             }
 
@@ -426,7 +462,7 @@ public class MappingPediaController {
             Boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
 
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, unannotatedDistribution
+            return mappingExecutionController.executeMapping(md, unannotatedDataset
                     , queryFile, outputFilename, true, true
                     , true
                     , null, useCache);
@@ -846,7 +882,7 @@ public class MappingPediaController {
                     try {
                         ExecuteMappingResult executeMappingResult = this.mappingExecutionController.executeMapping(
                                 mappingDocument
-                                , unannotatedDistribution
+                                , dataset
                                 , queryFileDownloadURL
                                 , outputFilename
 

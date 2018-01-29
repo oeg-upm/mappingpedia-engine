@@ -25,7 +25,7 @@ import scala.collection.JavaConversions._
 
 class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient)  {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  val distributionController = new DistributionController(ckanClient, githubClient);
+  val distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient: VirtuosoClient);
 
   def findAllDatasets(): ListResult = {
     logger.info("findDatasets")

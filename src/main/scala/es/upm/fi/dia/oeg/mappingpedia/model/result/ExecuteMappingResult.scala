@@ -5,7 +5,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.{AnnotatedDistribution, Distribution
 class ExecuteMappingResult (
                              val errorCode:Integer, val status:String
                              //, val distributionDownloadURL:String
-                             , val unannotatedDistribution:UnannotatedDistribution
+                             //, val unannotatedDistribution:UnannotatedDistribution
                              //, val mappingDocumentDownloadURL:String
                              , val mappingDocument:MappingDocument
                              , val queryURL:String
@@ -20,14 +20,14 @@ class ExecuteMappingResult (
 
   def this(errorCode:Integer, status:String) {
     this(errorCode, status
-      , null, null, null, null
+      , null, null, null
     )
   }
 
-  val distributionDownloadURL = unannotatedDistribution.getDownload_url;
-  def getDatasetURL() = distributionDownloadURL;
-  def getDistribution_download_url() = distributionDownloadURL;
-  def getDistribution_sha() = unannotatedDistribution.getSHA;
+  //val distributionDownloadURL = unannotatedDistribution.getDownload_url;
+  //def getDatasetURL() = distributionDownloadURL;
+  //def getDistribution_download_url() = distributionDownloadURL;
+  //def getDistribution_sha() = unannotatedDistribution.getSHA;
 
   val mappingDocumentDownloadURL = mappingDocument.getDownloadURL();
   def getMappingURL() = mappingDocumentDownloadURL;

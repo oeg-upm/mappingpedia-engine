@@ -43,6 +43,8 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String){
   var ckanSpatial:String = null;
   var ckanAccrualPeriodicity:String = null;
 
+  var superset:Dataset = null;
+
 
   //var mappingDocuments:List[MappingDocument] = Nil;
 

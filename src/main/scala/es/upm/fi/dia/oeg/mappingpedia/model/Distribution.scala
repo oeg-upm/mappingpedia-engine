@@ -31,7 +31,7 @@ abstract class Distribution (val dataset: Dataset, val dctIdentifier:String){
   var dcatMediaType:String = null;
 
   //CUSTOM FIELDS
-  var cvsFieldSeparator:String=",";
+  var csvFieldSeparator:String=",";
   var distributionFile:File = null;
   var encoding:String="UTF-8";
   var ckanResourceId:String = null;

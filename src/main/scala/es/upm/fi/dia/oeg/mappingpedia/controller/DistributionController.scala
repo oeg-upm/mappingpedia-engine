@@ -5,16 +5,63 @@ import java.net.HttpURLConnection
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
-import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, AddDistributionResult}
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Agent}
-import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility}
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, AddDistributionResult, ListResult}
+import es.upm.fi.dia.oeg.mappingpedia.model._
+import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility, VirtuosoClient}
 import org.apache.http.util.EntityUtils
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
 
-class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility) {
+class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
+  def findUnannotatedDistributions(queryString: String): ListResult = {
+    logger.info(s"queryString = $queryString");
+
+    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+
+    var results: List[Distribution] = List.empty;
+    try {
+      val rs = qexec.execSelect
+      while (rs.hasNext) {
+        val qs = rs.nextSolution
+
+        val datasetId = qs.get("datasetId").toString;
+        val dataset = new Dataset(datasetId);
+
+        val distributionId = qs.get("distributionId").toString;
+        val distribution = new UnannotatedDistribution(dataset, distributionId);
+
+        distribution.dcatDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null)
+
+        results = distribution :: results;
+      }
+    }
+    catch {
+      case e:Exception => {
+        e.printStackTrace()
+        logger.error(s"Error execution query: ${e.getMessage}")
+      }
+    }
+    finally qexec.close
+
+    val listResult = new ListResult(results.length, results);
+    listResult
+  }
+
+  def findDistributionByCKANResourceId(ckanResourceId:String): ListResult = {
+    logger.info("findDistributionByCKANResourceId")
+    val queryTemplateFile = "templates/findDistributionByCKANResourceId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$ckanResourceId" -> ckanResourceId
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findUnannotatedDistributions(queryString);
+  }
 
   def storeManifestFileOnGitHub(file:File, distribution:Distribution) : HttpResponse[JsonNode] = {
     val dataset = distribution.dataset;
