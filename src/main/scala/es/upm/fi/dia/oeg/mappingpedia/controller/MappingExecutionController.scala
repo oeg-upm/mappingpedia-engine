@@ -255,9 +255,9 @@ class MappingExecutionController(val ckanClient:CKANUtility
       annotatedDistribution.manifestDownloadURL = this.githubClient.getDownloadURL(annotatedDistribution.manifestAccessURL);
 
 
-      val mappedClassByMappingId:String = try {
+      val mappedClasses:String = try {
         this.mappingDocumentController.findMappedClassesByMappingDocumentId(
-          md.dctIdentifier).results.iterator.next().toString
+          md.dctIdentifier).results.mkString(",");
       } catch {
         case e:Exception => null
       }
@@ -340,13 +340,12 @@ class MappingExecutionController(val ckanClient:CKANUtility
       }
       logger.info(s"mappedClassByDownloadURL = $mappedClassByDownloadURL")*/
 
-      val mappedClass = mappedClassByMappingId;
-      logger.info(s"mappedClass = $mappedClass")
+      logger.info(s"mappedClasses = $mappedClasses")
 
       //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
       val ckanAddResourceResponse = try {
         if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
-          logger.info("storing mapping execution result on CKAN ...")
+          logger.info("STORING MAPPING EXECUTION RESULT ON CKAN ...")
 
 
           //val addNewResourceResponse = CKANUtility.addNewResource(resourceIdentifier, resourceTitle
@@ -359,7 +358,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
             MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> unannotatedDistributionsDownloadURLs.mkString(",")
             , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
             , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> annotatedDistribution.manifestDownloadURL
-            , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClass
+            , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClasses
           )
           ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
 
@@ -382,6 +381,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
           null
         }
       }
+      //logger.info(s"ckanAddResourceResponse = ${ckanAddResourceResponse}");
+
       val ckanAddResourceResponseStatusCode:Integer = {
         if(ckanAddResourceResponse == null) {
           null
@@ -564,7 +565,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
         , "templates/metadata-mappingexecutionresult-template.ttl"
       );
 
-      val datasetDistributionDownloadURL:String = "";
+      //val datasetDistributionDownloadURL:String = "";
 
       val downloadURL = if(mappingExecutionResult.dcatDownloadURL == null) { "" }
       else { mappingExecutionResult.dcatDownloadURL }
@@ -579,7 +580,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
         "$mappingExecutionResultID" -> mappingExecutionResult.dctIdentifier
         , "$mappingExecutionResultTitle" -> mappingExecutionResult.dctTitle
         , "$mappingExecutionResultDescription" -> mappingExecutionResult.dctDescription
-        , "$datasetDistributionDownloadURL" -> datasetDistributionDownloadURL
+        , "$datasetID" -> unannotatedDataset.dctIdentifier
         , "$mappingDocumentID" -> mappingDocument.dctIdentifier
         , "$downloadURL" -> downloadURL
         , "$mappingDocumentSHA" -> mappingDocumentSHA

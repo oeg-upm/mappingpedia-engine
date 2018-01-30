@@ -8,7 +8,7 @@ mpids:dataset-$datasetID a mpv:Dataset ;
     dcterms:modified "$datasetModified"^^xsd:dateTime;
     dcterms:identifier "$datasetID" ;
     dcat:keyword "$datasetKeywords" ;
-    dcterms:language <http://id.loc.gov/vocabulary/iso639-1/$datasetLanguage> ;
+    dcterms:language <$datasetLanguage> ;
     mpv:datasetIdentifier "dataset-$datasetID" ;
     mpv:ckanPackageId "$ckanPackageId" ;
     mpv:ckanPackageName "$ckanPackageName" ;

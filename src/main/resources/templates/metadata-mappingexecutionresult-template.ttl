@@ -14,7 +14,7 @@ mpimd:mappingExecutionResult-$mappingExecutionResultID a mpv:MappingExecutionRes
     dcterms:modified "$modified"^^xsd:dateTime;
     prov:wasGeneratedBy mpimd:mappingExecutionActivity ;
     prov:wasAttributedTo mpimd:mappingpediaAgent ;
-    prov:wasDerivedFrom <$datasetDistributionDownloadURL> ;
+    prov:wasDerivedFrom mpids:dataset-$datasetID ;
     prov:hadPrimarySource mpimd:mappingDocument-$mappingDocumentID ;
     mpv:hasMappingDocumentSHA "$mappingDocumentSHA" ;
     mpv:hasDatasetDistributionSHA "$datasetDistributionSHA" ;

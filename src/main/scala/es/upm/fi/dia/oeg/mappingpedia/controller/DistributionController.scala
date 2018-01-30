@@ -210,7 +210,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     //STORING DISTRIBUTION FILE AS RESOURCE ON CKAN
     val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && storeToCKAN) {
-        logger.info("STORING DISTRIBUTION FILE AS A PACKAGE ON CKAN...")
+        logger.info("STORING DISTRIBUTION FILE AS A RESOURCE ON CKAN...")
 
         if(distribution != null
           && (distribution.distributionFile != null || distribution.dcatDownloadURL != null)) {
@@ -398,7 +398,7 @@ object DistributionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   def generateManifestFile(distribution: Distribution) = {
-    logger.info("GENERATION MANIFEST FOR DISTRIBUTION ...")
+    logger.info("GENERATING MANIFEST FOR DISTRIBUTION ...")
     val dataset = distribution.dataset;
 
     try {

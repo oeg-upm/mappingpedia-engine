@@ -1,5 +1,6 @@
 package es.upm.fi.dia.oeg.mappingpedia.controller
 
+import java.io.File
 import java.net.HttpURLConnection
 import java.util.Date
 
@@ -671,8 +672,16 @@ object MappingDocumentController {
   }
 
 
-  def detectMappingLanguage(mappingDocumentDownloadURL:String) : String = {
+  def detectMappingLanguage(mappingDocumentFile:File) : String = {
+    if(mappingDocumentFile == null) {
+      "r2rml"
+    } else {
+      val absolutePath = mappingDocumentFile.getAbsolutePath;
+      this.detectMappingLanguage(absolutePath);
+    }
+  }
 
+  def detectMappingLanguage(mappingDocumentDownloadURL:String) : String = {
 
     val mappingLanguage = if (mappingDocumentDownloadURL != null) {
       val splitedMappingLanguage = mappingDocumentDownloadURL.split("\\.")

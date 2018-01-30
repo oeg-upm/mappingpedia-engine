@@ -491,13 +491,20 @@ object DatasetController {
       }
       */
 
+      val datasetLanguage = if(dataset.dctLanguage != null && !"".equals(dataset.dctLanguage)) {
+        s"http://id.loc.gov/vocabulary/iso639-1/${dataset.dctLanguage}"
+      } else {
+        ""
+      }
+
+
       val mapValuesWithoutDistribution:Map[String,String] = Map(
         "$datasetID" -> dataset.dctIdentifier
         , "$datasetTitle" -> dataset.dctTitle
         , "$datasetDescription" -> dataset.dctDescription
         , "$datasetKeywords" -> dataset.dcatKeyword
         , "$publisherId" -> organization.dctIdentifier
-        , "$datasetLanguage" -> dataset.dctLanguage
+        , "$datasetLanguage" -> datasetLanguage
         , "$datasetIssued" -> dataset.dctIssued
         , "$datasetModified" -> dataset.dctModified
         , "$ckanPackageId" -> dataset.ckanPackageId
