@@ -16,8 +16,8 @@ mpimd:mappingExecutionResult-$mappingExecutionResultID a mpv:MappingExecutionRes
     prov:wasAttributedTo mpimd:mappingpediaAgent ;
     prov:wasDerivedFrom mpids:dataset-$datasetID ;
     prov:hadPrimarySource mpimd:mappingDocument-$mappingDocumentID ;
-    mpv:hasMappingDocumentSHA "$mappingDocumentSHA" ;
-    mpv:hasDatasetDistributionSHA "$datasetDistributionSHA" ;
+    mpv:hasMappingDocumentHash "$mappingDocumentHash" ;
+    mpv:hasDatasetDistributionHash "$datasetDistributionHash" ;
 .
 
 #mpids:dataset-$datasetID void:subset mpids:dataset-$subsetID .

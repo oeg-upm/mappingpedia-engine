@@ -15,7 +15,7 @@ class AddMappingDocumentResult(val errorCode:Integer, val status:String
   def getMappingURL = mappingDocument.accessURL
   def getMapping_document_access_url= mappingDocument.accessURL
   def getMapping_document_download_url= mappingDocument.getDownloadURL()
-  def getMapping_document_sha= mappingDocument.sha
+  def getMapping_document_hash= mappingDocument.hash
 
   def getManifestURL = mappingDocument.manifestAccessURL
   def getManifest_access_url = mappingDocument.manifestAccessURL

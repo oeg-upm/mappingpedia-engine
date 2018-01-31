@@ -28,7 +28,7 @@ WHERE {
         ?dataset dcterms:title ?datasetTitle.
         ?dataset dcat:distribution ?distribution .
         ?distribution dcat:accessURL ?distributionAccessURL .
-        ?distribution mpv:sha ?distributionSHA .
+        ?distribution mpv:hash ?distributionHash .
     }
 
 }

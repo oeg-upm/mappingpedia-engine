@@ -1,4 +1,4 @@
-#findMappingExecutionResultBySHA.rq
+#findMappingExecutionResultByHash.rq
 
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
@@ -10,8 +10,8 @@ FROM <$graphURL>
 WHERE {
     ?s a mpv:MappingExecutionResultEntity .
     ?s dcterms:issued ?dateIssued .
-    ?s mpv:hasMappingDocumentSHA "$mdSHA"^^<http://www.w3.org/2001/XMLSchema#string> .
-    ?s mpv:hasDatasetDistributionSHA "$datasetDistributionSHA"^^<http://www.w3.org/2001/XMLSchema#string> .
+    ?s mpv:hasMappingDocumentHash "$mdHash"^^<http://www.w3.org/2001/XMLSchema#string> .
+    ?s mpv:hasDatasetDistributionHash "$datasetDistributionHash"^^<http://www.w3.org/2001/XMLSchema#string> .
     ?s dcat:downloadURL ?downloadURL .
 }
 ORDER BY DESC(?dateIssued)

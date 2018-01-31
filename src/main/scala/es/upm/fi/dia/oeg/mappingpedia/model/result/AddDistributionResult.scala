@@ -19,7 +19,7 @@ class AddDistributionResult (val errorCode:Integer, val status:String, distribut
   def getGithubStoreDistributionResponseStatusText = this.githubStoreDistributionResponseStatusText
     def getDistribution_access_url = distribution.dcatAccessURL
     def getDistribution_download_url = distribution.dcatDownloadURL
-    def getDistribution_sha = distribution.sha
+    def getDistribution_hash = distribution.hash
 
     //def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
     def getVirtuoso_store_manifest_status = this.virtuosoStoreManifestResponseStatusText;

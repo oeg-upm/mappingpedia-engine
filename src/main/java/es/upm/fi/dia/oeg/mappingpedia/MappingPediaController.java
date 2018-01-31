@@ -62,7 +62,7 @@ public class MappingPediaController {
         logger.info("mappingDocumentSHA = " + mappingDocumentSHA);
         logger.info("datasetDistributionSHA = " + datasetDistributionSHA);
 
-        return this.mappingExecutionController.findMappingExecutionURLBySHA(
+        return this.mappingExecutionController.findMappingExecutionURLByHash(
                 mappingDocumentSHA, datasetDistributionSHA);
     }
 
@@ -326,7 +326,6 @@ public class MappingPediaController {
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
             , @RequestParam(value="distribution_download_url", required = false) String pDistributionDownloadURL
             , @RequestParam(value="distribution_mediatype", required = false, defaultValue="text/csv") String distributionMediaType
-            , @RequestParam(value="distribution_hash", required = false) String distributionHash
             , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
             , @RequestParam(value="field_separator", required = false) String fieldSeparator
 
@@ -337,6 +336,8 @@ public class MappingPediaController {
 
             , @RequestParam(value="query_file", required = false) String queryFile
             , @RequestParam(value="output_filename", required = false) String outputFilename
+            , @RequestParam(value="output_fileextension", required = false) String outputFileExtension
+            , @RequestParam(value="output_mediatype", required = false) String outputMediaType
 
             , @RequestParam(value="db_username", required = false) String dbUserName
             , @RequestParam(value="db_password", required = false) String dbPassword
@@ -359,6 +360,9 @@ public class MappingPediaController {
             logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
             logger.info("distribution_encoding = " + distributionEncoding);
             logger.info("use_cache = " + pUseCache);
+            logger.info("output_filename = " + outputFilename);
+            logger.info("output_fileextension = " + outputFileExtension);
+            logger.info("output_mediatype = " + outputMediaType);
 
             MappingDocument md;
             if(mappingDocumentId != null) {
@@ -381,10 +385,10 @@ public class MappingPediaController {
             String mdDownloadURL = md.getDownloadURL();
 
             if(mappingDocumentHash == null && mdDownloadURL != null) {
-                md.sha_$eq(MappingPediaUtility.calculateHash(
+                md.hash_$eq(MappingPediaUtility.calculateHash(
                         mdDownloadURL, "UTF-8"));
             }
-            logger.info("md.sha = " + md.sha());
+            logger.info("md.sha = " + md.hash());
 
             if(pMappingLanguage != null) {
                 md.mappingLanguage_$eq(pMappingLanguage);
@@ -437,26 +441,8 @@ public class MappingPediaController {
                 }
                 unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
 
-                if(distributionHash != null) {
-                    unannotatedDistribution.sha_$eq(distributionHash);
-                } else {
-                    if(distributionDownloadURLTrimmed != null) {
-                        String hashValue = MappingPediaUtility.calculateHash(distributionDownloadURLTrimmed
-                                , distributionEncoding);
-                        unannotatedDistribution.sha_$eq(hashValue);
-                    }
-                }
-                logger.info("distribution.sha() = " + unannotatedDistribution.sha());
 
-                dataset.addDistribution(unannotatedDistribution);
             }
-
-
-
-
-
-
-
 
             JDBCConnection jdbcConnection = new JDBCConnection(dbUserName, dbPassword
                     , dbName, jdbc_url
@@ -467,7 +453,9 @@ public class MappingPediaController {
 
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return mappingExecutionController.executeMapping(md, dataset
-                    , queryFile, outputFilename, true, true
+                    , queryFile
+                    , outputFilename, outputFileExtension, outputMediaType
+                    ,  true, true
                     , true
                     , null, useCache);
 
@@ -826,6 +814,8 @@ public class MappingPediaController {
             , @RequestParam(value="execute_mapping", required = false, defaultValue="true") String executeMapping
             , @RequestParam(value="query_file_download_url", required = false) String queryFileDownloadURL
             , @RequestParam(value="output_file_name", required = false) String outputFilename
+            , @RequestParam(value="output_fileextension", required = false) String outputFileExtension
+            , @RequestParam(value="output_mediatype", required = false) String outputMediaType
 
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
@@ -908,7 +898,7 @@ public class MappingPediaController {
                                 mappingDocument
                                 , dataset
                                 , queryFileDownloadURL
-                                , outputFilename
+                                , outputFilename, outputFileExtension, outputMediaType
 
                                 , true
                                 , true

@@ -38,7 +38,7 @@ WHERE {
         FILTER regex(str(?searchedClass), "$mappedClass", "i")
     }
     #OPTIONAL { ?md mpv:sha ?mdSHA . }
-    ?md mpv:sha ?mdSHA .
+    ?md mpv:hash ?mdHash .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
     OPTIONAL { ?md mpv:hasMappingLanguage ?mappingLanguage . }
     OPTIONAL { ?md mpv:hasDatasetId ?datasetId . }
@@ -48,7 +48,7 @@ WHERE {
         OPTIONAL { ?dataset dcat:distribution ?distribution . }
         OPTIONAL { ?distribution dcat:accessURL ?distributionAccessURL . }
         OPTIONAL { ?distribution dcat:downloadURL ?distributionDownloadURL . }
-        ?distribution mpv:sha ?distributionSHA .
+        ?distribution mpv:hash ?distributionHash.
     }
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
     OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }

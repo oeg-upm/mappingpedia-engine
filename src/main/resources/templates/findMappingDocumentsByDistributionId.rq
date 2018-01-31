@@ -29,7 +29,7 @@ WHERE {
         ?distribution dcterms:identifier ?distributionId .
         ?distribution mpv:ckanResourceId ?distributionCKANId .
         ?distribution dcat:accessURL ?distributionAccessURL .
-        ?distribution mpv:sha ?distributionSHA .
+        ?distribution mpv:hash ?distributionHash .
     FILTER (regex(str(?distributionId), "$distributionId", "i") || regex(str(?distributionCKANId), "$distributionId", "i")  )
 }
 ORDER BY DESC(?dateSubmitted)

@@ -6,7 +6,7 @@ import java.security.MessageDigest
 import java.util.UUID
 
 import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
-import es.upm.fi.dia.oeg.mappingpedia.model.OntologyClass
+import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, OntologyClass}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine, MappingPediaProperties}
 import org.apache.jena.graph.{Node, NodeFactory, Triple}
 import org.apache.jena.query.QuerySolution
@@ -274,7 +274,29 @@ object MappingPediaUtility {
     result;
   }
 
-  def calculateHash(downloadURL:String, pEncoding:String) = {
+  def calculateHash(dataset:Dataset) : String = {
+    val distributions = dataset.dcatDistributions;
+    this.calculateHash(distributions);
+  }
+
+  def calculateHash(distributions:List[Distribution]) : String = {
+  val datasetHashValue = distributions.foldLeft(0)((acc, distribution) => {
+      val distributionHashValue = MappingPediaUtility.calculateHash(
+        distribution.dcatDownloadURL, distribution.encoding);
+      logger.info(s"distributionHashValue = ${distributionHashValue}")
+      acc + distributionHashValue.toInt
+    })
+
+    logger.info(s"datasetHashValue = ${datasetHashValue}")
+    datasetHashValue.toString
+  }
+
+
+  def calculateHash(downloadURL:String) : String = {
+    this.calculateHash(downloadURL, null);
+  }
+
+  def calculateHash(downloadURL:String, pEncoding:String) : String = {
     logger.info(s"calculating hash value of ${downloadURL}");
     val encoding = if(pEncoding == null) { "UTF-8" } else { pEncoding }
 

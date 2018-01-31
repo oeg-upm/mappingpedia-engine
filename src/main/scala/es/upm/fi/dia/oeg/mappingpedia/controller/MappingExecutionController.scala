@@ -5,7 +5,7 @@ import java.net.{HttpURLConnection, URL}
 import java.util.{Date, UUID}
 
 import com.mashape.unirest.http.{HttpResponse, JsonNode, Unirest}
-import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, ExecuteMappingResultSummary, GeneralResult, ListResult}
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{ExecuteMappingResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.connector.RMLMapperConnector
@@ -18,6 +18,7 @@ import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.QueryExecutionFactory
 import java.io.InputStream
 
+import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logger
 import org.eclipse.rdf4j.model.impl.LinkedHashModel
 import org.eclipse.rdf4j.rio.helpers.StatementCollector
 import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
@@ -30,15 +31,15 @@ class MappingExecutionController(val ckanClient:CKANUtility
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mappingDocumentController:MappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
 
-  def findMappingExecutionURLBySHA(mdSHA:String, datasetDistributionSHA:String) = {
+  def findMappingExecutionURLByHash(mdHash:String, datasetDistributionHash:String) = {
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$mdSHA" -> mdSHA
-      , "$datasetDistributionSHA" -> datasetDistributionSHA
+      , "$mdHash" -> mdHash
+      , "$datasetDistributionHash" -> datasetDistributionHash
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
-      mapValues, "templates/findMappingExecutionResultBySHA.rq");
+      mapValues, "templates/findMappingExecutionResultByHash.rq");
     logger.info(s"queryString = ${queryString}");
 
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
@@ -64,9 +65,11 @@ class MappingExecutionController(val ckanClient:CKANUtility
                       md:MappingDocument
                       //, unannotatedDistributions: List[UnannotatedDistribution]
                     //, unannotatedDistribution: UnannotatedDistribution
-                    , unannotatedDataset:Dataset
+                    , dataset:Dataset
                       , queryFileName:String
                       , pOutputFilename: String
+                      , pOutputFileExtension: String
+                      , pOutputMediaType: String
 
                       , pStoreToCKAN:Boolean
                       , pStoreToGithub:Boolean
@@ -79,7 +82,9 @@ class MappingExecutionController(val ckanClient:CKANUtility
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
 
-    val organization = unannotatedDataset.dctPublisher
+
+
+    val organization = dataset.dctPublisher
     //val unannotatedDistribution = dataset.getDistribution().asInstanceOf[UnannotatedDistribution];
 
     //val datasetDistributionDownloadURL = unannotatedDistribution.dcatDownloadURL;
@@ -94,17 +99,18 @@ class MappingExecutionController(val ckanClient:CKANUtility
     }
     */
 
-    val unannotatedDistributions = unannotatedDataset.dcatDistributions.asInstanceOf[List[UnannotatedDistribution]]
-    val distributionsHash = unannotatedDistributions.hashCode().toString;
+    val unannotatedDistributions = dataset.dcatDistributions.asInstanceOf[List[UnannotatedDistribution]]
+    //val distributionsHash = unannotatedDistributions.hashCode().toString;
+    val unannotatedDatasetHash = MappingPediaUtility.calculateHash(dataset);
 
     val mdDownloadURL = md.getDownloadURL();
-    if (md.sha == null && mdDownloadURL != null ) {
+    if (md.hash == null && mdDownloadURL != null ) {
       val hashValue = MappingPediaUtility.calculateHash(mdDownloadURL, "UTF-8");
-      md.sha = hashValue
+      md.hash = hashValue
     }
 
 
-    val cacheExecutionURL = this.findMappingExecutionURLBySHA(md.sha, distributionsHash);
+    val cacheExecutionURL = this.findMappingExecutionURLByHash(md.hash, unannotatedDatasetHash);
     logger.info(s"cacheExecutionURL = ${cacheExecutionURL}");
 
     if(cacheExecutionURL == null || cacheExecutionURL.results.isEmpty || !useCache) {
@@ -120,11 +126,16 @@ class MappingExecutionController(val ckanClient:CKANUtility
         UUID.randomUUID.toString
       }
 
-      val datasetId = unannotatedDataset.dctIdentifier
+      val datasetId = dataset.dctIdentifier
 
       val mappingExecutionId = UUID.randomUUID.toString;
-      val annotatedDistribution = new AnnotatedDistribution(unannotatedDataset, mappingExecutionId)
-      annotatedDistribution.dcatMediaType = "text/txt" //TODO FIXME
+      val annotatedDistribution = new AnnotatedDistribution(dataset, mappingExecutionId)
+      val outputMediaType = if(pOutputMediaType == null) {
+        "text/txt"
+      } else {
+        pOutputMediaType
+      }
+      annotatedDistribution.dcatMediaType = outputMediaType
       annotatedDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
 
 
@@ -140,12 +151,21 @@ class MappingExecutionController(val ckanClient:CKANUtility
       //val mappingExecutionDirectory = s"executions/$organizationId/$datasetId/${md.dctIdentifier}/$mappingExecutionId";
 
       val outputFileName = if (pOutputFilename == null) {
-        UUID.randomUUID.toString + ".txt"
+        UUID.randomUUID.toString
       } else {
         pOutputFilename;
       }
-      val githubOutputFilepath:String = s"$mappingExecutionDirectory/$outputFileName"
-      val localOutputFilepath:String = s"$mappingExecutionDirectory/$mappingExecutionId/$outputFileName"
+      val outputFileExtension = if(pOutputFileExtension == null) {
+        "txt"
+      } else {
+        pOutputFileExtension
+      }
+      val outputFileNameWithExtension:String = s"${outputFileName}.${outputFileExtension}"
+
+
+
+      val githubOutputFilepath:String = s"$mappingExecutionDirectory/$outputFileNameWithExtension"
+      val localOutputFilepath:String = s"$mappingExecutionDirectory/$mappingExecutionId/$outputFileNameWithExtension"
       val localOutputFile: File = new File(localOutputFilepath)
       annotatedDistribution.distributionFile = localOutputFile;
 
@@ -155,11 +175,13 @@ class MappingExecutionController(val ckanClient:CKANUtility
           if(jdbcConnection != null) {
             MappingExecutionController.executeR2RMLMappingWithRDB(md, localOutputFilepath, queryFileName, jdbcConnection);
           } else {
+
             MappingExecutionController.executeR2RMLMappingWithCSV(md, unannotatedDistributions, localOutputFilepath, queryFileName);
+            logger.info(s"unannotatedDataset.dcatDistributions.size = ${dataset.dcatDistributions.size} after")
           }
         } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
           val unannotatedDistribution = unannotatedDistributions.iterator.next();
-          MappingExecutionController.executeRMLMapping(md, unannotatedDataset, localOutputFilepath);
+          MappingExecutionController.executeRMLMapping(md, dataset, localOutputFilepath);
         } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
           throw new Exception(mappingLanguage + " Language is not supported yet");
         } else {
@@ -228,13 +250,13 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
 
       //GENERATING MANIFEST FILE
-      val manifestFile = this.generateManifestFile(annotatedDistribution, unannotatedDataset, md)
+      val manifestFile = MappingExecutionController.generateManifestFile(annotatedDistribution, unannotatedDistributions, md)
 
       //STORING MANIFEST ON GITHUB
       val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
         if(MappingPediaEngine.mappingpediaProperties.githubEnabled && pStoreToGithub) {
           try {
-            this.storeManifestFileOnGitHub(manifestFile, unannotatedDataset, md);
+            this.storeManifestFileOnGitHub(manifestFile, dataset, md);
           } catch {
             case e: Exception => {
               errorOccured = true;
@@ -434,7 +456,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
       )
     } else {
       val mappingExecutionResultURL = cacheExecutionURL.results.iterator.next().toString;
-      val annotatedDistribution = new AnnotatedDistribution(unannotatedDataset);
+      val annotatedDistribution = new AnnotatedDistribution(dataset);
       annotatedDistribution.dcatDownloadURL = mappingExecutionResultURL;
 
       new ExecuteMappingResult(
@@ -483,21 +505,21 @@ class MappingExecutionController(val ckanClient:CKANUtility
         val unannotatedDistribution = new UnannotatedDistribution(dataset);
         dataset.addDistribution(unannotatedDistribution);
         unannotatedDistribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
-        unannotatedDistribution.sha = md.dataset.getDistribution().sha
-        if (unannotatedDistribution.sha == null && unannotatedDistribution.dcatDownloadURL != null ) {
+        unannotatedDistribution.hash = md.dataset.getDistribution().hash
+        if (unannotatedDistribution.hash == null && unannotatedDistribution.dcatDownloadURL != null ) {
           val hashValue = MappingPediaUtility.calculateHash(unannotatedDistribution.dcatDownloadURL, unannotatedDistribution.encoding);
-          unannotatedDistribution.sha = hashValue
+          unannotatedDistribution.hash = hashValue
         }
 
 
-        logger.info(s"mapping document SHA = ${md.sha}");
-        logger.info(s"dataset distribution SHA = ${unannotatedDistribution.sha}");
+        logger.info(s"mapping document SHA = ${md.hash}");
+        logger.info(s"dataset distribution hash = ${unannotatedDistribution.hash}");
 
-        if(executedMappingDocuments.contains((md.sha,unannotatedDistribution.sha))) {
+        if(executedMappingDocuments.contains((md.hash,unannotatedDistribution.hash))) {
           None
         } else {
           if(i < maxMappingDocuments) {
-            val mappingExecutionURLs = if(useCache) { this.findMappingExecutionURLBySHA(md.sha,unannotatedDistribution.sha); }
+            val mappingExecutionURLs = if(useCache) { this.findMappingExecutionURLByHash(md.hash,unannotatedDistribution.hash); }
             else { null }
 
             if(useCache && mappingExecutionURLs != null && mappingExecutionURLs.results.size > 0) {
@@ -505,7 +527,6 @@ class MappingExecutionController(val ckanClient:CKANUtility
               logger.info(s"cachedMappingExecutionResultURL = " + cachedMappingExecutionResultURL)
 
               i +=1
-              //Some(new ExecuteMappingResultSummary(md, unannotatedDistribution, cachedMappingExecutionResultURL, cachedMappingExecutionResultURL))
               val mappingExecutionResult = new AnnotatedDistribution(dataset);
               mappingExecutionResult.dcatAccessURL = cachedMappingExecutionResultURL;
               mappingExecutionResult.dcatDownloadURL = cachedMappingExecutionResultURL;
@@ -522,21 +543,21 @@ class MappingExecutionController(val ckanClient:CKANUtility
               //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
               val executionResult = this.executeMapping(md
                 , dataset
-                , mappingExecution.queryFilePath, outputFilename
+                , mappingExecution.queryFilePath
+                , outputFilename, "txt", "text/txt"
                 , false, true, false
                 , null
                 , useCache
               );
               //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
-              executedMappingDocuments = (md.sha,unannotatedDistribution.sha) :: executedMappingDocuments;
+              executedMappingDocuments = (md.hash,unannotatedDistribution.hash) :: executedMappingDocuments;
 
               val executionResultAccessURL = executionResult.getMapping_execution_result_access_url()
               val executionResultDownloadURL = executionResult.getMapping_execution_result_download_url
               //executionResultURL;
 
               i +=1
-              //Some(new ExecuteMappingResultSummary(md, unannotatedDistribution, executionResultAccessURL, executionResultDownloadURL))
               Some(executionResult);
             }
           } else {
@@ -551,57 +572,6 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
   }
 
-  def generateManifestFile(mappingExecutionResult:Distribution
-                           //, datasetDistribution: Distribution
-                           //, unannotatedDistributions: List[UnannotatedDistribution]
-                          , unannotatedDataset: Dataset
-                           , mappingDocument:MappingDocument) = {
-
-
-    logger.info("Generating manifest file for Mapping Execution Result ...")
-    try {
-      val templateFiles = List(
-        "templates/metadata-namespaces-template.ttl"
-        , "templates/metadata-mappingexecutionresult-template.ttl"
-      );
-
-      //val datasetDistributionDownloadURL:String = "";
-
-      val downloadURL = if(mappingExecutionResult.dcatDownloadURL == null) { "" }
-      else { mappingExecutionResult.dcatDownloadURL }
-      logger.info(s"downloadURL = ${downloadURL}")
-
-      val mappingDocumentSHA = if(mappingDocument.sha == null) { "" } else { mappingDocument.sha }
-      logger.info(s"mappingDocumentSHA = ${mappingDocumentSHA}")
-
-      val datasetDistributionSHA = ""
-
-      val mapValues:Map[String,String] = Map(
-        "$mappingExecutionResultID" -> mappingExecutionResult.dctIdentifier
-        , "$mappingExecutionResultTitle" -> mappingExecutionResult.dctTitle
-        , "$mappingExecutionResultDescription" -> mappingExecutionResult.dctDescription
-        , "$datasetID" -> unannotatedDataset.dctIdentifier
-        , "$mappingDocumentID" -> mappingDocument.dctIdentifier
-        , "$downloadURL" -> downloadURL
-        , "$mappingDocumentSHA" -> mappingDocumentSHA
-        , "$datasetDistributionSHA" -> datasetDistributionSHA
-        , "$issued" -> mappingExecutionResult.dctIssued
-        , "$modified" -> mappingExecutionResult.dctModified
-
-      );
-
-      val filename = s"metadata-mappingexecutionresult-${mappingExecutionResult.dctIdentifier}.ttl";
-      val manifestFile = MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, unannotatedDataset.dctIdentifier);
-      logger.info("Manifest file generated.")
-      manifestFile;
-    } catch {
-      case e:Exception => {
-        e.printStackTrace()
-        val errorMessage = "Error occured when generating manifest file: " + e.getMessage
-        null;
-      }
-    }
-  }
 
   def storeManifestFileOnGitHub(manifestFile:File, dataset:Dataset, mappingDocument: MappingDocument) = {
     val organization = dataset.dctPublisher;
@@ -725,4 +695,62 @@ object MappingExecutionController {
   def getMappingExecutionResultURL(mdSHA:String, datasetDistributionSHA:String) = {
 
   }
+
+  def generateManifestFile(mappingExecutionResult:AnnotatedDistribution
+                           //, datasetDistribution: Distribution
+                           , unannotatedDistributions: List[UnannotatedDistribution]
+                           , mappingDocument:MappingDocument) = {
+
+
+
+
+    logger.info("Generating manifest file for Mapping Execution Result ...")
+    try {
+      val templateFiles = List(
+        "templates/metadata-namespaces-template.ttl"
+        , "templates/metadata-mappingexecutionresult-template.ttl"
+      );
+
+      //val datasetDistributionDownloadURL:String = "";
+
+      val downloadURL = if(mappingExecutionResult.dcatDownloadURL == null) { "" }
+      else { mappingExecutionResult.dcatDownloadURL }
+      logger.info(s"downloadURL = ${downloadURL}")
+
+      val mappingDocumentHash = if(mappingDocument.hash == null) { "" } else { mappingDocument.hash }
+      logger.info(s"mappingDocumentHash = ${mappingDocumentHash}")
+
+      //val datasetDistributionHash = unannotatedDataset.dcatDistributions.hashCode().toString
+      val datasetDistributionHash = MappingPediaUtility.calculateHash(unannotatedDistributions);
+      logger.info(s"datasetDistributionHash = ${datasetDistributionHash}")
+
+      val datasetId = mappingExecutionResult.dataset.dctIdentifier;
+
+      val mapValues:Map[String,String] = Map(
+        "$mappingExecutionResultID" -> mappingExecutionResult.dctIdentifier
+        , "$mappingExecutionResultTitle" -> mappingExecutionResult.dctTitle
+        , "$mappingExecutionResultDescription" -> mappingExecutionResult.dctDescription
+        , "$datasetID" -> datasetId
+        , "$mappingDocumentID" -> mappingDocument.dctIdentifier
+        , "$downloadURL" -> downloadURL
+        , "$mappingDocumentHash" -> mappingDocumentHash
+        , "$datasetDistributionHash" -> datasetDistributionHash
+        , "$issued" -> mappingExecutionResult.dctIssued
+        , "$modified" -> mappingExecutionResult.dctModified
+
+      );
+
+      val filename = s"metadata-mappingexecutionresult-${mappingExecutionResult.dctIdentifier}.ttl";
+      val manifestFile = MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, datasetId);
+      logger.info("Manifest file generated.")
+      manifestFile;
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+        val errorMessage = "Error occured when generating manifest file: " + e.getMessage
+        null;
+      }
+    }
+  }
+
 }

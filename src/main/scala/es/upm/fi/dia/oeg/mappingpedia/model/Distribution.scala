@@ -35,7 +35,7 @@ abstract class Distribution (val dataset: Dataset, val dctIdentifier:String){
   var distributionFile:File = null;
   var encoding:String="UTF-8";
   var ckanResourceId:String = null;
-  var sha:String = null;
+  var hash:String = null;
   var manifestAccessURL:String = null;
   var manifestDownloadURL:String = null;
 
@@ -43,7 +43,7 @@ abstract class Distribution (val dataset: Dataset, val dctIdentifier:String){
   def getId = this.dctIdentifier
   def getAccess_url = this.dcatAccessURL;
   def getDownload_url = this.dcatDownloadURL;
-  def getSHA = this.sha;
+  def getHash = this.hash;
   def getCKAN_resource_id = this.ckanResourceId;
 
 }

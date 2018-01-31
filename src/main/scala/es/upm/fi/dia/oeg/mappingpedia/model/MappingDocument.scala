@@ -30,7 +30,7 @@ class MappingDocument(val dctIdentifier:String) {
   var distributionFieldSeparator:Option[String] = None;
   //var multipartFile: MultipartFile = null;
   var mappingDocumentFile:File = null;
-  var sha:String = null;
+  var hash:String = null;
 
   // TODO it is a hack by Freddy, refactor this
   /*
@@ -76,7 +76,7 @@ class MappingDocument(val dctIdentifier:String) {
     }
   }
 
-  def getSHA = this.sha
+  def getHash= this.hash
   def getId = this.dctIdentifier;
   def getTitle = this.dctTitle;
   def getCreator = this.dctCreator;

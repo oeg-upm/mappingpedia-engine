@@ -12,5 +12,5 @@ mpidd:distribution-$distributionID a dcat:Distribution;
     dcat:accessURL <$distributionAccessURL> ;
     dcat:downloadURL <$distributionDownloadURL> ;
     dcat:mediaType "$distributionMediaType" ;
-    mpv:sha "$sha" ;
+    mpv:hash "$hash" ;
 .

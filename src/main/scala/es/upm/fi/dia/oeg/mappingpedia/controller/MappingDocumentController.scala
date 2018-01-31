@@ -78,7 +78,8 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     }
     mappingDocument.accessURL = this.githubClient.getAccessURL(mappingFileGitHubResponse)
     mappingDocument.setDownloadURL(this.githubClient.getDownloadURL(mappingDocument.accessURL))
-    mappingDocument.sha = this.githubClient.getSHA(mappingDocument.accessURL);
+    val mappingDocumentDownloadURL = mappingDocument.getDownloadURL();
+    mappingDocument.hash = MappingPediaUtility.calculateHash(mappingDocumentDownloadURL).toString;
 
 
     //MANIFEST FILE
@@ -590,7 +591,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
         distribution.dcatDownloadURL= MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null);
 
-        distribution.sha = MappingPediaUtility.getStringOrElse(qs, "distributionSHA", null);
+        distribution.hash = MappingPediaUtility.getStringOrElse(qs, "distributionHash", null);
 
 
         //md.dataset = MappingPediaUtility.getStringOrElse(qs, "dataset", null);
@@ -601,7 +602,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
 
-        md.sha = MappingPediaUtility.getStringOrElse(qs, "mdSHA", null);
+        md.hash = MappingPediaUtility.getStringOrElse(qs, "mdHash", null);
 
         md.ckanPackageId = MappingPediaUtility.getStringOrElse(qs, "packageId", null);
 
@@ -613,12 +614,12 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
         //logger.info(s"md.distributionSHA = ${md.distributionSHA}");
         //logger.info(s"md.sha = ${md.sha}");
 
-        if(!retrievedMappings.contains(md.sha)) {
+        if(!retrievedMappings.contains(md.hash)) {
           //logger.warn(s"retrieving mapping document with sha ${md.sha}.")
           //results = md :: results;
           results = results :+ md
 
-          retrievedMappings = retrievedMappings :+ md.sha
+          retrievedMappings = retrievedMappings :+ md.hash
         } else {
           //logger.warn(s"mapping document with sha ${md.sha} has been retrived.")
         }
@@ -639,6 +640,9 @@ object MappingDocumentController {
 
   def generateManifestFile(mappingDocument: MappingDocument, dataset: Dataset) = {
     logger.info("GENERATING MANIFEST FILE FOR MAPPING DOCUMENT ...")
+    logger.info(s"mappingDocument.hash = ${mappingDocument.hash}")
+
+
     val templateFiles = List(
       MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
       , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
@@ -654,7 +658,7 @@ object MappingDocumentController {
       , "$mappingDocumentFilePath" -> mappingDocument.getDownloadURL()
       , "$datasetID" -> dataset.dctIdentifier
       , "$mappingLanguage" -> mappingDocument.mappingLanguage
-      , "$sha" -> mappingDocument.sha
+      , "$hash" -> mappingDocument.hash
 
       , "$ckanPackageID" -> mappingDocument.ckanPackageId
       , "$ckanResourceID" -> mappingDocument.ckanResourceId

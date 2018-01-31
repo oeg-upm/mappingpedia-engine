@@ -32,17 +32,17 @@ class ExecuteMappingResult (
   val mappingDocumentDownloadURL = mappingDocument.getDownloadURL();
   def getMappingURL() = mappingDocumentDownloadURL;
   def getMapping_document_download_url() = mappingDocumentDownloadURL;
-  def getMapping_document_sha() = mappingDocument.getSHA;
+  def getMapping_document_hash() = mappingDocument.getHash;
 
   def getQueryURL() = queryURL;
   def getQuery_file_download_url() = queryURL;
 
-  val mappingExecutionResultURL = mappingExecutionResult.dcatAccessURL
-  val mappingExecutionResultDownloadURL = mappingExecutionResult.getDownload_url;
+  //val mappingExecutionResultURL = mappingExecutionResult.dcatAccessURL
+  //val mappingExecutionResultDownloadURL = mappingExecutionResult.getDownload_url;
 
-  def getMappingExecutionResultURL() = mappingExecutionResultURL;
-  def getMapping_execution_result_access_url() = mappingExecutionResultURL;
-  def getMapping_execution_result_download_url = mappingExecutionResultDownloadURL;
+  def getMappingExecutionResultURL() = mappingExecutionResult.dcatAccessURL;
+  def getMapping_execution_result_access_url() = mappingExecutionResult.dcatAccessURL;
+  def getMapping_execution_result_download_url = mappingExecutionResult.getDownload_url;
 
   def getStatus() = status;
   def getErrorCode() = errorCode;

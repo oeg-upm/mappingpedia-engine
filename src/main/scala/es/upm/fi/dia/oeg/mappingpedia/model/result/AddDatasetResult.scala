@@ -39,7 +39,7 @@ class AddDatasetResult(val errorCode:Integer, val status:String
   def getDistribution_download_url = if(distribution == null ) { null } else { distribution.dcatDownloadURL }
   def getDistribution_manifest_access_url = if(distribution == null ) { null } else { distribution.manifestAccessURL }
   def getDistribution_manifest_download_url = if(distribution == null ) { null } else { distribution.manifestDownloadURL }
-  def getDistribution_sha = if(distribution == null ) { null } else { distribution.sha }
+  def getDistribution_hash= if(distribution == null ) { null } else { distribution.hash }
   def getDistribution_id = if(distribution == null ) { null } else { distribution.dctIdentifier}
   def getDistribution_ckan_resource_id = if(distribution == null ) { null } else { distribution.ckanResourceId}
 

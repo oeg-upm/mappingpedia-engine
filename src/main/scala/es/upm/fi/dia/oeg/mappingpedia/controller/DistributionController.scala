@@ -158,10 +158,13 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
     val distributionDownloadURL = this.githubClient.getDownloadURL(distributionAccessURL);
     val addDistributionFileGitHubResponseStatus:Integer = if(addDistributionFileGitHubResponse == null) { null }
     else { addDistributionFileGitHubResponse.getStatus }
+    /*
     if(addDistributionFileGitHubResponseStatus!= null && addDistributionFileGitHubResponseStatus >= 200
       && addDistributionFileGitHubResponseStatus < 300 && distributionDownloadURL != null) {
-      distribution.sha = this.githubClient.getSHA(distributionAccessURL);
+      distribution.hash = this.githubClient.getSHA(distributionAccessURL);
     }
+    */
+    distribution.hash = MappingPediaUtility.calculateHash(distributionDownloadURL, distribution.encoding);
 
 
     val addDatasetFileGitHubResponseStatusText = if(addDistributionFileGitHubResponse == null) { null }
@@ -432,7 +435,7 @@ object DistributionController {
           , "$distributionIssued" -> distribution.dctIssued
           , "$distributionModified" -> distribution.dctModified
           , "$ckanResourceID" -> distribution.ckanResourceId
-          , "$sha" -> distribution.sha
+          , "$hash" -> distribution.hash
         )
       }
 
