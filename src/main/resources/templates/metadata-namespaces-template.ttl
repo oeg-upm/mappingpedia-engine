@@ -2,8 +2,10 @@
 
 @base <http://mappingpedia.linkeddata.es/instance#> .
 @prefix dcterms: <http://purl.org/dc/elements/1.1/> .
+@prefix dct: <http://purl.org/dc/elements/1.1/> .
 @prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#> .
 @prefix mpi: <http://mappingpedia.linkeddata.es/instance/> .
+@prefix mpip: <http://mappingpedia.linkeddata.es/instance/publisher/> .
 @prefix mpimd: <http://mappingpedia.linkeddata.es/instance/mappingdocument/> .
 @prefix mpids: <http://mappingpedia.linkeddata.es/instance/dataset/> .
 @prefix mpidd: <http://mappingpedia.linkeddata.es/instance/dataset/distribution/> .
@@ -14,4 +16,4 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix void: <http://rdfs.org/ns/void#> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
-
+@prefix owl: <http://www.w3.org/2002/07/owl#> .

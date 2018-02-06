@@ -167,8 +167,11 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     if(dataset.dctDescription != null) {
       jsonObj.put("notes", dataset.dctDescription);
     }
+    if(dataset.mvpCategory != null) {
+      jsonObj.put("category", dataset.mvpCategory);
+    }
     if(dataset.dcatKeyword != null) {
-      jsonObj.put("category", dataset.dcatKeyword);
+      jsonObj.put("tags", dataset.dcatKeyword);
     }
     if(dataset.dctLanguage != null) {
       jsonObj.put("language", dataset.dctLanguage);
@@ -180,8 +183,8 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     }
 
     //logger.info(s"dataset.ckanSource = ${dataset.ckanSource}")
-    if(dataset.ckanSource != null && !"".equals(dataset.ckanSource)) {
-      jsonObj.put("source", dataset.ckanSource)
+    if(dataset.dctSource != null && !"".equals(dataset.dctSource)) {
+      jsonObj.put("source", dataset.dctSource)
     }
 
     //logger.info(s"dataset.ckanVersion = ${dataset.ckanVersion}")

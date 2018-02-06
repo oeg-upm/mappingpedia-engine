@@ -933,27 +933,18 @@ public class MappingPediaController {
     @RequestMapping(value = "/datasets/{organization_id}", method= RequestMethod.POST)
     public AddDatasetResult postDatasets(
             @PathVariable("organization_id") String organizationId
+
+            //FIELDS RELATED TO DATASET/PACKAGE
             , @RequestParam(value="dataset_id", required = false) String datasetID
-            , @RequestParam(value="datasetFile", required = false) MultipartFile datasetMultipartFile
-            , @RequestParam(value="distribution_file", required = false) MultipartFile distributionMultipartFile
             , @RequestParam(value="dataset_title", required = false) String pDatasetTitle1
             , @RequestParam(value="datasetTitle", required = false) String pDatasetTitle2
             , @RequestParam(value="dataset_keywords", required = false) String pDatasetKeywords1
             , @RequestParam(value="datasetKeywords", required = false) String pDatasetKeywords2
+            , @RequestParam(value="dataset_category", required = false) String datasetCategory
             , @RequestParam(value="dataset_language", required = false) String pDatasetLanguage1
             , @RequestParam(value="datasetLanguage", required = false) String pDatasetLanguage2
             , @RequestParam(value="dataset_description", required = false) String pDatasetDescription1
             , @RequestParam(value="datasetDescription", required = false) String pDatasetDescription2
-            , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
-            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
-            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
-            , @RequestParam(value="distributionDescription", required = false) String distributionDescription
-            , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
-            , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
-            , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
-            , @RequestParam(value="store_to_ckan", required = false, defaultValue = "true") String pStoreToCKAN
-
             , @RequestParam(value="source", required = false, defaultValue = "") String ckanSource
             , @RequestParam(value="version", required = false, defaultValue = "") String ckanVersion
             , @RequestParam(value="author_name", required = false, defaultValue = "") String ckanAuthorName
@@ -963,96 +954,82 @@ public class MappingPediaController {
             , @RequestParam(value="temporal", required = false, defaultValue = "") String ckanTemporal
             , @RequestParam(value="spatial", required = false, defaultValue = "") String ckanSpatial
             , @RequestParam(value="accrual_periodicity", required = false, defaultValue = "") String ckanAccrualPeriodicity
+            , @RequestParam(value="access_right", required = false, defaultValue = "") String accessRight
+            , @RequestParam(value="provenance", required = false, defaultValue = "") String provenance
+
+            //FIELDS RELATED TO DISTRIBUTION/RESOURCE
+            , @RequestParam(value="distribution_file", required = false) MultipartFile pDistributionFile1
+            , @RequestParam(value="distributionFile", required = false) MultipartFile pDistributionFile2
+            , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
+            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
+            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="distributionDescription", required = false) String distributionDescription
+            , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
+
+            //FIELDS RELATED TO PROV
+            , @RequestParam(value="was_attributed_to", required = false) String provWasAttributedTo
+            , @RequestParam(value="was_generated_by", required = false) String provWasGeneratedBy
+            , @RequestParam(value="was_derived_from", required = false) String provWasDerivedFrom
+            , @RequestParam(value="specialization_of", required = false) String provSpecializationOf
+            , @RequestParam(value="has_primary_source", required = false) String provHadPrimarySource
+            , @RequestParam(value="was_revision_of", required = false) String provWasRevisionOf
+            , @RequestParam(value="was_influenced_by", required = false) String provWasInfluencedBy
+
+
+            //OTHER FIELDS
+            , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+            , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
+            , @RequestParam(value="store_to_ckan", required = false, defaultValue = "true") String pStoreToCKAN
     )
     {
         logger.info("[POST] /datasets/{organization_id}");
         logger.info("organization_id = " + organizationId);
         logger.debug("dataset_id = " + datasetID);
-        logger.debug("pStoreToCKAN = " + pStoreToCKAN);
         logger.info("distribution_download_url = " + distributionDownloadURL);
-        logger.info("distribution_file = " + distributionMultipartFile);
-        logger.info("dataset_description = " + pDatasetDescription1);
-        logger.info("datasetDescription = " + pDatasetDescription2);
+        logger.info("distribution_file = " + pDistributionFile1);
+
+        logger.info("was_attributed_to = " + provWasAttributedTo);
+        logger.info("was_generated_by = " + provWasGeneratedBy);
+        logger.info("was_derived_from = " + provWasDerivedFrom);
+        logger.info("specialization_of = " + provSpecializationOf);
+        logger.info("has_primary_source = " + provHadPrimarySource);
+        logger.info("was_revision_of = " + provWasRevisionOf);
+        logger.info("was_influenced_by = " + provWasInfluencedBy);
 
 
         try {
-            Agent organization = new Agent(organizationId);
-
-            Dataset dataset;
-            if(datasetID == null) {
-                dataset = new Dataset(organization);
-            } else {
-                dataset = new Dataset(organization, datasetID);
-            }
-            logger.info("dataset.getId() = " + dataset.getId());
-
-            if(pDatasetTitle1 != null && !"".equals(pDatasetTitle1)) {
-                dataset.dctTitle_$eq(pDatasetTitle1);
-            } else if(pDatasetTitle2 != null  && !"".equals(pDatasetTitle2)) {
-                dataset.dctTitle_$eq(pDatasetTitle2);
-            } else {
-                dataset.dctTitle_$eq(dataset.dctIdentifier());
-            }
-
-            if(pDatasetDescription1 != null && !"".equals(pDatasetDescription1)) {
-                dataset.dctDescription_$eq(pDatasetDescription1);
-            } else if(pDatasetDescription2 != null  && !"".equals(pDatasetDescription2)) {
-                dataset.dctDescription_$eq(pDatasetDescription2);
-            } else {
-                dataset.dctDescription_$eq(dataset.dctIdentifier());
-            }
-
-            if(pDatasetKeywords1 != null && !"".equals(pDatasetKeywords1)) {
-                dataset.dcatKeyword_$eq(pDatasetKeywords1);
-            } else if(pDatasetKeywords2 != null && !"".equals(pDatasetKeywords2)) {
-                dataset.dcatKeyword_$eq(pDatasetKeywords2);
-            }
-
-            if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
-                dataset.dctLanguage_$eq(pDatasetLanguage1);
-            } else if(pDatasetLanguage2 != null && !"".equals(pDatasetLanguage2)) {
-                dataset.dctLanguage_$eq(pDatasetLanguage2);
-            } else {
-                dataset.dctLanguage_$eq("");
-            }
-
-            dataset.ckanSource_$eq(ckanSource);
+            Dataset dataset = Dataset.apply(organizationId, datasetID);
+            dataset.setTitle(pDatasetTitle1, pDatasetTitle2);
+            dataset.setDescription(pDatasetDescription1, pDatasetDescription2);
+            dataset.setKeywords(pDatasetKeywords1, pDatasetKeywords2);
+            dataset.setLanguage(pDatasetLanguage1, pDatasetLanguage2);
+            dataset.mvpCategory_$eq(datasetCategory);
+            dataset.dctSource_$eq(ckanSource);
             dataset.ckanVersion_$eq(ckanVersion);
-            Agent author = Agent.apply(ckanAuthorName, ckanAuthorEmail);
-            dataset.ckanAuthor_$eq(author);
-            Agent maintainer = Agent.apply(ckanMaintainerName, ckanMaintainerEmail);
-            dataset.ckanMaintener_$eq(maintainer);
+            dataset.setAuthor(ckanAuthorName, ckanAuthorEmail);
+            dataset.setMaintainer(ckanMaintainerName, ckanMaintainerEmail);
             dataset.ckanTemporal_$eq(ckanTemporal);
             dataset.ckanSpatial_$eq(ckanSpatial);
             dataset.ckanAccrualPeriodicity_$eq(ckanAccrualPeriodicity);
+            dataset.dctAccessRight_$eq(accessRight);
+            dataset.dctProvenance_$eq(provenance);
+
+            dataset.provWasAttributedTo_$eq(provWasAttributedTo);
+            dataset.provWasGeneratedBy_$eq(provWasGeneratedBy);
+            dataset.provWasDerivedFrom_$eq(provWasDerivedFrom);
+            dataset.provSpecializationOf_$eq(provSpecializationOf);
+            dataset.provHadPrimarySource_$eq(provHadPrimarySource);
+            dataset.provWasRevisionOf_$eq(provWasRevisionOf);
+            dataset.provWasInfluencedBy_$eq(provWasInfluencedBy);
 
 
-
-
-            if(distributionDownloadURL != null || datasetMultipartFile != null || distributionMultipartFile != null) {
+            if(distributionDownloadURL != null || pDistributionFile1 != null
+                    || pDistributionFile2 != null) {
                 Distribution distribution = new UnannotatedDistribution(dataset);
-
-                if(distributionAccessURL == null) {
-                    distribution.dcatAccessURL_$eq(distributionDownloadURL);
-                } else {
-                    distribution.dcatAccessURL_$eq(distributionAccessURL);
-                }
+                distribution.setDistributionFile(pDistributionFile1, pDistributionFile2);
                 distribution.dcatDownloadURL_$eq(distributionDownloadURL);
-
-                if(distributionMultipartFile != null) {
-                    distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
-                            distributionMultipartFile , dataset.dctIdentifier()));
-                } else if(datasetMultipartFile != null){
-                    distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
-                            datasetMultipartFile , dataset.dctIdentifier()));
-                }
-
-                if(distributionDescription == null) {
-                    distribution.dctDescription_$eq("Original Dataset");
-                } else {
-                    distribution.dctDescription_$eq(distributionDescription);
-                }
-
+                distribution.setDescription(distributionDescription);
                 distribution.dcatMediaType_$eq(distributionMediaType);
                 distribution.encoding_$eq(distributionEncoding);
                 dataset.addDistribution(distribution);
@@ -1158,6 +1135,11 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /distributions/{organization_id}/{dataset_id}");
+        logger.info("organization_id = " + organizationID);
+        logger.info("dataset_id = " + datasetID);
+        logger.info("distribution_download_url = " + distributionDownloadURL);
+        logger.info("distribution_file = " + distributionMultipartFile);
+
         Agent organization = new Agent(organizationID);
 
         Dataset dataset = new Dataset(organization, datasetID);

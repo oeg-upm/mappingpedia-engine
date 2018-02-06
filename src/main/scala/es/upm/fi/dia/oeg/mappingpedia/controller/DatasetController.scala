@@ -499,7 +499,9 @@ object DatasetController {
 
 
       val mapValuesWithoutDistribution:Map[String,String] = Map(
-        "$datasetID" -> dataset.dctIdentifier
+        "$publisherId" -> dataset.dctPublisher.dctIdentifier
+
+        , "$datasetID" -> dataset.dctIdentifier
         , "$datasetTitle" -> dataset.dctTitle
         , "$datasetDescription" -> dataset.dctDescription
         , "$datasetKeywords" -> dataset.dcatKeyword
@@ -509,8 +511,10 @@ object DatasetController {
         , "$datasetModified" -> dataset.dctModified
         , "$ckanPackageId" -> dataset.ckanPackageId
         , "$ckanPackageName" -> dataset.ckanPackageName
+        , "$accessRight" -> dataset.dctAccessRight
+        , "$provenance" -> dataset.dctProvenance
 
-        , "$ckanSource" -> dataset.ckanSource
+        , "$ckanSource" -> dataset.dctSource
         , "$ckanVersion" -> dataset.ckanVersion
         , "$ckanAuthor" -> dataset.getAuthor_name
         , "$ckanAuthorEmail" -> dataset.getAuthor_email
@@ -519,6 +523,14 @@ object DatasetController {
         , "$ckanTemporal" -> dataset.ckanTemporal
         , "$ckanSpatial" -> dataset.ckanSpatial
         , "$ckanAccrualPeriodicity" -> dataset.ckanAccrualPeriodicity
+
+        , "$provWasAttributedTo" -> dataset.provWasAttributedTo
+        , "$provWasGeneratedBy" -> dataset.provWasGeneratedBy
+        , "$provWasDerivedFrom" -> dataset.provWasDerivedFrom
+        , "$provSpecializationOf" -> dataset.provSpecializationOf
+        , "$provHadPrimarySource" -> dataset.provHadPrimarySource
+        , "$provWasRevisionOf" -> dataset.provWasRevisionOf
+        , "$provWasInfluencedBy" -> dataset.provWasInfluencedBy
 
 
       );

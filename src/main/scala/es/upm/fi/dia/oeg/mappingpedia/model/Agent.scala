@@ -13,10 +13,20 @@ class Agent(val dctIdentifier:String) {
 }
 
 object Agent {
+  /*
   def apply(name:String, email:String) = {
     val newAgent:Agent = new Agent();
     newAgent.foafName = name;
     newAgent.foafMbox = email;
     newAgent
+  }
+  */
+
+  def apply(dctIdentifier:String) = {
+    if(dctIdentifier == null) {
+      new Agent()
+    } else {
+      new Agent(dctIdentifier)
+    }
   }
 }
