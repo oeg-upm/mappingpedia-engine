@@ -14,6 +14,6 @@ mpidd:distribution-$distributionID a dcat:Distribution;
     dcat:mediaType "$distributionMediaType" ;
     mpv:hash "$hash" ;
     dcterms:language <$distributionLanguage> ;
-    dcterms:license <$distributionLicense> ;
-    dcterms:rights <$distributionRights> ;
+    dcterms:license "$distributionLicense" ;
+    dcterms:rights "$distributionRights" ;
 .

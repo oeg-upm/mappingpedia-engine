@@ -42,7 +42,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
   var dctSource: String = null;
   var ckanVersion: String = null;
   var ckanAuthor: Agent = null;
-  var ckanMaintener: Agent = null;
+  var ckanMaintainer: Agent = null;
   var ckanTemporal: String = null;
   var ckanSpatial: String = null;
   var ckanAccrualPeriodicity: String = null;
@@ -105,16 +105,16 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
     this.ckanAuthor.foafMbox
   }
 
-  def getMaintainer_name = if (this.ckanMaintener == null) {
+  def getMaintainer_name = if (this.ckanMaintainer == null) {
     null
   } else {
-    this.ckanMaintener.foafName
+    this.ckanMaintainer.foafName
   }
 
-  def getMaintainer_email = if (this.ckanMaintener == null) {
+  def getMaintainer_email = if (this.ckanMaintainer == null) {
     null
   } else {
-    this.ckanMaintener.foafMbox
+    this.ckanMaintainer.foafMbox
   }
 
   def getDistribution() = if (dcatDistributions == Nil) {
@@ -178,7 +178,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
     val maintainer = new Agent();
     maintainer.foafName = maintainerName;
     maintainer.foafMbox = maintainerEmail;
-    this.ckanMaintener = maintainer;
+    this.ckanMaintainer = maintainer;
   }
 
 

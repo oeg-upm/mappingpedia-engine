@@ -63,7 +63,21 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
         builder.addBinaryBody("upload", distribution.distributionFile)
       }
 
+      if(distribution.dctLanguage != null) {
+        builder.addTextBody("language", distribution.dctLanguage)
+      }
 
+      if(distribution.dctLicense != null) {
+        builder.addTextBody("license", distribution.dctLicense)
+      }
+
+      if(distribution.dctRights != null) {
+        builder.addTextBody("rights", distribution.dctRights)
+      }
+
+      if(distribution.hash != null) {
+        builder.addTextBody("hash", distribution.hash)
+      }
 
       if(textBodyMap != null && textBodyMap.isDefined) {
 
@@ -168,61 +182,67 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       jsonObj.put("category", dataset.mvpCategory);
     }
     if(dataset.dcatKeyword != null) {
-      jsonObj.put("tags", dataset.dcatKeyword);
+      jsonObj.put("tag_string", dataset.dcatKeyword);
     }
-    if(dataset.dctLanguage != null) {
-      jsonObj.put("language", dataset.dctLanguage);
-    }
-
-    //logger.info(s"dataset.dctLanguage = ${dataset.dctLanguage}")
     if(dataset.dctLanguage != null && !"".equals(dataset.dctLanguage)) {
       jsonObj.put("language", dataset.dctLanguage)
     }
-
-    //logger.info(s"dataset.ckanSource = ${dataset.ckanSource}")
     if(dataset.dctSource != null && !"".equals(dataset.dctSource)) {
-      jsonObj.put("source", dataset.dctSource)
+      jsonObj.put("url", dataset.dctSource)
     }
-
-    //logger.info(s"dataset.ckanVersion = ${dataset.ckanVersion}")
     if(dataset.ckanVersion != null && !"".equals(dataset.ckanVersion)) {
       jsonObj.put("version", dataset.ckanVersion)
     }
-
-    //logger.info(s"dataset.getAuthor_name = ${dataset.getAuthor_name}")
     if(dataset.getAuthor_name != null && !"".equals(dataset.getAuthor_name)) {
       jsonObj.put("author", dataset.getAuthor_name)
     }
-
-    //logger.info(s"dataset.getAuthor_email = ${dataset.getAuthor_email}")
     if(dataset.getAuthor_email != null && !"".equals(dataset.getAuthor_email)) {
       jsonObj.put("author_email", dataset.getAuthor_email)
     }
-
-    //logger.info(s"dataset.getMaintainer_name = ${dataset.getMaintainer_name}")
     if(dataset.getMaintainer_name != null && !"".equals(dataset.getMaintainer_name)) {
       jsonObj.put("maintainer", dataset.getMaintainer_name)
     }
-
-    //logger.info(s"dataset.getMaintainer_email = ${dataset.getMaintainer_email}")
     if(dataset.getMaintainer_email != null && !"".equals(dataset.getMaintainer_email)) {
       jsonObj.put("maintainer_email", dataset.getMaintainer_email)
     }
-
-    //logger.info(s"dataset.ckanTemporal = ${dataset.ckanTemporal}")
     if(dataset.ckanTemporal != null && !"".equals(dataset.ckanTemporal)) {
       jsonObj.put("temporal", dataset.ckanTemporal)
     }
-
-    //logger.info(s"dataset.ckanSpatial = ${dataset.ckanSpatial}")
     if(dataset.ckanSpatial != null && !"".equals(dataset.ckanSpatial)) {
       jsonObj.put("spatial", dataset.ckanSpatial)
     }
-
-    //logger.info(s"dataset.ckanAccrualPeriodicity = ${dataset.ckanAccrualPeriodicity}")
     if(dataset.ckanAccrualPeriodicity != null && !"".equals(dataset.ckanAccrualPeriodicity)) {
-      //jsonObj.put("accrual_periodicity", dataset.ckanAccrualPeriodicity)
-      jsonObj.put("frequency", dataset.ckanAccrualPeriodicity)
+      jsonObj.put("accrualPeriodicity", dataset.ckanAccrualPeriodicity)
+    }
+
+    if(dataset.provWasAttributedTo != null && !"".equals(dataset.provWasAttributedTo)) {
+      jsonObj.put("was_attributed_to", dataset.provWasAttributedTo)
+    }
+
+    if(dataset.provWasGeneratedBy != null && !"".equals(dataset.provWasGeneratedBy)) {
+      jsonObj.put("was_generated_by", dataset.provWasGeneratedBy)
+    }
+
+    if(dataset.provWasDerivedFrom!= null && !"".equals(dataset.provWasDerivedFrom)) {
+      jsonObj.put("was_derived_from", dataset.provWasDerivedFrom)
+    }
+
+    if(dataset.ckanAccrualPeriodicity != null && !"".equals(dataset.ckanAccrualPeriodicity)) {
+      jsonObj.put("accrualPeriodicity", dataset.ckanAccrualPeriodicity)
+    }
+
+    logger.info(s"dataset.provHadPrimarySource = ${dataset.provHadPrimarySource}");
+    if(dataset.provHadPrimarySource != null && !"".equals(dataset.provHadPrimarySource)) {
+      jsonObj.put("had_primary_source", dataset.provHadPrimarySource)
+    }
+
+    if(dataset.provWasRevisionOf != null && !"".equals(dataset.provWasRevisionOf)) {
+      jsonObj.put("was_revision_of", dataset.provWasRevisionOf)
+    }
+
+    logger.info(s"dataset.provWasInfluencedBy = ${dataset.provWasInfluencedBy}");
+    if(dataset.provWasInfluencedBy != null && !"".equals(dataset.provWasInfluencedBy)) {
+      jsonObj.put("was_influenced_by", dataset.provWasInfluencedBy)
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate

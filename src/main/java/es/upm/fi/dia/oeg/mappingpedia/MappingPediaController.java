@@ -1128,6 +1128,10 @@ public class MappingPediaController {
             , @RequestParam(value="distributionDescription", required = false) String distributionDescription
             , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
             , @RequestParam(value="store_to_ckan", defaultValue = "true") String pStoreToCKAN
+            , @RequestParam(value="distribution_language", required = false) String distributionLanguage
+            , @RequestParam(value="distribution_license", required = false) String distributionLicense
+            , @RequestParam(value="distribution_rights", required = false) String distributionRights
+
     )
     {
         logger.info("[POST] /distributions/{organization_id}/{dataset_id}");
@@ -1161,9 +1165,14 @@ public class MappingPediaController {
         if(distributionMultipartFile != null) {
             distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
                     distributionMultipartFile , dataset.dctIdentifier()));
-        } 
+        }
         logger.info("distributionEncoding = " + distributionEncoding);
         distribution.encoding_$eq(distributionEncoding);
+        distribution.setLanguage(distributionLanguage);
+        distribution.dctLicense_$eq(distributionLicense);
+        distribution.dctRights_$eq(distributionRights);
+
+
         dataset.addDistribution(distribution);
 
         boolean storeToCKAN = true;

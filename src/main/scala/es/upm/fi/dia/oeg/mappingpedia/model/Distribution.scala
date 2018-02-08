@@ -71,7 +71,11 @@ abstract class Distribution (val dataset: Dataset, val dctIdentifier:String) ext
     }
   }
 
-  def setLanguage(pDatasetLanguage1:String, pDatasetLanguage2:String) = {
+  def setLanguage(pDatasetLanguage1:String) : Unit = {
+    this.setLanguage(pDatasetLanguage1, null);
+  }
+
+  def setLanguage(pDatasetLanguage1:String, pDatasetLanguage2:String) : Unit = {
     val datasetLanguage:String = if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
       pDatasetLanguage1;
     } else if(pDatasetLanguage2 != null && !"".equals(pDatasetLanguage2)) {
