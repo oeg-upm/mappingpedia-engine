@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile
 
 //based on dcat:Disctribution https://www.w3.org/TR/vocab-dcat/#class-distribution
 //see also ckan:Resource  http://docs.ckan.org/en/ckan-1.7.4/domain-model-resource.html
-abstract class Distribution (val dataset: Dataset, val dctIdentifier:String){
+abstract class Distribution (val dataset: Dataset, val dctIdentifier:String) extends Entity {
   def this(dataset: Dataset) {
     this(dataset, UUID.randomUUID.toString)
   }
@@ -33,6 +33,8 @@ abstract class Distribution (val dataset: Dataset, val dctIdentifier:String){
   var dcatAccessURL:String = null;
   var dcatDownloadURL:String = null;
   var dcatMediaType:String = null;
+  var dctLanguage: String = null;
+
 
   //CUSTOM FIELDS
   var csvFieldSeparator:String=",";
@@ -67,6 +69,27 @@ abstract class Distribution (val dataset: Dataset, val dctIdentifier:String){
     } else {
       this.dctDescription = distributionDescription;
     }
+  }
 
+  def setLanguage(pDatasetLanguage1:String, pDatasetLanguage2:String) = {
+    val datasetLanguage:String = if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
+      pDatasetLanguage1;
+    } else if(pDatasetLanguage2 != null && !"".equals(pDatasetLanguage2)) {
+      pDatasetLanguage2;
+    } else {
+      null;
+    }
+
+    this.dctLanguage = if(datasetLanguage != null) {
+      if(datasetLanguage.length==2) {
+        s"http://id.loc.gov/vocabulary/iso639-1/${datasetLanguage}"
+      } else {
+        datasetLanguage
+      }
+    } else {
+      null
+    }
   }
 }
+
+

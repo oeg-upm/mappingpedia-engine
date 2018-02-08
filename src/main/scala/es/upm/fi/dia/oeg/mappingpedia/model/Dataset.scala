@@ -148,12 +148,22 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
   }
 
   def setLanguage(pDatasetLanguage1:String, pDatasetLanguage2:String) = {
-    if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
-      this.dctLanguage = pDatasetLanguage1;
+    val datasetLanguage:String = if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
+      pDatasetLanguage1;
     } else if(pDatasetLanguage2 != null && !"".equals(pDatasetLanguage2)) {
-      this.dctLanguage = pDatasetLanguage2;
+      pDatasetLanguage2;
     } else {
-      this.dctLanguage = "";
+      null;
+    }
+
+    this.dctLanguage = if(datasetLanguage != null) {
+      if(datasetLanguage.length==2) {
+        s"http://id.loc.gov/vocabulary/iso639-1/${datasetLanguage}"
+      } else {
+        datasetLanguage
+      }
+    } else {
+      null
     }
   }
 

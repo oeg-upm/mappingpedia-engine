@@ -7,5 +7,14 @@ class UnannotatedDistribution (dataset: Dataset, dctIdentifier:String)
   def this(dataset: Dataset) {
     this(dataset, UUID.randomUUID.toString)
   }
+}
 
+object UnannotatedDistribution {
+  def apply(dataset: Dataset, dctIdentifier:String) = {
+    if(dctIdentifier == null) {
+      new UnannotatedDistribution(dataset)
+    } else {
+      new UnannotatedDistribution(dataset, dctIdentifier)
+    }
+  }
 }

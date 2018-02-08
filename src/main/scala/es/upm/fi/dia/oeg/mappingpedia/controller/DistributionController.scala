@@ -234,7 +234,7 @@ class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHub
         null
       }
     }
-
+    logger.info(s"ckanAddResourceResponse= ${ckanAddResourceResponse}");
 
     val ckanAddResourceResponseStatusCode:Integer = {
       if(ckanAddResourceResponse == null) {
@@ -436,6 +436,9 @@ object DistributionController {
           , "$distributionModified" -> distribution.dctModified
           , "$ckanResourceID" -> distribution.ckanResourceId
           , "$hash" -> distribution.hash
+          , "$distributionLanguage" -> distribution.dctLanguage
+          , "$distributionLicense" -> distribution.dctLicense
+          , "$distributionRights" -> distribution.dctRights
         )
       }
 

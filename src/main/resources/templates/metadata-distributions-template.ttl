@@ -13,4 +13,7 @@ mpidd:distribution-$distributionID a dcat:Distribution;
     dcat:downloadURL <$distributionDownloadURL> ;
     dcat:mediaType "$distributionMediaType" ;
     mpv:hash "$hash" ;
+    dcterms:language <$distributionLanguage> ;
+    dcterms:license <$distributionLicense> ;
+    dcterms:rights <$distributionRights> ;
 .

@@ -317,7 +317,7 @@ public class MappingPediaController {
     }
 
 
-    @RequestMapping(value="/executions2", method= RequestMethod.POST)
+    @RequestMapping(value="/executions", method= RequestMethod.POST)
     public ExecuteMappingResult postExecutions(
             @RequestParam(value="organization_id", required = false) String organizationId
             , @RequestParam(value="dataset_id", required = false) String datasetId
@@ -971,7 +971,7 @@ public class MappingPediaController {
             , @RequestParam(value="was_generated_by", required = false) String provWasGeneratedBy
             , @RequestParam(value="was_derived_from", required = false) String provWasDerivedFrom
             , @RequestParam(value="specialization_of", required = false) String provSpecializationOf
-            , @RequestParam(value="has_primary_source", required = false) String provHadPrimarySource
+            , @RequestParam(value="had_primary_source", required = false) String provHadPrimarySource
             , @RequestParam(value="was_revision_of", required = false) String provWasRevisionOf
             , @RequestParam(value="was_influenced_by", required = false) String provWasInfluencedBy
 
@@ -993,7 +993,7 @@ public class MappingPediaController {
         logger.info("was_generated_by = " + provWasGeneratedBy);
         logger.info("was_derived_from = " + provWasDerivedFrom);
         logger.info("specialization_of = " + provSpecializationOf);
-        logger.info("has_primary_source = " + provHadPrimarySource);
+        logger.info("had_primary_source = " + provHadPrimarySource);
         logger.info("was_revision_of = " + provWasRevisionOf);
         logger.info("was_influenced_by = " + provWasInfluencedBy);
 
@@ -1118,18 +1118,14 @@ public class MappingPediaController {
             @PathVariable("organization_id") String organizationID
             , @PathVariable("dataset_id") String datasetID
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
-
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
-            , @RequestParam(value="datasetFile", required = false) MultipartFile datasetMultipartFile
+            //, @RequestParam(value="datasetFile", required = false) MultipartFile datasetMultipartFile
             , @RequestParam(value="distribution_file", required = false) MultipartFile distributionMultipartFile
-            , @RequestParam(value="datasetTitle", required = false) String distributionTitle
-            , @RequestParam(value="datasetKeywords", required = false) String datasetKeywords
-            , @RequestParam(value="datasetPublisher", required = false) String datasetPublisher
-            , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
+            , @RequestParam(value="distribution_title", required = false) String distributionTitle
             , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
             , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
-            , @RequestParam(value="datasetDescription", required = false) String distributionDescription
+            , @RequestParam(value="distributionDescription", required = false) String distributionDescription
             , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
             , @RequestParam(value="store_to_ckan", defaultValue = "true") String pStoreToCKAN
     )
@@ -1143,8 +1139,6 @@ public class MappingPediaController {
         Agent organization = new Agent(organizationID);
 
         Dataset dataset = new Dataset(organization, datasetID);
-        dataset.dcatKeyword_$eq(datasetKeywords);
-        dataset.dctLanguage_$eq(datasetLanguage);
 
         Distribution distribution = new UnannotatedDistribution(dataset);
         if(distributionTitle == null) {
@@ -1167,10 +1161,7 @@ public class MappingPediaController {
         if(distributionMultipartFile != null) {
             distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
                     distributionMultipartFile , dataset.dctIdentifier()));
-        } else if(datasetMultipartFile != null) {
-            distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
-                    datasetMultipartFile , dataset.dctIdentifier()));
-        }
+        } 
         logger.info("distributionEncoding = " + distributionEncoding);
         distribution.encoding_$eq(distributionEncoding);
         dataset.addDistribution(distribution);

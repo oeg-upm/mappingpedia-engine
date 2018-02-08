@@ -81,23 +81,20 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       val mpEntity = builder.build();
       httpPostRequest.setEntity(mpEntity)
       val response = httpClient.execute(httpPostRequest)
-      logger.info(s"response = ${response}")
+
+
+      if (response.getStatusLine.getStatusCode < 200 || response.getStatusLine.getStatusCode >= 300) {
+        logger.info(s"response = ${response}")
+        logger.info(s"response.getAllHeaders= ${response.getAllHeaders}");
+        logger.info(s"response.getEntity= ${response.getEntity}");
+        logger.info(s"response.getProtocolVersion= ${response.getProtocolVersion}");
+        logger.info(s"response.getStatusLine= ${response.getStatusLine}");
+        logger.info(s"response.getClass= ${response.getClass}");
+
+        throw new Exception("Failed to add the file to CKAN storage. Response status line from " + uploadFileUrl + " was: " + response.getStatusLine)
+      }
 
       response
-
-      /*
-      val responseStatus = response.getStatusLine;
-
-      if (response.getStatusLine.getStatusCode < 200 || response.getStatusLine.getStatusCode >= 300)
-        throw new RuntimeException("failed to add the file to CKAN storage. response status line from " + uploadFileUrl + " was: " + response.getStatusLine)
-      val httpEntity  = response.getEntity
-      val entity = EntityUtils.toString(httpEntity)
-      //logger.info(s"entity = " + entity)
-      val responseEntity = new JSONObject(entity);
-      //logger.info(s"responseEntity = " + responseEntity)
-      (responseStatus, responseEntity);
-      */
-
     } catch {
       case e: Exception => {
         e.printStackTrace()
@@ -224,7 +221,8 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
 
     //logger.info(s"dataset.ckanAccrualPeriodicity = ${dataset.ckanAccrualPeriodicity}")
     if(dataset.ckanAccrualPeriodicity != null && !"".equals(dataset.ckanAccrualPeriodicity)) {
-      jsonObj.put("accrual_periodicity", dataset.ckanAccrualPeriodicity)
+      //jsonObj.put("accrual_periodicity", dataset.ckanAccrualPeriodicity)
+      jsonObj.put("frequency", dataset.ckanAccrualPeriodicity)
     }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate
@@ -234,8 +232,18 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       .header("Authorization", this.authorizationToken)
       .body(jsonObj)
       .asJson();
-    logger.debug(s"response.getHeaders = ${response.getHeaders}")
-    logger.debug(s"response.getBody = ${response.getBody}")
+
+    val responseStatus = response.getStatus
+    val responseStatusText = response.getStatusText
+    if (responseStatus < 200 || responseStatus >= 300) {
+      logger.info(s"response.getBody= ${response.getBody}");
+      logger.info(s"response.getHeaders= ${response.getHeaders}");
+      logger.info(s"response.getRawBody= ${response.getRawBody}");
+      logger.info(s"response.getStatus= ${response.getStatus}");
+      logger.info(s"response.getStatusText= ${response.getStatusText}");
+      throw new Exception(responseStatusText)
+    }
+
     response;
   }
 

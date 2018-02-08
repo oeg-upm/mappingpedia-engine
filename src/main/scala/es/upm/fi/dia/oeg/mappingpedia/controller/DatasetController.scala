@@ -160,14 +160,22 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         null
       }
     }
-    val ckanAddPackageResponseResult = try {
-      ckanAddPackageResponse.getBody.getObject.getJSONObject("result");
-    } catch {
-      case e:Exception => {
-        logger.error(s"error obtaining ckanAddPackageResponseResult: ${e.getMessage}")
-        null
+
+
+    val ckanAddPackageResponseResult = if(ckanAddPackageResponse != null) {
+      try {
+        ckanAddPackageResponse.getBody.getObject.getJSONObject("result");
+      } catch {
+        case e:Exception => {
+          logger.error(s"error obtaining ckanAddPackageResponseResult: ${e.getMessage}")
+          null
+        }
       }
+    } else {
+      null
     }
+
+
 
     if(ckanAddPackageResponseResult != null) {
       dataset.ckanPackageId = ckanAddPackageResponseResult.getString("id");
@@ -491,11 +499,7 @@ object DatasetController {
       }
       */
 
-      val datasetLanguage = if(dataset.dctLanguage != null && !"".equals(dataset.dctLanguage)) {
-        s"http://id.loc.gov/vocabulary/iso639-1/${dataset.dctLanguage}"
-      } else {
-        ""
-      }
+      val datasetLanguage = if(dataset.dctLanguage != null) { dataset.dctLanguage } else { "" }
 
 
       val mapValuesWithoutDistribution:Map[String,String] = Map(
