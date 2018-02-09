@@ -67,9 +67,7 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
         builder.addTextBody("language", distribution.dctLanguage)
       }
 
-      if(distribution.dctLicense != null) {
-        builder.addTextBody("license", distribution.dctLicense)
-      }
+
 
       if(distribution.dctRights != null) {
         builder.addTextBody("rights", distribution.dctRights)
@@ -172,78 +170,42 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     val jsonObj = new JSONObject();
     jsonObj.put("name", dataset.dctIdentifier);
     jsonObj.put("owner_org", organization.dctIdentifier);
-    if(dataset.dctTitle != null) {
-      jsonObj.put("title", dataset.dctTitle);
-    }
-    if(dataset.dctDescription != null) {
-      jsonObj.put("notes", dataset.dctDescription);
-    }
-    if(dataset.mvpCategory != null) {
-      jsonObj.put("category", dataset.mvpCategory);
-    }
-    if(dataset.dcatKeyword != null) {
-      jsonObj.put("tag_string", dataset.dcatKeyword);
-    }
-    if(dataset.dctLanguage != null && !"".equals(dataset.dctLanguage)) {
-      jsonObj.put("language", dataset.dctLanguage)
-    }
-    if(dataset.dctSource != null && !"".equals(dataset.dctSource)) {
-      jsonObj.put("url", dataset.dctSource)
-    }
-    if(dataset.ckanVersion != null && !"".equals(dataset.ckanVersion)) {
-      jsonObj.put("version", dataset.ckanVersion)
-    }
-    if(dataset.getAuthor_name != null && !"".equals(dataset.getAuthor_name)) {
-      jsonObj.put("author", dataset.getAuthor_name)
-    }
-    if(dataset.getAuthor_email != null && !"".equals(dataset.getAuthor_email)) {
-      jsonObj.put("author_email", dataset.getAuthor_email)
-    }
-    if(dataset.getMaintainer_name != null && !"".equals(dataset.getMaintainer_name)) {
-      jsonObj.put("maintainer", dataset.getMaintainer_name)
-    }
-    if(dataset.getMaintainer_email != null && !"".equals(dataset.getMaintainer_email)) {
-      jsonObj.put("maintainer_email", dataset.getMaintainer_email)
-    }
-    if(dataset.ckanTemporal != null && !"".equals(dataset.ckanTemporal)) {
-      jsonObj.put("temporal", dataset.ckanTemporal)
-    }
-    if(dataset.ckanSpatial != null && !"".equals(dataset.ckanSpatial)) {
-      jsonObj.put("spatial", dataset.ckanSpatial)
-    }
-    if(dataset.ckanAccrualPeriodicity != null && !"".equals(dataset.ckanAccrualPeriodicity)) {
-      jsonObj.put("accrualPeriodicity", dataset.ckanAccrualPeriodicity)
+
+    val optionalFields:Option[Map[String, String]] = Some(Map(
+      "title" -> dataset.dctTitle
+      , "notes" -> dataset.dctDescription
+      , "category" -> dataset.mvpCategory
+      , "tag_string" -> dataset.dcatKeyword
+      , "language" -> dataset.dctLanguage
+      , "license_id" -> dataset.ckanPackageLicense
+      , "url" -> dataset.dctSource
+      , "version" -> dataset.ckanVersion
+      , "author" -> dataset.getAuthor_name
+      , "author_email" -> dataset.getAuthor_email
+      , "maintainer" -> dataset.getMaintainer_name
+      , "maintainer_email" -> dataset.getMaintainer_email
+      , "temporal" -> dataset.ckanTemporal
+      , "spatial" -> dataset.ckanSpatial
+      , "accrualPeriodicity" -> dataset.ckanAccrualPeriodicity
+      , "was_attributed_to" -> dataset.provWasAttributedTo
+      , "was_generated_by" -> dataset.provWasGeneratedBy
+      , "was_derived_from" -> dataset.provWasDerivedFrom
+      , "accrualPeriodicity" -> dataset.ckanAccrualPeriodicity
+      , "had_primary_source" -> dataset.provHadPrimarySource
+      , "was_revision_of" -> dataset.provWasRevisionOf
+      , "was_influenced_by" -> dataset.provWasInfluencedBy
+    ))
+
+    if(optionalFields != null && optionalFields.isDefined) {
+      for((key, value) <- optionalFields.get) {
+        if(key != null && !"".equals(key) && value != null && !"".equals(value)) {
+          jsonObj.put(key, value)
+        } else {
+          logger.warn(s"jsonObj key,value = ${key},${value}")
+        }
+      }
     }
 
-    if(dataset.provWasAttributedTo != null && !"".equals(dataset.provWasAttributedTo)) {
-      jsonObj.put("was_attributed_to", dataset.provWasAttributedTo)
-    }
-
-    if(dataset.provWasGeneratedBy != null && !"".equals(dataset.provWasGeneratedBy)) {
-      jsonObj.put("was_generated_by", dataset.provWasGeneratedBy)
-    }
-
-    if(dataset.provWasDerivedFrom!= null && !"".equals(dataset.provWasDerivedFrom)) {
-      jsonObj.put("was_derived_from", dataset.provWasDerivedFrom)
-    }
-
-    if(dataset.ckanAccrualPeriodicity != null && !"".equals(dataset.ckanAccrualPeriodicity)) {
-      jsonObj.put("accrualPeriodicity", dataset.ckanAccrualPeriodicity)
-    }
-
-    logger.info(s"dataset.provHadPrimarySource = ${dataset.provHadPrimarySource}");
-    if(dataset.provHadPrimarySource != null && !"".equals(dataset.provHadPrimarySource)) {
-      jsonObj.put("had_primary_source", dataset.provHadPrimarySource)
-    }
-
-    if(dataset.provWasRevisionOf != null && !"".equals(dataset.provWasRevisionOf)) {
-      jsonObj.put("was_revision_of", dataset.provWasRevisionOf)
-    }
-
-    logger.info(s"dataset.provWasInfluencedBy = ${dataset.provWasInfluencedBy}");
-    if(dataset.provWasInfluencedBy != null && !"".equals(dataset.provWasInfluencedBy)) {
-      jsonObj.put("was_influenced_by", dataset.provWasInfluencedBy)
-    }
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate
     logger.info(s"Hitting endpoint: $uri");

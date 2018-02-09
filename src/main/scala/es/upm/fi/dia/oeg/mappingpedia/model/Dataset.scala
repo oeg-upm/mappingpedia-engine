@@ -37,6 +37,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
   var dctAccessRight:String = null;
   var dctProvenance:String = null;
 
+  var ckanPackageLicense:String = null;
   var ckanPackageId: String = null;
   var ckanPackageName: String = null;
   var dctSource: String = null;

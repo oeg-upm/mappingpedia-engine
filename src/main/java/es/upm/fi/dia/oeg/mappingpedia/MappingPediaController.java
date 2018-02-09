@@ -956,6 +956,7 @@ public class MappingPediaController {
             , @RequestParam(value="accrual_periodicity", required = false, defaultValue = "") String ckanAccrualPeriodicity
             , @RequestParam(value="access_right", required = false, defaultValue = "") String accessRight
             , @RequestParam(value="provenance", required = false, defaultValue = "") String provenance
+            , @RequestParam(value="dataset_license", required = false) String datasetLicense
 
             //FIELDS RELATED TO DISTRIBUTION/RESOURCE
             , @RequestParam(value="distribution_file", required = false) MultipartFile pDistributionFile1
@@ -988,6 +989,7 @@ public class MappingPediaController {
         logger.debug("dataset_id = " + datasetID);
         logger.info("distribution_download_url = " + distributionDownloadURL);
         logger.info("distribution_file = " + pDistributionFile1);
+        logger.info("datasetLicense = " + datasetLicense);
 
         logger.info("was_attributed_to = " + provWasAttributedTo);
         logger.info("was_generated_by = " + provWasGeneratedBy);
@@ -996,7 +998,6 @@ public class MappingPediaController {
         logger.info("had_primary_source = " + provHadPrimarySource);
         logger.info("was_revision_of = " + provWasRevisionOf);
         logger.info("was_influenced_by = " + provWasInfluencedBy);
-
 
         try {
             Dataset dataset = Dataset.apply(organizationId, datasetID);
@@ -1014,6 +1015,7 @@ public class MappingPediaController {
             dataset.ckanAccrualPeriodicity_$eq(ckanAccrualPeriodicity);
             dataset.dctAccessRight_$eq(accessRight);
             dataset.dctProvenance_$eq(provenance);
+            dataset.ckanPackageLicense_$eq(datasetLicense);
 
             dataset.provWasAttributedTo_$eq(provWasAttributedTo);
             dataset.provWasGeneratedBy_$eq(provWasGeneratedBy);

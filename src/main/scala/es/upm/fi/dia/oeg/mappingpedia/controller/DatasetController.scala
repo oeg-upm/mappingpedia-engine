@@ -483,7 +483,7 @@ object DatasetController {
   def generateManifestFile(dataset: Dataset) = {
     logger.info(s"GENERATING MANIFEST FILE FOR DATASET ${dataset.dctIdentifier} ...")
     try {
-      val organization = dataset.dctPublisher;
+      //val organization = dataset.dctPublisher;
       //val datasetDistribution = dataset.getDistribution();
 
       val templateFilesWithoutDistribution = List(
@@ -509,15 +509,14 @@ object DatasetController {
         , "$datasetTitle" -> dataset.dctTitle
         , "$datasetDescription" -> dataset.dctDescription
         , "$datasetKeywords" -> dataset.dcatKeyword
-        , "$publisherId" -> organization.dctIdentifier
         , "$datasetLanguage" -> datasetLanguage
         , "$datasetIssued" -> dataset.dctIssued
         , "$datasetModified" -> dataset.dctModified
-        , "$ckanPackageId" -> dataset.ckanPackageId
-        , "$ckanPackageName" -> dataset.ckanPackageName
         , "$accessRight" -> dataset.dctAccessRight
         , "$provenance" -> dataset.dctProvenance
 
+        , "$ckanPackageId" -> dataset.ckanPackageId
+        , "$ckanPackageName" -> dataset.ckanPackageName
         , "$ckanSource" -> dataset.dctSource
         , "$ckanVersion" -> dataset.ckanVersion
         , "$ckanAuthor" -> dataset.getAuthor_name
@@ -527,6 +526,7 @@ object DatasetController {
         , "$ckanTemporal" -> dataset.ckanTemporal
         , "$ckanSpatial" -> dataset.ckanSpatial
         , "$ckanAccrualPeriodicity" -> dataset.ckanAccrualPeriodicity
+        , "$ckanPackageLicense" -> dataset.ckanPackageLicense
 
         , "$provWasAttributedTo" -> dataset.provWasAttributedTo
         , "$provWasGeneratedBy" -> dataset.provWasGeneratedBy

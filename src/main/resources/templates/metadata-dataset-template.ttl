@@ -15,6 +15,7 @@ mpids:dataset-$datasetID a mpv:Dataset ;
     mpv:datasetIdentifier "dataset-$datasetID" ;
     mpv:ckanPackageId "$ckanPackageId" ;
     mpv:ckanPackageName "$ckanPackageName" ;
+    mpv:ckanPackageLicense "$ckanPackageLicense" ;
     dct:source "$ckanSource";
     owl:versionInfo "$ckanVersion" ;
     dct:hasVersion "$ckanVersion" ;
