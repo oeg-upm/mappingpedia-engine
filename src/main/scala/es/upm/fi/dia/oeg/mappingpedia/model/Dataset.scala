@@ -124,9 +124,9 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
     this.dcatDistributions.iterator.next()
   }
 
-  def setTitle(pDatasetTitle1: String, pDatasetTitle2: String) = {
-    if (pDatasetTitle1 != null && !("" == pDatasetTitle1)) { this.dctTitle = pDatasetTitle1 }
-    else if (pDatasetTitle2 != null && !("" == pDatasetTitle2)) {this.dctTitle = pDatasetTitle2}
+  def setTitle(pTitle1: String, pTitle2: String) = {
+    if (pTitle1 != null && !("" == pTitle1)) { this.dctTitle = pTitle1 }
+    else if (pTitle2 != null && !("" == pTitle2)) {this.dctTitle = pTitle2}
     else {this.dctTitle = this.dctIdentifier }
   }
 
@@ -148,11 +148,11 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
     }
   }
 
-  def setLanguage(pDatasetLanguage1:String, pDatasetLanguage2:String) = {
-    val datasetLanguage:String = if(pDatasetLanguage1 != null && !"".equals(pDatasetLanguage1)) {
-      pDatasetLanguage1;
-    } else if(pDatasetLanguage2 != null && !"".equals(pDatasetLanguage2)) {
-      pDatasetLanguage2;
+  def setLanguage(pLanguage1:String, pLanguage2:String) = {
+    val datasetLanguage:String = if(pLanguage1 != null && !"".equals(pLanguage1)) {
+      pLanguage1;
+    } else if(pLanguage2 != null && !"".equals(pLanguage2)) {
+      pLanguage2;
     } else {
       null;
     }

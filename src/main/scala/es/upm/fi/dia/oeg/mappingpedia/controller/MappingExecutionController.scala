@@ -381,6 +381,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
             , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
             , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> annotatedDistribution.manifestDownloadURL
             , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClasses
+            , MappingPediaConstant.CKAN_RESOURCE_CLASSES -> mappedClasses
           )
           ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
 

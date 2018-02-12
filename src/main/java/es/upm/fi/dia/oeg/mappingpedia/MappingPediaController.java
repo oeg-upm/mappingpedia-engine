@@ -590,7 +590,6 @@ public class MappingPediaController {
             , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
             , @RequestParam(value="ckan_package_name", required = false) String ckanPackageName
 
-
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileMultipartFile
             , @RequestParam(value="mapping_document_file", required = false) MultipartFile mappingDocumentFileMultipartFile
@@ -612,6 +611,9 @@ public class MappingPediaController {
         logger.info("dataset_id = " + pDatasetID);
         logger.info("ckan_package_id = " + ckanPackageId);
         logger.info("ckan_package_name = " + ckanPackageName);
+        logger.info("mappingFile = " + mappingFileMultipartFile);
+        logger.info("mapping_document_file = " + mappingDocumentFileMultipartFile);
+        logger.info("mapping_document_url = " + pMappingDocumentDownloadURL1);
 
 
         try {
@@ -696,58 +698,35 @@ public class MappingPediaController {
         logger.debug("ckanResourceId = " + ckanResourceId);
 
         try {
+            /*
             Agent organization = new Agent(organizationID);
             Dataset dataset = new Dataset(organization, datasetID);
+            */
+            Dataset dataset = Dataset.apply(organizationID, datasetID);
             dataset.ckanPackageId_$eq(ckanPackageId);
 
             MappingDocument mappingDocument = new MappingDocument();
             mappingDocument.ckanPackageId_$eq(ckanPackageId);
             mappingDocument.ckanResourceId_$eq(ckanResourceId);
-            logger.info("mappingDocument.dctIdentifier() = " + mappingDocument.dctIdentifier());
             mappingDocument.dctSubject_$eq(mappingDocumentSubjects);
             mappingDocument.dctCreator_$eq(mappingDocumentCreator);
-            if(mappingDocumentTitle == null) {
-                mappingDocument.dctTitle_$eq(dataset.dctIdentifier());
-            } else {
-                mappingDocument.dctTitle_$eq(mappingDocumentTitle);
+            mappingDocument.setTitle(mappingDocumentTitle, mappingDocument.dctIdentifier());
+            mappingDocument.setMappingLanguage(pMappingLanguage1, pMappingLanguage2);
+
+            mappingDocument.setFile(mappingDocumentFileMultipartFile, mappingFileMultipartFile
+                    , dataset.dctIdentifier());
+            if(mappingDocument.mappingLanguage() == null && mappingDocument.mappingDocumentFile() != null) {
+                String inferredMappingLanguage = MappingDocumentController.detectMappingLanguage(
+                        mappingDocument.mappingDocumentFile());
+                mappingDocument.mappingLanguage_$eq(inferredMappingLanguage);
             }
 
-            String mappingLanguage = null;
-            if(pMappingLanguage1 != null) {
-                mappingLanguage = pMappingLanguage1;
-            } else if(pMappingLanguage2 != null) {
-                mappingLanguage = pMappingLanguage2;
+            mappingDocument.setDownloadURL(pMappingDocumentDownloadURL1, pMappingDocumentDownloadURL2);
+            if(mappingDocument.mappingLanguage() == null && mappingDocument.getDownloadURL() != null) {
+                String inferredMappingLanguage = MappingDocumentController.detectMappingLanguage(
+                        mappingDocument.getDownloadURL());
+                mappingDocument.mappingLanguage_$eq(inferredMappingLanguage);
             }
-
-
-            File mappingDocumentFile = null;
-            if(mappingDocumentFileMultipartFile != null) {
-                mappingDocumentFile = MappingPediaUtility.multipartFileToFile(
-                        mappingDocumentFileMultipartFile, dataset.dctIdentifier());
-            } else if(mappingFileMultipartFile != null) {
-                mappingDocumentFile = MappingPediaUtility.multipartFileToFile(
-                        mappingFileMultipartFile , dataset.dctIdentifier());
-            }
-
-            if(mappingLanguage == null) {
-                mappingLanguage = MappingDocumentController.detectMappingLanguage(mappingDocumentFile);
-            }
-
-
-            String mappingDocumentDownloadURL = null;
-            if(pMappingDocumentDownloadURL1 != null) {
-                mappingDocumentDownloadURL = pMappingDocumentDownloadURL1;
-            } else if(pMappingDocumentDownloadURL2 != null) {
-                mappingDocumentDownloadURL = pMappingDocumentDownloadURL2;
-            }
-            mappingDocument.setDownloadURL(mappingDocumentDownloadURL);
-
-            if(mappingLanguage == null) {
-                mappingLanguage = MappingDocumentController.detectMappingLanguage(
-                        mappingDocumentDownloadURL);
-            }
-
-            mappingDocument.mappingLanguage_$eq(mappingLanguage);
 
             logger.info("mappingDocument.mappingLanguage() = " + mappingDocument.mappingLanguage());
             return mappingDocumentController.addNewMappingDocument(dataset, manifestFileRef
@@ -1147,34 +1126,19 @@ public class MappingPediaController {
         Dataset dataset = new Dataset(organization, datasetID);
 
         Distribution distribution = new UnannotatedDistribution(dataset);
-        if(distributionTitle == null) {
-            distribution.dctTitle_$eq(distribution.dctIdentifier());
-        } else {
-            distribution.dctTitle_$eq(distributionTitle);
-        }
-        if(distributionDescription == null) {
-            distribution.dctDescription_$eq(distribution.dctIdentifier());
-        } else {
-            distribution.dctDescription_$eq(distributionDescription);
-        }
-        if(distributionAccessURL == null) {
-            distribution.dcatAccessURL_$eq(distributionDownloadURL);
-        } else {
-            distribution.dcatAccessURL_$eq(distributionAccessURL);
-        }
+        distribution.setTitle(distributionTitle);
+        distribution.setDescription(distributionDescription);
         distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+        distribution.setAccessURL(distributionAccessURL, distributionDownloadURL);
         distribution.dcatMediaType_$eq(distributionMediaType);
         if(distributionMultipartFile != null) {
             distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
                     distributionMultipartFile , dataset.dctIdentifier()));
         }
-        logger.info("distributionEncoding = " + distributionEncoding);
         distribution.encoding_$eq(distributionEncoding);
         distribution.setLanguage(distributionLanguage);
         distribution.dctLicense_$eq(distributionLicense);
         distribution.dctRights_$eq(distributionRights);
-
-
         dataset.addDistribution(distribution);
 
         boolean storeToCKAN = true;

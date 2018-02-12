@@ -4,7 +4,9 @@ import java.io.File
 import java.util.UUID
 
 import com.mashape.unirest.http.Unirest
+import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility
 import org.slf4j.{Logger, LoggerFactory}
+import org.springframework.web.multipart.MultipartFile
 
 /**
   * Created by fpriyatna on 07/04/2017.
@@ -86,4 +88,38 @@ class MappingDocument(val dctIdentifier:String) {
   def getCKAN_package_id = this.ckanPackageId
   def getCKAN_resource_id = this.ckanResourceId
   def getDataset = this.dataset;
+
+  def setTitle(pTitle1: String) : Unit = {
+    this.setTitle(pTitle1, null)
+  }
+
+  def setTitle(pTitle1: String, pTitle2: String) : Unit = {
+    if (pTitle1 != null && !("" == pTitle1)) { this.dctTitle = pTitle1 }
+    else if (pTitle2 != null && !("" == pTitle2)) {this.dctTitle = pTitle2}
+    else {this.dctTitle = this.dctIdentifier }
+  }
+
+  def setMappingLanguage(pLanguage1:String, pLanguage2:String) = {
+    if(pLanguage1 != null && !"".equals(pLanguage1)) {
+      this.mappingLanguage = pLanguage1;
+    } else if(pLanguage2 != null && !"".equals(pLanguage2)) {
+      this.mappingLanguage = pLanguage2;
+    }
+  }
+
+  def setFile(pFile1:MultipartFile, pFile2:MultipartFile, datasetId:String) = {
+    if(pFile1 != null) {
+      this.mappingDocumentFile = MappingPediaUtility.multipartFileToFile(pFile1, datasetId);}
+    else if(pFile2 != null) {
+      this.mappingDocumentFile = MappingPediaUtility.multipartFileToFile(pFile2 , datasetId);
+    }
+  }
+
+  def setDownloadURL(pDownloadURL1:String, pDownloadURL2:String) = {
+    if(pDownloadURL1 != null) {
+      this.downloadURL = pDownloadURL1;
+    } else if(pDownloadURL2 != null) {
+      this.downloadURL = pDownloadURL2;
+    }
+  }
 }

@@ -67,8 +67,6 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
         builder.addTextBody("language", distribution.dctLanguage)
       }
 
-
-
       if(distribution.dctRights != null) {
         builder.addTextBody("rights", distribution.dctRights)
       }

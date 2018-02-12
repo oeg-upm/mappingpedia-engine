@@ -348,7 +348,7 @@ object MappingPediaUtility {
         val downloadURLContentString = downloadURLContent.mkString
         (downloadURLFilename, downloadURLContentString);
       } else {
-        val errorMessage = "No distribution or distribution file has been provided"
+        val errorMessage = "No file or download url has been provided"
         logger.info(errorMessage);
         throw new Exception(errorMessage);
       }

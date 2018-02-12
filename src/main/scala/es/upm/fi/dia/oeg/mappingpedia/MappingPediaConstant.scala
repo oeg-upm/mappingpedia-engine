@@ -84,5 +84,6 @@ object MappingPediaConstant {
 	val CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL = "mapping_document_download_url";
 	val CKAN_RESOURCE_PROV_TRIPLES = "prov_triples";
 	val CKAN_RESOURCE_CLASS = "class";
+	val CKAN_RESOURCE_CLASSES = "tag_string";
 
 }

@@ -94,6 +94,24 @@ abstract class Distribution (val dataset: Dataset, val dctIdentifier:String) ext
       null
     }
   }
+
+  def setTitle(pTitle1: String) : Unit = {
+    this.setTitle(pTitle1, null);
+  }
+
+  def setTitle(pTitle1: String, pTitle2: String) : Unit = {
+    if (pTitle1 != null && !("" == pTitle1)) { this.dctTitle = pTitle1 }
+    else if (pTitle2 != null && !("" == pTitle2)) {this.dctTitle = pTitle2}
+    else {this.dctTitle = this.dctIdentifier }
+  }
+
+  def setAccessURL(accessURL:String, downloadURL:String) = {
+    if(accessURL != null) {
+      this.dcatAccessURL = accessURL;
+    } else {
+      this.dcatAccessURL = downloadURL;
+    }
+  }
 }
 
 
