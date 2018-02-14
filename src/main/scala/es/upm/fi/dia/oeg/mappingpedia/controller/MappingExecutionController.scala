@@ -117,7 +117,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
         case Success(mappingExecutionResult:ExecuteMappingResult) => {
           logger.info("f.onComplete Success");
 
-          val mappingExecutionResultAsJson = mapper.writeValueAsString(mappingExecutionResult);
+          val mappingExecutionResultAsJson = mapper.writeValueAsString(mappingExecutionResult)
           logger.info(s"mappingExecutionResultAsJson = ${mappingExecutionResultAsJson}");
 
           val mappingExecutionResultDownloadURL = mappingExecutionResult.getMapping_execution_result_download_url;
@@ -126,8 +126,25 @@ class MappingExecutionController(val ckanClient:CKANUtility
           val field = if(callbackField == null || "".equals(callbackField)) {
             "notification"
           } else { callbackField }
-          Unirest.post(callbackURL)
-            .field(field, mappingExecutionResultAsJson)
+
+          logger.info(s"POST to ${callbackURL} with information ${mappingExecutionResultAsJson}")
+          val jsonObj = new JSONObject();
+          jsonObj.put(field, mappingExecutionResultAsJson);
+
+          val notificationField = "\"" + field + "\"";
+          val response = Unirest.post(callbackURL)
+            //.body(jsonObj);
+            .body(s"{${notificationField}:${mappingExecutionResultAsJson}}")
+          logger.info(s"response = ${response}")
+
+          try {
+            logger.info(s"response.asJson().getBody = ${response.asJson().getBody}")
+          } catch {
+            case e:Exception => {
+              e.printStackTrace()
+            }
+          }
+
         }
         case Failure(e) => {
           logger.info("f.onComplete Success Failure");
