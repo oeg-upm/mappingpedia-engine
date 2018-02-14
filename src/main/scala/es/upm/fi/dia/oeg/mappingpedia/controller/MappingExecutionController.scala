@@ -18,6 +18,7 @@ import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.QueryExecutionFactory
 import java.io.InputStream
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logger
 import org.eclipse.rdf4j.model.impl.LinkedHashModel
 import org.eclipse.rdf4j.rio.helpers.StatementCollector
@@ -50,22 +51,21 @@ class MappingExecutionController(val ckanClient:CKANUtility
       mapValues, "templates/findMappingExecutionResultByHash.rq");
     logger.info(s"queryString = ${queryString}");
 
-    val qexec = this.virtuosoClient.createQueryExecution(queryString);
-
     var results: List[String] = List.empty;
-    try {
-      val rs = qexec.execSelect
-      while (rs.hasNext) {
-        val qs = rs.nextSolution
-        val mappedClass = qs.get("downloadURL").toString;
-        results = mappedClass :: results;
-      }
-    } finally qexec.close
 
-    val listResult = new ListResult(results.length, results);
+    if(this.virtuosoClient != null) {
+      val qexec = this.virtuosoClient.createQueryExecution(queryString);
+      try {
+        val rs = qexec.execSelect
+        while (rs.hasNext) {
+          val qs = rs.nextSolution
+          val mappedClass = qs.get("downloadURL").toString;
+          results = mappedClass :: results;
+        }
+      } finally qexec.close
+    }
 
-
-    listResult
+    new ListResult(results.length, results);
   }
 
 
@@ -117,13 +117,18 @@ class MappingExecutionController(val ckanClient:CKANUtility
         case Success(mappingExecutionResult:ExecuteMappingResult) => {
           logger.info("f.onComplete Success");
 
+          val mapper = new ObjectMapper();
+          val mappingExecutionResultAsJson = mapper.writeValueAsString(mappingExecutionResult);
+          logger.info(s"mappingExecutionResultAsJson = ${mappingExecutionResultAsJson}");
+
           val mappingExecutionResultDownloadURL = mappingExecutionResult.getMapping_execution_result_download_url;
           logger.info(s"mappingExecutionResultDownloadURL = ${mappingExecutionResultDownloadURL}");
 
           val field = if(callbackField == null || "".equals(callbackField)) {
             "notification"
           } else { callbackField }
-          Unirest.post(callbackURL).field(field, mappingExecutionResultDownloadURL)
+          Unirest.post(callbackURL)
+            .field(field, mappingExecutionResultAsJson)
         }
         case Failure(e) => {
           logger.info("f.onComplete Success Failure");
