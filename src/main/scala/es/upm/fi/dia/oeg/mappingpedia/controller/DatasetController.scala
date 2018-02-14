@@ -4,6 +4,7 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.util.Date
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
@@ -26,6 +27,7 @@ import scala.collection.JavaConversions._
 class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient)  {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient: VirtuosoClient);
+  val mapper = new ObjectMapper();
 
   def findAllDatasets(): ListResult = {
     logger.info("findDatasets")
@@ -444,6 +446,17 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
       , ckanAddPackageResponseStatusCode
       //, ckanAddResourceResponseStatusCode
     )
+
+    try {
+      val addDatasetResultAsJson = this.mapper.writeValueAsString(addDatasetResult);
+      logger.info(s"addDatasetResultAsJson = ${addDatasetResultAsJson}");
+    } catch {
+      case e:Exception => {
+        logger.error(s"addDatasetResult = ${addDatasetResult}")
+      }
+    }
+
+
     addDatasetResult
 
     /*

@@ -385,7 +385,7 @@ public class MappingPediaController {
     )
     {
         try {
-            logger.info("POST /executions2");
+            logger.info("POST /executions");
             logger.info("organization_id = " + organizationId);
             logger.info("dataset_id = " + datasetId);
             logger.info("ckan_resources_ids = " + ckanResourcesIds);

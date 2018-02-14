@@ -38,7 +38,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mappingDocumentController:MappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
-
+  val mapper = new ObjectMapper();
 
   def findMappingExecutionURLByHash(mdHash:String, datasetDistributionHash:String) = {
     val mapValues: Map[String, String] = Map(
@@ -49,7 +49,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
       mapValues, "templates/findMappingExecutionResultByHash.rq");
-    logger.info(s"queryString = ${queryString}");
+    logger.debug(s"queryString = ${queryString}");
 
     var results: List[String] = List.empty;
 
@@ -107,7 +107,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
       , callbackField:String
     );
 
-    if(callbackURL == null) {
+    val executeMappingResult = if(callbackURL == null) {
       logger.info("Await.result");
       val result = Await.result(f, 60 second)
       result;
@@ -117,12 +117,11 @@ class MappingExecutionController(val ckanClient:CKANUtility
         case Success(mappingExecutionResult:ExecuteMappingResult) => {
           logger.info("f.onComplete Success");
 
-          val mapper = new ObjectMapper();
           val mappingExecutionResultAsJson = mapper.writeValueAsString(mappingExecutionResult);
           logger.info(s"mappingExecutionResultAsJson = ${mappingExecutionResultAsJson}");
 
           val mappingExecutionResultDownloadURL = mappingExecutionResult.getMapping_execution_result_download_url;
-          logger.info(s"mappingExecutionResultDownloadURL = ${mappingExecutionResultDownloadURL}");
+          //logger.info(s"mappingExecutionResultDownloadURL = ${mappingExecutionResultDownloadURL}");
 
           val field = if(callbackField == null || "".equals(callbackField)) {
             "notification"
@@ -146,8 +145,16 @@ class MappingExecutionController(val ckanClient:CKANUtility
       )
     }
 
+    try {
+      val executeMappingResultAsJson = this.mapper.writeValueAsString(executeMappingResult);
+      logger.info(s"executeMappingResultAsJson = ${executeMappingResultAsJson}");
+    } catch {
+      case e:Exception => {
+        logger.error(s"executeMappingResult = ${executeMappingResult}")
+      }
+    }
 
-
+    executeMappingResult
   }
 
   @throws(classOf[Exception])
@@ -188,7 +195,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
       }
 
       val cacheExecutionURL = this.findMappingExecutionURLByHash(md.hash, unannotatedDatasetHash);
-      logger.info(s"cacheExecutionURL = ${cacheExecutionURL}");
+      logger.debug(s"cacheExecutionURL = ${cacheExecutionURL}");
 
       if(cacheExecutionURL == null || cacheExecutionURL.results.isEmpty || !useCache) {
         val mappingLanguage = if (md.mappingLanguage == null) {

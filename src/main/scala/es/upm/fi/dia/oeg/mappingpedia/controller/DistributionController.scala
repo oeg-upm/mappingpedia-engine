@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia.controller
 import java.io.File
 import java.net.HttpURLConnection
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, AddDistributionResult, ListResult}
@@ -18,7 +19,7 @@ class DistributionController(val ckanClient:CKANUtility
                              , val virtuosoClient: VirtuosoClient)
 {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-
+  val mapper = new ObjectMapper();
 
   def findUnannotatedDistributions(queryString: String): ListResult = {
     logger.info(s"queryString = $queryString");
@@ -389,6 +390,16 @@ class DistributionController(val ckanClient:CKANUtility
 
       , ckanAddResourceResponseStatusCode
     )
+
+    try {
+      val addDistributionResultAsJson = this.mapper.writeValueAsString(addDistributionResult);
+      logger.info(s"addDistributionResultAsJson = ${addDistributionResultAsJson}");
+    } catch {
+      case e:Exception => {
+      logger.error(s"addDistributionResult = ${addDistributionResult}")
+      }
+    }
+
     addDistributionResult
 
 

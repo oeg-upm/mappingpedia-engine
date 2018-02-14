@@ -4,6 +4,7 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.util.Date
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
@@ -17,6 +18,7 @@ import scala.collection.JavaConversions._
 
 class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient, val jenaClient:JenaClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val mapper = new ObjectMapper();
 
   def storeMappingDocumentOnGitHub(mappingDocument:MappingDocument, dataset: Dataset) = {
     val organization = dataset.dctPublisher;
@@ -199,7 +201,15 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       , virtuosoStoreMappingStatus, virtuosoStoreMappingStatus
     )
 
-    logger.info("\n")
+    try {
+      val addMappingDocumentResultAsJson = this.mapper.writeValueAsString(addMappingResult);
+      logger.info(s"addMappingDocumentResultAsJson = ${addMappingDocumentResultAsJson}");
+    } catch {
+      case e:Exception => {
+        logger.error(s"addMappingResult = ${addMappingResult}")
+      }
+    }
+
     addMappingResult
 
     /*
@@ -260,7 +270,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       mapValues, "templates/findMappedClassesByMappingDocumentId.rq")
 
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-    logger.info(s"queryString = \n$queryString")
+    logger.debug(s"queryString = \n$queryString")
 
     var results: List[String] = List.empty;
     try {
