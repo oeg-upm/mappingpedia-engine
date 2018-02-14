@@ -88,6 +88,7 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       }
 
 
+
       val mpEntity = builder.build();
       httpPostRequest.setEntity(mpEntity)
       val response = httpClient.execute(httpPostRequest)
@@ -95,11 +96,12 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
 
       if (response.getStatusLine.getStatusCode < 200 || response.getStatusLine.getStatusCode >= 300) {
         logger.info(s"response = ${response}")
-        logger.info(s"response.getAllHeaders= ${response.getAllHeaders}");
         logger.info(s"response.getEntity= ${response.getEntity}");
+        logger.info(s"response.getEntity.getContent= ${response.getEntity.getContent}");
+        logger.info(s"response.getEntity.getContentType= ${response.getEntity.getContentType}");
         logger.info(s"response.getProtocolVersion= ${response.getProtocolVersion}");
         logger.info(s"response.getStatusLine= ${response.getStatusLine}");
-        logger.info(s"response.getClass= ${response.getClass}");
+        logger.info(s"response.getStatusLine.getReasonPhrase= ${response.getStatusLine.getReasonPhrase}");
 
         throw new Exception("Failed to add the file to CKAN storage. Response status line from " + uploadFileUrl + " was: " + response.getStatusLine)
       }

@@ -210,6 +210,18 @@
 			<version>0.4.2</version>
 		</dependency>
 
+		<dependency>
+			<groupId>de.escalon.hypermedia</groupId>
+			<artifactId>hydra-spring</artifactId>
+			<version>0.3.1</version>
+		</dependency>
+
+        <dependency>
+            <groupId>com.github.jsonld-java</groupId>
+            <artifactId>jsonld-java</artifactId>
+            <version>0.11.1</version>
+        </dependency>
+
 	</dependencies>
 
 	<repositories>

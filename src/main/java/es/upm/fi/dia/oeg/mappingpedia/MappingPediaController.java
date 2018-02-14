@@ -19,6 +19,9 @@ import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
 import es.upm.fi.dia.oeg.mappingpedia.utility.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.jena.ontology.OntModel;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
@@ -54,8 +57,37 @@ public class MappingPediaController {
                 String.format(template, name));
     }
 
+    @RequestMapping(value="/", method= RequestMethod.GET, produces={"application/ld+json"})
+    public Inbox get() {
+        logger.info("GET / ...");
+        return new Inbox();
+    }
+
+    @RequestMapping(value="/", method= RequestMethod.HEAD, produces={"application/ld+json"})
+    public ResponseEntity head() {
+        logger.info("HEAD / ...");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.LINK, "<http://mappingpedia-engine.linkeddata.es/inbox>; rel=\"http://www.w3.org/ns/ldp#inbox\"");
+
+        return new ResponseEntity(headers, HttpStatus.CREATED);
+    }
+
+    @RequestMapping(value="/inbox", method= RequestMethod.POST)
+    public void postInbox(
+            @RequestParam(value="notification", required = false) Object notification) {
+        logger.info("POST /inbox ...");
+        logger.info("notification = " + notification);
+    }
+
+    @RequestMapping(value="/inbox", method= RequestMethod.PUT)
+    public void putInbox(
+            @RequestParam(value="notification", defaultValue="") String notification) {
+        logger.info("PUT /inbox ...");
+        logger.info("notification = " + notification);
+    }
+
     @RequestMapping(value="/mappingexecutions", method= RequestMethod.GET)
-    public ListResult getGreeting(@RequestParam(value="mapping_document_sha", defaultValue="") String mappingDocumentSHA
+    public ListResult getMappingExecution(@RequestParam(value="mapping_document_sha", defaultValue="") String mappingDocumentSHA
             , @RequestParam(value="dataset_distribution_sha", defaultValue="") String datasetDistributionSHA) {
 
         logger.info("GET /mappingexecutions ...");
@@ -347,6 +379,8 @@ public class MappingPediaController {
             , @RequestParam(value="database_type", required = false) String databaseType
 
             , @RequestParam(value="use_cache", required = false) String pUseCache
+            , @RequestParam(value="callback_url", required = false) String callbackURL
+            , @RequestParam(value="callback_field", required = false) String callbackField
 
     )
     {
@@ -363,6 +397,7 @@ public class MappingPediaController {
             logger.info("output_filename = " + outputFilename);
             logger.info("output_fileextension = " + outputFileExtension);
             logger.info("output_mediatype = " + outputMediaType);
+            logger.info("callback_url = " + callbackURL);
 
             MappingDocument md;
             if(mappingDocumentId != null) {
@@ -452,12 +487,15 @@ public class MappingPediaController {
             Boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
 
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(md, dataset
+            return mappingExecutionController.executeMapping(
+                    md, dataset
                     , queryFile
                     , outputFilename, outputFileExtension, outputMediaType
                     ,  true, true
                     , true
-                    , null, useCache);
+                    , null, useCache
+                    , callbackURL, callbackField
+            );
 
             /*
         MappingExecution mappingExecution = new MappingExecution(md, dataset);
@@ -800,6 +838,8 @@ public class MappingPediaController {
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
 
             , @RequestParam(value="use_cache", required = false, defaultValue="true") String pUseCache
+            , @RequestParam(value="callback_url", required = false) String callbackURL
+            , @RequestParam(value="callback_field", required = false) String callbackField
     )
     {
         logger.info("[POST] /datasets_mappings_execute");
@@ -873,20 +913,22 @@ public class MappingPediaController {
             if("true".equalsIgnoreCase(executeMapping)) {
                 if(addMappingDocumentResultStatusCode >= 200 && addMappingDocumentResultStatusCode < 300) {
                     try {
-                        ExecuteMappingResult executeMappingResult = this.mappingExecutionController.executeMapping(
-                                mappingDocument
-                                , dataset
-                                , queryFileDownloadURL
-                                , outputFilename, outputFileExtension, outputMediaType
+                        ExecuteMappingResult executeMappingResult =
+                                this.mappingExecutionController.executeMapping(
+                                        mappingDocument
+                                        , dataset
+                                        , queryFileDownloadURL
+                                        , outputFilename, outputFileExtension, outputMediaType
 
-                                , true
-                                , true
-                                , true
+                                        , true
+                                        , true
+                                        , true
 
-                                , null
-                                , useCache
+                                        , null
+                                        , useCache
+                                        , callbackURL, callbackField
 
-                        );
+                                );
 
                         return new AddDatasetMappingExecuteResult (HttpURLConnection.HTTP_OK, addDatasetResult, addMappingDocumentResult, executeMappingResult);
 

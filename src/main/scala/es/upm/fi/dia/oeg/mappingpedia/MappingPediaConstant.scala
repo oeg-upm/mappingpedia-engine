@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg.mappingpedia
 
 import org.apache.jena.rdf.model.ResourceFactory
 
+
 /**
   * Created by freddy on 10/08/2017.
   */

@@ -13,8 +13,12 @@ import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
 
-class DistributionController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient) {
+class DistributionController(val ckanClient:CKANUtility
+                             , val githubClient:GitHubUtility
+                             , val virtuosoClient: VirtuosoClient)
+{
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
 
   def findUnannotatedDistributions(queryString: String): ListResult = {
     logger.info(s"queryString = $queryString");

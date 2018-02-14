@@ -39,22 +39,44 @@ class ExecuteMappingResult (
 
   //val mappingExecutionResultURL = mappingExecutionResult.dcatAccessURL
   //val mappingExecutionResultDownloadURL = mappingExecutionResult.getDownload_url;
-
-  def getMappingExecutionResultURL() = mappingExecutionResult.dcatAccessURL;
-  def getMapping_execution_result_access_url() = mappingExecutionResult.dcatAccessURL;
-  def getMapping_execution_result_download_url = mappingExecutionResult.getDownload_url;
-
   def getStatus() = status;
   def getErrorCode() = errorCode;
   def getStatus_code() = errorCode;
 
+  def getMappingExecutionResultURL() =
+    if(mappingExecutionResult == null) { null }
+    else { mappingExecutionResult.dcatAccessURL; }
+
+  def getMapping_execution_result_access_url() =
+    if(mappingExecutionResult == null) {
+      null
+    } else {
+      mappingExecutionResult.dcatAccessURL;
+    }
+
+  def getMapping_execution_result_download_url =
+    if(mappingExecutionResult == null) { null }
+    else { mappingExecutionResult.getDownload_url; }
+
+
+
   //def getCKAN_response_status = ckanResponseStatus;
 
 
-  def getMapping_execution_result_id = mappingExecutionResult.dctIdentifier
+  def getMapping_execution_result_id =
+    if(mappingExecutionResult == null) { null }
+    else { mappingExecutionResult.dctIdentifier }
 
-  def getManifestURL = this.mappingExecutionResult.manifestAccessURL
-  def getManifest_access_url = this.mappingExecutionResult.manifestAccessURL
-  def getManifest_download_url = this.mappingExecutionResult.dcatDownloadURL
+  def getManifestURL =
+    if(mappingExecutionResult == null) { null }
+    else { this.mappingExecutionResult.manifestAccessURL }
+
+  def getManifest_access_url =
+    if(mappingExecutionResult == null) { null }
+    else { this.mappingExecutionResult.manifestAccessURL }
+
+  def getManifest_download_url =
+    if(mappingExecutionResult == null) { null }
+    else { this.mappingExecutionResult.dcatDownloadURL }
 
 }

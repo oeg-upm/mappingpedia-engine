@@ -407,10 +407,6 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
   def findMappingDocumentsByDatasetId(pDatasetId: String, pCKANPackageId:String
                                       , pCKANPackageName:String): ListResult = {
-    logger.info("findMappingDocumentsByDatasetId")
-    logger.info(s"pDatasetId = ${pDatasetId}")
-    logger.info(s"pCKANPackageId = ${pCKANPackageId}")
-    logger.info(s"pCKANPackageName = ${pCKANPackageName}")
 
     val queryTemplateFile = "templates/findMappingDocumentsByDatasetId.rq";
 
@@ -565,7 +561,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-    logger.info(s"queryString = \n$queryString")
+    //logger.info(s"queryString = \n$queryString")
 
     var results: List[MappingDocument] = List.empty;
     try {
@@ -627,7 +623,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       }
     } finally qexec.close
 
-    logger.info(s"results = ${results}")
+    //logger.info(s"results = ${results}")
 
     val listResult = new ListResult(results.length, results);
     listResult
