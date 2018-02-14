@@ -14,6 +14,7 @@
 		<slf4j-log4j12.version>1.7.5</slf4j-log4j12.version>
 		<project.java.version>1.8</project.java.version>
 		<maven.dependency.version>2.5.1</maven.dependency.version>
+		<morphrdb.version>3.9.6</morphrdb.version>
 	</properties>
 
 	<parent>
@@ -132,7 +133,7 @@
 			<groupId>es.upm.fi.dia.oeg.morph</groupId>
 			<artifactId>morph-rdb-dist</artifactId>
 			<type>pom</type>
-			<version>3.9.5</version>
+			<version>${morphrdb.version}</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.kohsuke/github-api -->
