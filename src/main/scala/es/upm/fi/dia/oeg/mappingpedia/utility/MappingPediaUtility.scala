@@ -283,11 +283,11 @@ object MappingPediaUtility {
   val datasetHashValue = distributions.foldLeft(0)((acc, distribution) => {
       val distributionHashValue = MappingPediaUtility.calculateHash(
         distribution.dcatDownloadURL, distribution.encoding);
-      logger.info(s"distributionHashValue = ${distributionHashValue}")
+      logger.debug(s"distributionHashValue = ${distributionHashValue}")
       acc + distributionHashValue.toInt
     })
 
-    logger.info(s"datasetHashValue = ${datasetHashValue}")
+    logger.debug(s"datasetHashValue = ${datasetHashValue}")
     datasetHashValue.toString
   }
 
@@ -297,7 +297,7 @@ object MappingPediaUtility {
   }
 
   def calculateHash(downloadURL:String, pEncoding:String) : String = {
-    logger.info(s"calculating hash value of ${downloadURL}");
+    logger.debug(s"calculating hash value of ${downloadURL}");
     val encoding = if(pEncoding == null) { "UTF-8" } else { pEncoding }
 
     val hashValue = try {
@@ -322,7 +322,7 @@ object MappingPediaUtility {
       }
     }
 
-    logger.info(s"hash value of of ${downloadURL} = ${hashValue}");
+    logger.debug(s"hash value of of ${downloadURL} = ${hashValue}");
     hashValue
   }
 

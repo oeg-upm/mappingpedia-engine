@@ -74,14 +74,20 @@ public class MappingPediaController {
 
     @RequestMapping(value="/inbox", method= RequestMethod.POST)
     public void postInbox(
-            @RequestParam(value="notification", required = false) Object notification) {
+            //@RequestParam(value="notification", required = false) Object notification)
+            @RequestBody Object notification
+    )
+    {
         logger.info("POST /inbox ...");
         logger.info("notification = " + notification);
     }
 
     @RequestMapping(value="/inbox", method= RequestMethod.PUT)
     public void putInbox(
-            @RequestParam(value="notification", defaultValue="") String notification) {
+            //@RequestParam(value="notification", defaultValue="") String notification
+            @RequestBody Object notification
+    )
+    {
         logger.info("PUT /inbox ...");
         logger.info("notification = " + notification);
     }
@@ -385,11 +391,11 @@ public class MappingPediaController {
     )
     {
         try {
-            logger.info("POST /executions");
+            logger.info("\n\n\nPOST /executions");
             logger.info("organization_id = " + organizationId);
             logger.info("dataset_id = " + datasetId);
-            logger.info("ckan_resources_ids = " + ckanResourcesIds);
             logger.info("distributionDownloadURL = " + pDistributionDownloadURL);
+            logger.info("ckan_resources_ids = " + ckanResourcesIds);
             logger.info("mapping_document_id = " + mappingDocumentId);
             logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
             logger.info("distribution_encoding = " + distributionEncoding);
@@ -416,14 +422,14 @@ public class MappingPediaController {
                     md.setDownloadURL(foundMappingDocument.getDownloadURL());
                 }
             }
-            logger.info("md.getDownloadURL() = " + md.getDownloadURL());
+            logger.debug("md.getDownloadURL() = " + md.getDownloadURL());
             String mdDownloadURL = md.getDownloadURL();
 
             if(mappingDocumentHash == null && mdDownloadURL != null) {
                 md.hash_$eq(MappingPediaUtility.calculateHash(
                         mdDownloadURL, "UTF-8"));
             }
-            logger.info("md.sha = " + md.hash());
+            logger.debug("md.sha = " + md.hash());
 
             if(pMappingLanguage != null) {
                 md.mappingLanguage_$eq(pMappingLanguage);
@@ -431,14 +437,13 @@ public class MappingPediaController {
                 String mappingLanguage = MappingDocumentController.detectMappingLanguage(mappingDocumentDownloadURL);
                 md.mappingLanguage_$eq(mappingLanguage);
             }
-            logger.info("md.getMapping_language() = " + md.getMapping_language());
-
+            logger.debug("md.getMapping_language() = " + md.getMapping_language());
 
             String[] arrayDistributionDownloadURLs = null;
             if(pDistributionDownloadURL != null) {
                 arrayDistributionDownloadURLs = pDistributionDownloadURL.split(",");
             }
-            logger.info("arrayDistributionDownloadURLs = " + Arrays.toString(arrayDistributionDownloadURLs));
+            logger.debug("arrayDistributionDownloadURLs = " + Arrays.toString(arrayDistributionDownloadURLs));
 
 
             Agent organization;
@@ -460,7 +465,7 @@ public class MappingPediaController {
 
             for(String distributionDownloadURL:arrayDistributionDownloadURLs) {
                 String distributionDownloadURLTrimmed = distributionDownloadURL.trim();
-                logger.info("distributionDownloadURLTrimmed = " + distributionDownloadURLTrimmed);
+                logger.debug("distributionDownloadURLTrimmed = " + distributionDownloadURLTrimmed);
 
                 UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(dataset);
                 if(distributionAccessURL != null) {

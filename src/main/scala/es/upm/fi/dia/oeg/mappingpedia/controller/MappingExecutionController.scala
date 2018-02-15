@@ -112,33 +112,33 @@ class MappingExecutionController(val ckanClient:CKANUtility
       val result = Await.result(f, 60 second)
       result;
     } else {
-      logger.info("f.onComplete");
       f.onComplete {
-        case Success(mappingExecutionResult:ExecuteMappingResult) => {
+        case Success(forkExecuteMappingResult:ExecuteMappingResult) => {
           logger.info("f.onComplete Success");
 
-          val mappingExecutionResultAsJson = mapper.writeValueAsString(mappingExecutionResult)
-          logger.info(s"mappingExecutionResultAsJson = ${mappingExecutionResultAsJson}");
+          val forkExecuteMappingResultAsString = mapper.writeValueAsString(forkExecuteMappingResult)
+          logger.debug(s"forkExecuteMappingResultAsString = ${forkExecuteMappingResultAsString}");
 
-          val mappingExecutionResultDownloadURL = mappingExecutionResult.getMapping_execution_result_download_url;
+          //val mappingExecutionResultDownloadURL = forkExecuteMappingResult.getMapping_execution_result_download_url;
           //logger.info(s"mappingExecutionResultDownloadURL = ${mappingExecutionResultDownloadURL}");
 
           val field = if(callbackField == null || "".equals(callbackField)) {
             "notification"
           } else { callbackField }
 
-          logger.info(s"POST to ${callbackURL} with information ${mappingExecutionResultAsJson}")
-          val jsonObj = new JSONObject();
-          jsonObj.put(field, mappingExecutionResultAsJson);
+          //logger.info(s"POST to ${callbackURL} with ${field} = ${forkExecuteMappingResultAsString}")
+          val jsonObj = new JSONObject(forkExecuteMappingResultAsString);
+          //jsonObj.put(field, forkExecuteMappingResultAsString);
 
           val notificationField = "\"" + field + "\"";
           val response = Unirest.post(callbackURL)
-            //.body(jsonObj);
-            .body(s"{${notificationField}:${mappingExecutionResultAsJson}}")
-          logger.info(s"response = ${response}")
+            .body(jsonObj);
+            //.body(s"{${notificationField}:${forkExecuteMappingResultAsString}}")
+            //.body(forkExecuteMappingResultAsString)
+          logger.info(s"POST to ${callbackURL} with response.getBody = ${response.getBody}")
 
           try {
-            logger.info(s"response.asJson().getBody = ${response.asJson().getBody}")
+            logger.info(s"response from callback = ${response.asJson().getBody}")
           } catch {
             case e:Exception => {
               e.printStackTrace()
@@ -163,8 +163,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
     }
 
     try {
-      val executeMappingResultAsJson = this.mapper.writeValueAsString(executeMappingResult);
-      logger.info(s"executeMappingResultAsJson = ${executeMappingResultAsJson}");
+      val executeMappingResultAsString = this.mapper.writeValueAsString(executeMappingResult);
+      logger.info(s"executeMappingResultAsString = ${executeMappingResultAsString}");
     } catch {
       case e:Exception => {
         logger.error(s"executeMappingResult = ${executeMappingResult}")
