@@ -132,6 +132,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
           val notificationField = "\"" + field + "\"";
           val response = Unirest.post(callbackURL)
+              .header("Content-Type", "application/json")
             .body(jsonObj);
             //.body(s"{${notificationField}:${forkExecuteMappingResultAsString}}")
             //.body(forkExecuteMappingResultAsString)

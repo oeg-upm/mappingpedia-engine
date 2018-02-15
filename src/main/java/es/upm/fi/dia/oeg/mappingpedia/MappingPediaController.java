@@ -18,6 +18,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.*;
 import es.upm.fi.dia.oeg.mappingpedia.model.result.*;
 import es.upm.fi.dia.oeg.mappingpedia.utility.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.jena.atlas.test.Gen;
 import org.apache.jena.ontology.OntModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -73,23 +74,25 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value="/inbox", method= RequestMethod.POST)
-    public void postInbox(
+    public GeneralResult postInbox(
             //@RequestParam(value="notification", required = false) Object notification)
             @RequestBody Object notification
     )
     {
         logger.info("POST /inbox ...");
         logger.info("notification = " + notification);
+        return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
     }
 
     @RequestMapping(value="/inbox", method= RequestMethod.PUT)
-    public void putInbox(
+    public GeneralResult putInbox(
             //@RequestParam(value="notification", defaultValue="") String notification
             @RequestBody Object notification
     )
     {
         logger.info("PUT /inbox ...");
         logger.info("notification = " + notification);
+        return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
     }
 
     @RequestMapping(value="/mappingexecutions", method= RequestMethod.GET)
