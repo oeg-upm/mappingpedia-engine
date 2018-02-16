@@ -1,5 +1,7 @@
 package es.upm.fi.dia.oeg.mappingpedia.utility
 
+import java.io.{ByteArrayOutputStream, File}
+
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import es.upm.fi.dia.oeg.mappingpedia.model.{OntologyClass, OntologyResource}
 import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
@@ -7,6 +9,7 @@ import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
 import org.apache.jena.rdf.model.{ModelFactory, Resource}
 import org.slf4j.{Logger, LoggerFactory}
 import org.apache.jena.ontology._
+import org.apache.jena.riot.{Lang, RDFDataMgr}
 import org.apache.jena.vocabulary.{RDF, RDFS}
 
 import scala.collection.JavaConversions._
@@ -217,4 +220,28 @@ object JenaClient {
     rdfsModel;
   }
 
+  def fileToString(file:File, language:Option[String]) = {
+    val fileAbsolutePath = file.getAbsolutePath;
+    JenaClient.urlToString(fileAbsolutePath, language);
+
+  }
+  def urlToString(url:String, language:Option[String]) = {
+    logger.info(s"Reading model from ${url} ...")
+    try {
+      val model = ModelFactory.createDefaultModel()
+      if(language.isDefined) {
+        model.read(url, language.get);
+      } else {
+        model.read(url);
+      }
+      val outputStream = new ByteArrayOutputStream();
+      RDFDataMgr.write(outputStream, model, Lang.JSONLD);
+      new String(outputStream.toByteArray, "UTF-8");
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+        null
+      }
+    }
+  }
 }

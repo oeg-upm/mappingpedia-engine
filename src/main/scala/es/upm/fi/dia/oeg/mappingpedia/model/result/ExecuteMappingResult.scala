@@ -77,6 +77,6 @@ class ExecuteMappingResult (
 
   def getManifest_download_url =
     if(mappingExecutionResult == null) { null }
-    else { this.mappingExecutionResult.dcatDownloadURL }
+    else { this.mappingExecutionResult.manifestDownloadURL }
 
 }

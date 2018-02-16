@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.mappingpedia.controller
 
-import java.io.File
+import java.io.{ByteArrayOutputStream, File, InputStream}
 import java.net.{HttpURLConnection, URL}
 import java.util.{Date, UUID}
 
@@ -16,10 +16,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRun
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.QueryExecutionFactory
-import java.io.InputStream
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logger
+import org.apache.jena.riot.RDFDataMgr
 import org.eclipse.rdf4j.model.impl.LinkedHashModel
 import org.eclipse.rdf4j.rio.helpers.StatementCollector
 import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
@@ -30,6 +29,8 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
+import org.apache.jena.riot.Lang
+import org.apache.jena.riot.RDFDataMgr
 
 class MappingExecutionController(val ckanClient:CKANUtility
                                  , val githubClient:GitHubUtility
@@ -122,24 +123,32 @@ class MappingExecutionController(val ckanClient:CKANUtility
           //val mappingExecutionResultDownloadURL = forkExecuteMappingResult.getMapping_execution_result_download_url;
           //logger.info(s"mappingExecutionResultDownloadURL = ${mappingExecutionResultDownloadURL}");
 
+          /*
           val field = if(callbackField == null || "".equals(callbackField)) {
             "notification"
           } else { callbackField }
+          */
+
+          val manifestFile = forkExecuteMappingResult.getManifest_download_url;
+          val manifestStringJsonLd = JenaClient.urlToString(manifestFile, Some("TURTLE"));
+          //logger.info(s"manifestStringJsonLd = ${manifestStringJsonLd}")
 
           //logger.info(s"POST to ${callbackURL} with ${field} = ${forkExecuteMappingResultAsString}")
-          val jsonObj = new JSONObject(forkExecuteMappingResultAsString);
+          //val jsonObj = new JSONObject(forkExecuteMappingResultAsString);
+          val jsonObj = new JSONObject(manifestStringJsonLd);
           //jsonObj.put(field, forkExecuteMappingResultAsString);
 
-          val notificationField = "\"" + field + "\"";
+          //val notificationField = "\"" + field + "\"";
           val response = Unirest.post(callbackURL)
               .header("Content-Type", "application/json")
-            .body(jsonObj);
+            .body(jsonObj)
+            .asString();
             //.body(s"{${notificationField}:${forkExecuteMappingResultAsString}}")
             //.body(forkExecuteMappingResultAsString)
-          logger.info(s"POST to ${callbackURL} with response.getBody = ${response.getBody}")
+          logger.info(s"POST to ${callbackURL} with body = ${manifestStringJsonLd}")
 
           try {
-            logger.info(s"response from callback = ${response.asJson().getBody}")
+            logger.info(s"response from callback = ${response.getBody}")
           } catch {
             case e:Exception => {
               e.printStackTrace()
@@ -343,6 +352,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
         //GENERATING MANIFEST FILE
         val manifestFile = MappingExecutionController.generateManifestFile(annotatedDistribution, unannotatedDistributions, md)
+        logger.info("Manifest file generated.")
+
 
         //STORING MANIFEST ON GITHUB
         val addManifestFileGitHubResponse:HttpResponse[JsonNode] =
@@ -734,9 +745,9 @@ object MappingExecutionController {
 
       );
 
+      val manifestString = MappingPediaEngine.generateManifestString(mapValues, templateFiles);
       val filename = s"metadata-mappingexecutionresult-${mappingExecutionResult.dctIdentifier}.ttl";
-      val manifestFile = MappingPediaEngine.generateManifestFile(mapValues, templateFiles, filename, datasetId);
-      logger.info("Manifest file generated.")
+      val manifestFile = MappingPediaEngine.generateManifestFile(manifestString, filename, datasetId);
       manifestFile;
     } catch {
       case e:Exception => {

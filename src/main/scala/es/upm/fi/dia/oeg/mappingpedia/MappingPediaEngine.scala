@@ -153,13 +153,23 @@ object MappingPediaEngine {
 		}
 	}
 
-	def generateManifestFile(map: Map[String, String], templateFiles:List[String], filename:String, datasetID:String) : File = {
-		try {
-			val manifestTriples = templateFiles.foldLeft("") { (z, i) => {
-				//logger.info("templateFiles.foldLeft" + (z, i))
-				z + this.generateStringFromTemplateFile(map, i) + "\n\n" ;
-			} }
 
+	def generateManifestString(map: Map[String, String], templateFiles:List[String]) : String = {
+		val manifestString = templateFiles.foldLeft("") { (z, i) => {
+			//logger.info("templateFiles.foldLeft" + (z, i))
+			z + this.generateStringFromTemplateFile(map, i) + "\n\n" ;
+		} }
+
+		manifestString;
+	}
+
+	def generateManifestFile(map: Map[String, String], templateFiles:List[String], filename:String, datasetID:String) : File = {
+		val manifestString = this.generateManifestString(map, templateFiles);
+		this.generateManifestFile(manifestString, filename, datasetID);
+	}
+
+	def generateManifestFile(manifestString:String, filename:String, datasetID:String) : File = {
+		try {
 			//def mappingDocumentLines = this.generateManifestLines(map, "templates/metadata-mappingdocument-template.ttl");
 			//logger.debug("mappingDocumentLines = " + mappingDocumentLines)
 
@@ -181,7 +191,7 @@ object MappingPediaEngine {
 			val file = new File(uuidDirectory + "/" + filename)
 			val bw = new BufferedWriter(new FileWriter(file))
 			//logger.info(s"manifestTriples = $manifestTriples")
-			bw.write(manifestTriples)
+			bw.write(manifestString)
 			bw.close()
 			file
 		} catch {
