@@ -50,7 +50,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
       mapValues, "templates/findMappingExecutionResultByHash.rq");
-    logger.debug(s"queryString = ${queryString}");
+    logger.info(s"queryString = ${queryString}");
 
     var results: List[String] = List.empty;
 
@@ -118,7 +118,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
           logger.info("f.onComplete Success");
 
           val forkExecuteMappingResultAsString = mapper.writeValueAsString(forkExecuteMappingResult)
-          logger.debug(s"forkExecuteMappingResultAsString = ${forkExecuteMappingResultAsString}");
+          logger.info(s"forkExecuteMappingResultAsString = ${forkExecuteMappingResultAsString}");
 
           //val mappingExecutionResultDownloadURL = forkExecuteMappingResult.getMapping_execution_result_download_url;
           //logger.info(s"mappingExecutionResultDownloadURL = ${mappingExecutionResultDownloadURL}");
@@ -130,22 +130,32 @@ class MappingExecutionController(val ckanClient:CKANUtility
           */
 
           val manifestFile = forkExecuteMappingResult.getManifest_download_url;
-          val manifestStringJsonLd = JenaClient.urlToString(manifestFile, Some("TURTLE"));
-          //logger.info(s"manifestStringJsonLd = ${manifestStringJsonLd}")
+          val jsonObj = if(manifestFile == null ) {
+            val newJsonObj = new JSONObject();
+            newJsonObj.put("@id", forkExecuteMappingResult.mappingExecutionResult.dctIdentifier);
+            newJsonObj.put("downloadURL", forkExecuteMappingResult.getMapping_execution_result_download_url);
 
-          //logger.info(s"POST to ${callbackURL} with ${field} = ${forkExecuteMappingResultAsString}")
-          //val jsonObj = new JSONObject(forkExecuteMappingResultAsString);
-          val jsonObj = new JSONObject(manifestStringJsonLd);
-          //jsonObj.put(field, forkExecuteMappingResultAsString);
+            val context = new JSONObject();
+            newJsonObj.put("@context", context);
 
-          //val notificationField = "\"" + field + "\"";
+            val downloadURL = new JSONObject();
+            context.put("downloadURL", downloadURL);
+
+            downloadURL.put("type", "@id")
+            downloadURL.put("@id", "http://www.w3.org/ns/dcat#downloadURL")
+
+            newJsonObj
+          } else {
+            val manifestStringJsonLd = JenaClient.urlToString(manifestFile, Some("TURTLE"));
+            val jsonObjFromManifest = new JSONObject(manifestStringJsonLd);
+            jsonObjFromManifest
+          }
+
           val response = Unirest.post(callbackURL)
-              .header("Content-Type", "application/json")
+            .header("Content-Type", "application/json")
             .body(jsonObj)
             .asString();
-            //.body(s"{${notificationField}:${forkExecuteMappingResultAsString}}")
-            //.body(forkExecuteMappingResultAsString)
-          logger.info(s"POST to ${callbackURL} with body = ${manifestStringJsonLd}")
+          logger.info(s"POST to ${callbackURL} with body = ${jsonObj.toString(3)}")
 
           try {
             logger.info(s"response from callback = ${response.getBody}")
@@ -399,6 +409,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
               , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
               , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> annotatedDistribution.manifestDownloadURL
               , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClasses
+              //, "$manifestDownloadURL" -> annotatedDistribution.manifestDownloadURL
               //, MappingPediaConstant.CKAN_RESOURCE_CLASSES -> mappedClasses
             )
             ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
