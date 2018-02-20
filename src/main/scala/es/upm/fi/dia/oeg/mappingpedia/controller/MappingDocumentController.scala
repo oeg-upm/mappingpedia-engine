@@ -16,9 +16,10 @@ import org.springframework.web.multipart.MultipartFile
 
 import scala.collection.JavaConversions._
 
-class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient, val jenaClient:JenaClient) {
+class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient, val jenaClient:JenaClient) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mapper = new ObjectMapper();
+  val datasetController = new DatasetController(ckanClient, githubClient, virtuosoClient);
 
   def storeMappingDocumentOnGitHub(mappingDocument:MappingDocument, dataset: Dataset) = {
     val organization = dataset.dctPublisher;
@@ -61,6 +62,18 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     var collectiveErrorMessage: List[String] = Nil;
 
     val organization = dataset.dctPublisher;
+    val ckanPackageId = if(dataset.ckanPackageId == null) {
+      try {
+        val foundDataset = this.datasetController.findDatasetsByCKANPackageName(dataset.dctIdentifier);
+        if(foundDataset != null) {
+          foundDataset.results.iterator.next.ckanPackageId
+        } else { null }
+      } catch {
+        case e:Exception => null
+      }
+    } else { dataset.ckanPackageId }
+    logger.info("ckanPackageId = " + ckanPackageId);
+    dataset.ckanPackageId = ckanPackageId;
 
 
     val mappingDocumentFile = mappingDocument.mappingDocumentFile;
@@ -203,7 +216,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
     try {
       val addMappingDocumentResultAsJson = this.mapper.writeValueAsString(addMappingResult);
-      logger.info(s"addMappingDocumentResultAsJson = ${addMappingDocumentResultAsJson}");
+      logger.info(s"addMappingDocumentResultAsJson = ${addMappingDocumentResultAsJson}\n\n");
     } catch {
       case e:Exception => {
         logger.error(s"addMappingResult = ${addMappingResult}")
@@ -222,11 +235,11 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
 
 
-  def findAllMappedClasses(): ListResult = {
+  def findAllMappedClasses(): ListResult[String] = {
     this.findAllMappedClasses("http://schema.org")
   }
 
-  def findAllMappedClasses(prefix:String): ListResult = {
+  def findAllMappedClasses(prefix:String): ListResult[String] = {
 
     //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
     val mapValues: Map[String, String] = Map(
@@ -256,11 +269,11 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       }
     } finally qexec.close
 
-    val listResult = new ListResult(results.length, results);
+    val listResult = new ListResult[String](results.length, results);
     listResult
   }
 
-  def findMappedClassesByMappingDocumentId(mappingDocumentId:String): ListResult = {
+  def findMappedClassesByMappingDocumentId(mappingDocumentId:String) = {
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
       "$mappingDocumentId" -> mappingDocumentId
@@ -293,11 +306,11 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     listResult
   }
 
-  def findAllMappedClassesByTableName(tableName:String): ListResult = {
+  def findAllMappedClassesByTableName(tableName:String): ListResult[String] = {
     this.findAllMappedClassesByTableName("http://schema.org", tableName)
   }
 
-  def findAllMappedClassesByTableName(prefix:String, tableName:String): ListResult = {
+  def findAllMappedClassesByTableName(prefix:String, tableName:String): ListResult[String] = {
 
     //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
     val mapValues: Map[String, String] = Map(
@@ -336,11 +349,11 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
       }
     finally qexec.close
 
-    val listResult = new ListResult(results.length, results);
+    val listResult = new ListResult[String](results.length, results);
     listResult
   }
 
-  def findAllMappedProperties(prefix:String): ListResult = {
+  def findAllMappedProperties(prefix:String) = {
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName,
       "$prefix" -> prefix
@@ -374,7 +387,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
   }
 
 
-  def findAllMappingDocuments(): ListResult = {
+  def findAllMappingDocuments() = {
 
     //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
     val mapValues: Map[String, String] = Map(
@@ -388,8 +401,8 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
   }
 
-  def findMappingDocuments(searchType: String, searchTerm: String): ListResult = {
-    val result: ListResult = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
+  def findMappingDocuments(searchType: String, searchTerm: String): ListResult[MappingDocument] = {
+    val result = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
 
       val listResult = this.findMappingDocumentsByMappedClass(searchTerm)
       listResult
@@ -416,7 +429,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
   }
 
   def findMappingDocumentsByDatasetId(pDatasetId: String, pCKANPackageId:String
-                                      , pCKANPackageName:String): ListResult = {
+                                      , pCKANPackageName:String) = {
 
     val queryTemplateFile = "templates/findMappingDocumentsByDatasetId.rq";
 
@@ -443,7 +456,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedClass(mappedClass: String): ListResult = {
+  def findMappingDocumentsByMappedClass(mappedClass: String) = {
     //logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
     val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
 
@@ -457,7 +470,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedClassAndProperty(mappedClass: String, mappedProperty:String): ListResult = {
+  def findMappingDocumentsByMappedClassAndProperty(mappedClass: String, mappedProperty:String): ListResult[MappingDocument] = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedClassAndProperty.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -470,31 +483,31 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedClassAndProperty(aClass: String, aProperty:String, subclass: Boolean): ListResult = {
+  def findMappingDocumentsByMappedClassAndProperty(aClass: String, aProperty:String, subclass: Boolean): ListResult[MappingDocument] = {
     val classURI = MappingPediaUtility.getClassURI(aClass);
 
     val normalizedClassURI = this.jenaClient.mapNormalizedTerms.getOrElse(classURI, classURI);
 
     //val subclassesURIs:List[String] = jenaClient.getSubclassesSummary(normalizedClassURI).results.asInstanceOf[List[String]];
     val subclassesURIs:List[String] = if(subclass) {
-      jenaClient.getSubclassesSummary(normalizedClassURI).results.asInstanceOf[List[String]];
+      jenaClient.getSubclassesSummary(normalizedClassURI).results.toList;
     } else {
       List(normalizedClassURI)
     }
 
-    val allMappedClasses:List[String] = this.findAllMappedClasses().results.asInstanceOf[List[String]]
+    val allMappedClasses:List[String] = this.findAllMappedClasses().results.toList
 
     val intersectedClasses = subclassesURIs.intersect(allMappedClasses);
     
     val mappingDocuments = intersectedClasses.flatMap(intersectedClass => {
       this.findMappingDocumentsByMappedClassAndProperty(intersectedClass, aProperty).getResults();
-    }).asInstanceOf[Iterable[MappingDocument]];
+    });
 
-    val listResult = new ListResult(mappingDocuments.size, mappingDocuments)
+    val listResult = new ListResult[MappingDocument](mappingDocuments.size, mappingDocuments)
     listResult
   }
 
-  def findMappingDocumentsByDistributionId(distributionId: String): ListResult = {
+  def findMappingDocumentsByDistributionId(distributionId: String) = {
     logger.info("findMappingDocumentsByDistributionId:" + distributionId)
     val queryTemplateFile = "templates/findMappingDocumentsByDistributionId.rq";
 
@@ -519,7 +532,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
     val resultAux = this.findMappingDocuments(queryString).getResults();
     val result = if(resultAux != null) {
-      resultAux.iterator().next().asInstanceOf[MappingDocument]
+      resultAux.iterator().next()
     } else {
       null
     }
@@ -527,7 +540,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
   }
 
-  def findMappingDocumentsByMappedProperty(mappedProperty: String): ListResult = {
+  def findMappingDocumentsByMappedProperty(mappedProperty: String) = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -539,7 +552,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedColumn(mappedColumn: String): ListResult = {
+  def findMappingDocumentsByMappedColumn(mappedColumn: String) = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedColumn.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -551,7 +564,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
-  def findMappingDocumentsByMappedTable(mappedTable: String): ListResult = {
+  def findMappingDocumentsByMappedTable(mappedTable: String) = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedTable.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -563,7 +576,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
     this.findMappingDocuments(queryString);
   }
 
-  def findMappingDocuments(queryString: String): ListResult = {
+  def findMappingDocuments(queryString: String): ListResult[MappingDocument] = {
     //logger.info(s"queryString = $queryString");
     /*
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
@@ -635,7 +648,7 @@ class MappingDocumentController(val githubClient:GitHubUtility, val virtuosoClie
 
     //logger.info(s"results = ${results}")
 
-    val listResult = new ListResult(results.length, results);
+    val listResult = new ListResult[MappingDocument](results.length, results);
     listResult
   }
 
@@ -666,7 +679,7 @@ object MappingDocumentController {
       , "$mappingLanguage" -> mappingDocument.mappingLanguage
       , "$hash" -> mappingDocument.hash
 
-      , "$ckanPackageID" -> mappingDocument.ckanPackageId
+      , "$ckanPackageID" -> dataset.ckanPackageId
       , "$ckanResourceID" -> mappingDocument.ckanResourceId
 
       //, "$datasetTitle" -> datasetTitle

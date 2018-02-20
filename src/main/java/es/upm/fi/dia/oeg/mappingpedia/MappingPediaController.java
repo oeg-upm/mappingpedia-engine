@@ -48,7 +48,7 @@ public class MappingPediaController {
 
     private DatasetController datasetController = new DatasetController(ckanClient, githubClient, virtuosoClient);
     private DistributionController distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient);
-    private MappingDocumentController mappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
+    private MappingDocumentController mappingDocumentController = new MappingDocumentController(ckanClient, githubClient, virtuosoClient, jenaClient);
     private MappingExecutionController mappingExecutionController= new MappingExecutionController(ckanClient, githubClient, virtuosoClient, jenaClient);
 
     @RequestMapping(value="/greeting", method= RequestMethod.GET)
@@ -94,6 +94,8 @@ public class MappingPediaController {
         logger.info("notification = " + notification);
         return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
     }
+
+
 
     @RequestMapping(value="/mappingexecutions", method= RequestMethod.GET)
     public ListResult getMappingExecution(@RequestParam(value="mapping_document_sha", defaultValue="") String mappingDocumentSHA
@@ -1142,6 +1144,23 @@ public class MappingPediaController {
 
         return this.distributionController.addDistribution(distribution, manifestFileRef
                 , generateManifestFile, storeToCKAN);
+    }
+
+    @RequestMapping(value = "/distributions/{organization_id}/{dataset_id}/{distribution_id}"
+            , method= RequestMethod.PUT)
+    public GeneralResult putDistribution(
+            @PathVariable("organization_id") String organizationId
+            , @PathVariable("dataset_id") String datasetId
+            , @PathVariable("distribution_id") String distributionId
+
+    )
+    {
+        logger.info("[POST] /distributions/{organization_id}/{dataset_id}/{distribution_id}");
+        logger.info("organization_id = " + organizationId);
+        logger.info("dataset_id = " + datasetId);
+        logger.info("distribution_id = " + distributionId);
+
+        return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
     }
 
     @RequestMapping(value = "/distributions/{organization_id}/{dataset_id}", method= RequestMethod.POST)

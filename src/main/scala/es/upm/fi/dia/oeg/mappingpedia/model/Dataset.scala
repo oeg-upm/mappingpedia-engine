@@ -30,6 +30,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
   var dcatKeyword: String = null;
   var dctLanguage: String = null;
   var dcatDistributions: List[Distribution] = Nil;
+  val unannotatedDistribution = dcatDistributions.asInstanceOf[List[UnannotatedDistribution]]
 
   var manifestAccessURL: String = null;
   var manifestDownloadURL: String = null;
@@ -82,7 +83,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
       this.dcatDistributions = List(distribution);
     } else {
       if (!this.dcatDistributions.contains(distribution)) {
-        this.dcatDistributions = distribution :: this.dcatDistributions;
+        this.dcatDistributions = List(distribution) ++ this.dcatDistributions;
       }
     }
   }
@@ -182,6 +183,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
     this.ckanMaintainer = maintainer;
   }
 
+  def getCKAN_package_name = this.ckanPackageName
 
 
 }

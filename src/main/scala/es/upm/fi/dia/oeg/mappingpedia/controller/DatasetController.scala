@@ -29,7 +29,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   val distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient: VirtuosoClient);
   val mapper = new ObjectMapper();
 
-  def findAllDatasets(): ListResult = {
+  def findAllDatasets() = {
     logger.info("findDatasets")
     val queryTemplateFile = "templates/findAllDatasets.rq";
 
@@ -41,7 +41,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     this.findDatasets(queryString);
   }
 
-  def findDatasetsByCKANPackageId(ckanPackageId:String): ListResult = {
+  def findDatasetsByCKANPackageId(ckanPackageId:String) = {
     logger.info("findDatasetsByCKANPackageId")
     val queryTemplateFile = "templates/findDatasetByCKANPackageId.rq";
 
@@ -54,7 +54,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     this.findDatasets(queryString);
   }
 
-  def findDatasetsByCKANPackageName(ckanPackageName:String): ListResult = {
+  def findDatasetsByCKANPackageName(ckanPackageName:String) = {
     logger.info("findDatasetsByCKANPackageName")
     val queryTemplateFile = "templates/findDatasetByCKANPackageName.rq";
 
@@ -67,7 +67,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     this.findDatasets(queryString);
   }
 
-  def findDatasets(queryString: String): ListResult = {
+  def findDatasets(queryString: String): ListResult[Dataset] = {
     logger.info(s"queryString = $queryString");
 
     /*    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
@@ -86,6 +86,9 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         val datasetID = qs.get("datasetID").toString;
         val dataset = new Dataset(datasetID);
         dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null)
+        dataset.ckanPackageId = MappingPediaUtility.getStringOrElse(qs, "ckanPackageId", null)
+        dataset.ckanPackageName = MappingPediaUtility.getStringOrElse(qs, "ckanPackageName", null)
+
         val distributionID = MappingPediaUtility.getStringOrElse(qs, "distributionID", null)
         val distribution = new UnannotatedDistribution(dataset, distributionID);
         distribution.dcatAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null)
@@ -106,7 +109,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     }
     finally qexec.close
 
-    val listResult = new ListResult(results.length, results);
+    val listResult = new ListResult[Dataset](results.length, results);
     listResult
   }
 
@@ -449,7 +452,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
     try {
       val addDatasetResultAsJson = this.mapper.writeValueAsString(addDatasetResult);
-      logger.info(s"addDatasetResultAsJson = ${addDatasetResultAsJson}");
+      logger.info(s"addDatasetResultAsJson = ${addDatasetResultAsJson}\n\n");
     } catch {
       case e:Exception => {
         logger.error(s"addDatasetResult = ${addDatasetResult}")

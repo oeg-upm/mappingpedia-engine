@@ -282,7 +282,7 @@ object MappingPediaEngine {
 		mappingContent;
 	}
 
-	def getAllTriplesMaps() : ListResult = {
+	def getAllTriplesMaps() = {
 		val prolog = "PREFIX rr: <http://www.w3.org/ns/r2rml#> \n"
 		var queryString: String = prolog + "SELECT ?tm \n";
 		queryString = queryString + " FROM <" + this.mappingpediaProperties.graphName + ">\n";
@@ -305,7 +305,7 @@ object MappingPediaEngine {
 			}
 		} finally qexec.close
 
-		val listResult = new ListResult(results.length, results);
+		val listResult = new ListResult[String](results.length, results);
 		listResult
 	}
 
@@ -316,7 +316,7 @@ object MappingPediaEngine {
 
 
 
-	def getSubclassesSummary(pClass:String) : ListResult = {
+	def getSubclassesSummary(pClass:String) = {
 		//val classURI = MappingPediaUtility.getClassURI(pClass, "http://schema.org/");
 
 		val normalizedClasses = MappingPediaUtility.normalizeTerm(pClass).distinct;
@@ -331,7 +331,7 @@ object MappingPediaEngine {
 		new ListResult(resultAux.size, resultAux)
 	}
 
-	def getSchemaOrgSubclassesDetail(aClass:String) : ListResult = {
+	def getSchemaOrgSubclassesDetail(aClass:String) = {
 		logger.info(s"jenaClient = $jenaClient")
 		logger.info(s"this.ontologyModel = ${this.ontologyModel}")
 

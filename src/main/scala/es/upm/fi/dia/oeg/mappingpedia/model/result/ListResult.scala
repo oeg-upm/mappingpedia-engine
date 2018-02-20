@@ -5,7 +5,7 @@ import scala.collection.JavaConverters._
 /**
   * Created by fpriyatna on 04/04/2017.
   */
-class ListResult (val count:Integer, val results:Iterable[_ <: AnyRef]) {
+class ListResult [A] (val count:Integer, val results:Iterable[A]) {
   def getCount() = this.count;
 
   def getResults() = this.results.asJava;

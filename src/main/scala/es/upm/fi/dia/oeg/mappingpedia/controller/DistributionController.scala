@@ -21,7 +21,7 @@ class DistributionController(val ckanClient:CKANUtility
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mapper = new ObjectMapper();
 
-  def findUnannotatedDistributions(queryString: String): ListResult = {
+  def findUnannotatedDistributions(queryString: String)= {
     logger.info(s"queryString = $queryString");
 
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
@@ -51,11 +51,11 @@ class DistributionController(val ckanClient:CKANUtility
     }
     finally qexec.close
 
-    val listResult = new ListResult(results.length, results);
+    val listResult = new ListResult[Distribution](results.length, results);
     listResult
   }
 
-  def findDistributionByCKANResourceId(ckanResourceId:String): ListResult = {
+  def findDistributionByCKANResourceId(ckanResourceId:String) = {
     logger.info("findDistributionByCKANResourceId")
     val queryTemplateFile = "templates/findDistributionByCKANResourceId.rq";
 
@@ -393,7 +393,7 @@ class DistributionController(val ckanClient:CKANUtility
 
     try {
       val addDistributionResultAsJson = this.mapper.writeValueAsString(addDistributionResult);
-      logger.info(s"addDistributionResultAsJson = ${addDistributionResultAsJson}");
+      logger.info(s"addDistributionResultAsJson = ${addDistributionResultAsJson}\n\n");
     } catch {
       case e:Exception => {
       logger.error(s"addDistributionResult = ${addDistributionResult}")

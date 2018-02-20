@@ -18,10 +18,10 @@ class JenaClient(val ontModel:OntModel) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
   val mapNormalizedTerms:Map[String, String] = {
-    val subclassesLocalNames:List[String] = this.getSubclassesSummary("Thing").results.asInstanceOf[List[String]];
-    val subclassesURIs:List[String] = this.getSubclassesSummary("http://schema.org/Thing").results.asInstanceOf[List[String]];
+    val subclassesLocalNames = this.getSubclassesSummary("Thing").results.asInstanceOf[List[String]];
+    val subclassesURIs= this.getSubclassesSummary("http://schema.org/Thing").results.asInstanceOf[List[String]];
 
-    (subclassesLocalNames:::subclassesURIs).distinct.flatMap(subclassesLocalName => {
+    (subclassesLocalNames ::: subclassesURIs).distinct.flatMap(subclassesLocalName => {
       val normalizedLocalNames = MappingPediaUtility.normalizeTerm(subclassesLocalName);
       normalizedLocalNames.map(normalizedLocalName => normalizedLocalName -> subclassesLocalName)
     }).toMap
@@ -41,7 +41,7 @@ class JenaClient(val ontModel:OntModel) {
     new OntologyResource(uri, localName, label, comment);
   }
 
-  def getProperties(ontClass: OntClass, direct:Boolean) : ListResult = {
+  def getProperties(ontClass: OntClass, direct:Boolean) : ListResult[String] = {
     logger.info(s"ontClass = $ontClass");
     logger.info(s"direct = $direct");
 
@@ -49,7 +49,7 @@ class JenaClient(val ontModel:OntModel) {
 
     val propertiesInString = properties.map(property => property.toString);
 
-    new ListResult(propertiesInString.length, propertiesInString.asInstanceOf[List[String]])
+    new ListResult[String](propertiesInString.length, propertiesInString)
   }
 
   /*  def isClass(resource:Resource) = {
@@ -70,7 +70,7 @@ class JenaClient(val ontModel:OntModel) {
       }
     }*/
 
-  def getProperties(cls:String, direct:String) : ListResult = {
+  def getProperties(cls:String, direct:String) : ListResult[String] = {
     val directBoolean = if("false".equalsIgnoreCase(direct) || "no".equalsIgnoreCase(direct)) {
       false
     } else {
@@ -93,7 +93,7 @@ class JenaClient(val ontModel:OntModel) {
     }
   }
 
-  def getSubclassesDetail(cls:OntClass) : ListResult = {
+  def getSubclassesDetail(cls:OntClass) : ListResult[OntologyClass] = {
     //logger.info("Retrieving subclasses of = " + cls.getURI)
     val clsSubClasses:List[OntClass] = cls.listSubClasses(false).toList.toList;
     val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
@@ -108,11 +108,11 @@ class JenaClient(val ontModel:OntModel) {
 
     val result = resultHead :: resultTail;
 
-    val listResult = new ListResult(result.size, result);
+    val listResult = new ListResult[OntologyClass](result.size, result);
     listResult;
   }
 
-  def getSuperclasses(aClass:String) : ListResult = {
+  def getSuperclasses(aClass:String) : ListResult[String] = {
     val classURI = MappingPediaUtility.getClassURI(aClass, "http://schema.org/");
     val resource = ontModel.getResource(classURI);
     val cls = resource.as(classOf[OntClass])
@@ -120,7 +120,7 @@ class JenaClient(val ontModel:OntModel) {
 
   }
 
-  def getSuperclasses(cls:OntClass) : ListResult = {
+  def getSuperclasses(cls:OntClass) : ListResult[String] = {
 
     logger.info("Retrieving superclasses of = " + cls.getURI)
     val clsSuperclasses:List[OntClass] = cls.listSuperClasses(true).toList.toList;
@@ -128,11 +128,11 @@ class JenaClient(val ontModel:OntModel) {
       clsSuperClass.getLocalName
     })
 
-    val listResult = new ListResult(result.size, result);
+    val listResult = new ListResult[String](result.size, result);
     listResult;
   }
 
-  def getSubclassesDetail(pClass:String) : ListResult  = {
+  def getSubclassesDetail(pClass:String) : ListResult[OntologyClass]  = {
     val classURI = MappingPediaUtility.getClassURI(pClass, "http://schema.org/");
 
     //    val normalizedClasses = MappingPediaUtility.normalizeTerm(classIRI);
@@ -145,12 +145,12 @@ class JenaClient(val ontModel:OntModel) {
       //logger.info(s"schemaClass = $schemaClass");
       val resource = ontModel.getResource(classURI);
       val cls = resource.as(classOf[OntClass])
-      val result = this.getSubclassesDetail(cls).results.asInstanceOf[List[String]];
-      val listResult = new ListResult(result.size, result);
+      val result = this.getSubclassesDetail(cls).results;
+      val listResult = new ListResult[OntologyClass](result.size, result);
       listResult
     } catch {
       case e:Exception => {
-        new ListResult(0, Nil);
+        new ListResult[OntologyClass](0, Nil);
       }
     }
     //});
@@ -158,7 +158,7 @@ class JenaClient(val ontModel:OntModel) {
 
   }
 
-  def getSubclassesSummary(aClass:String) : ListResult = {
+  def getSubclassesSummary(aClass:String) = {
     val isLocalName = if(aClass.contains("/")) { false } else { true }
 
     val subclassesDetail= this.getSubclassesDetail(aClass)
@@ -172,7 +172,7 @@ class JenaClient(val ontModel:OntModel) {
           result.asInstanceOf[OntologyClass].getURI
         }).toList.distinct
 
-      new ListResult(subclassesInList.size, subclassesInList);
+      new ListResult[String](subclassesInList.size, subclassesInList);
     } else {
       null
     }

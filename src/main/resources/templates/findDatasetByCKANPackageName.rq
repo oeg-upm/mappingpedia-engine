@@ -11,6 +11,7 @@ SELECT DISTINCT *
 FROM <$graphURL>
 WHERE {
     ?dataset a mpv:Dataset .
+    ?dataset mpv:ckanPackageId ?ckanPackageId .
     ?dataset mpv:ckanPackageName ?ckanPackageName .
     ?dataset dcterms:identifier ?datasetID .
     FILTER regex(str(?ckanPackageName), "$ckanPackageName", "i")

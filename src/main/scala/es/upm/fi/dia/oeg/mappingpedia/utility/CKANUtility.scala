@@ -287,12 +287,12 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
 object CKANUtility {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
-  def getDatasetList(catalogUrl:String) : ListResult = {
+  def getDatasetList(catalogUrl:String) = {
     val cc: CkanClient = new CkanClient(catalogUrl)
     val datasetList = cc.getDatasetList.asScala
 
     logger.info(s"ckanDatasetList $catalogUrl = " + datasetList)
-    new ListResult(datasetList.size, datasetList)
+    new ListResult[String](datasetList.size, datasetList)
   }
 
   def getResultId(response:CloseableHttpResponse) = {

@@ -38,7 +38,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
                                  , val jenaClient:JenaClient)
 {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  val mappingDocumentController:MappingDocumentController = new MappingDocumentController(githubClient, virtuosoClient, jenaClient);
+  val mappingDocumentController:MappingDocumentController = new MappingDocumentController(
+    ckanClient, githubClient, virtuosoClient, jenaClient);
   val mapper = new ObjectMapper();
 
   def findMappingExecutionURLByHash(mdHash:String, datasetDistributionHash:String) = {
@@ -50,7 +51,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
       mapValues, "templates/findMappingExecutionResultByHash.rq");
-    logger.info(s"queryString = ${queryString}");
+    logger.debug(s"queryString = ${queryString}");
 
     var results: List[String] = List.empty;
 
@@ -222,7 +223,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
 
       val organization = dataset.dctPublisher
-      val unannotatedDistributions = dataset.dcatDistributions.asInstanceOf[List[UnannotatedDistribution]]
+      val unannotatedDistributions = dataset.unannotatedDistribution
       val unannotatedDatasetHash = MappingPediaUtility.calculateHash(dataset);
 
       val mdDownloadURL = md.getDownloadURL();
@@ -285,7 +286,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
             if(jdbcConnection != null) {
               MappingExecutionController.executeR2RMLMappingWithRDB(md, localOutputFilepath, queryFileName, jdbcConnection);
             } else {
-              MappingExecutionController.executeR2RMLMappingWithCSV(md, unannotatedDistributions, localOutputFilepath, queryFileName);
+              MappingExecutionController.executeR2RMLMappingWithCSV(md, unannotatedDistributions
+                , localOutputFilepath, queryFileName);
               logger.info(s"unannotatedDataset.dcatDistributions.size = ${dataset.dcatDistributions.size} after")
             }
           } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
@@ -361,7 +363,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
 
         //GENERATING MANIFEST FILE
-        val manifestFile = MappingExecutionController.generateManifestFile(annotatedDistribution, unannotatedDistributions, md)
+        val manifestFile = MappingExecutionController.generateManifestFile(
+          annotatedDistribution, unannotatedDistributions, md)
         logger.info("Manifest file generated.")
 
 
@@ -493,7 +496,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
   }
 
-  def getInstances(aClass:String, maxMappingDocuments:Integer, useCache:Boolean) : ListResult = {
+  def getInstances(aClass:String, maxMappingDocuments:Integer, useCache:Boolean) = {
     logger.info(s"useCache = ${useCache}");
 
     val mappingDocuments =
@@ -504,7 +507,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
     var i = 0;
     val executionResults:Iterable[ExecuteMappingResult] = mappingDocuments.flatMap(
-      mappingDocument => { val md = mappingDocument.asInstanceOf[MappingDocument];
+      md => {
 
         val mappingLanguage = md.mappingLanguage;
         val distributionFieldSeparator = if(md.distributionFieldSeparator != null
