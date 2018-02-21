@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.io.File
 import java.net.HttpURLConnection
+import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -28,6 +29,31 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient: VirtuosoClient);
   val mapper = new ObjectMapper();
+
+  def addDistributionModifiedDate(dataset: Dataset) = {
+    val now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date())
+    dataset.dctModified = now;
+
+    try {
+      val mapValues: Map[String, String] = Map(
+        "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+        , "$datasetID" -> dataset.dctIdentifier
+        , "$datasetModified" -> dataset.dctModified
+      );
+
+      val triplesString: String = MappingPediaEngine.generateStringFromTemplateFile(
+        mapValues, "templates/addDatasetModifiedDate.ttl")
+      logger.info(s"adding triples to virtuoso: ${triplesString}");
+
+      if(triplesString != null) {
+        this.virtuosoClient.storeFromString(triplesString);
+      }
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+      }
+    }
+  }
 
   def findAllDatasets() = {
     logger.info("findDatasets")

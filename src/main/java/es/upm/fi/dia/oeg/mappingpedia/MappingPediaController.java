@@ -135,7 +135,24 @@ public class MappingPediaController {
         this.distributionController.addDistributionModifiedDate(distribution);
 
         return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
+    }
 
+    @RequestMapping(value="/datasets/{organization_id}/{dataset_id}/modified"
+            , method= RequestMethod.PUT)
+    public GeneralResult putDatasetModifiedDate(
+            @PathVariable("organization_id") String organizationId
+            , @PathVariable("dataset_id") String datasetId
+    )
+    {
+        logger.info("[PUT] /datasets/{organization_id}/{dataset_id}");
+        logger.info("organization_id = " + organizationId);
+        logger.info("dataset_id = " + datasetId);
+
+        Dataset dataset = new Dataset(organizationId, datasetId);
+
+        this.datasetController.addDistributionModifiedDate(dataset);
+
+        return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
     }
 
     @RequestMapping(value="/ontology/resource_details", method= RequestMethod.GET)

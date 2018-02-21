@@ -148,7 +148,6 @@ class DistributionController(val ckanClient:CKANUtility
         e.printStackTrace()
       }
     }
-
   }
 
   def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile
