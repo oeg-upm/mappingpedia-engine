@@ -41,8 +41,10 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         , "$datasetModified" -> dataset.dctModified
       );
 
-      val triplesString: String = MappingPediaEngine.generateStringFromTemplateFile(
-        mapValues, "templates/addDatasetModifiedDate.ttl")
+      val templateFiles = List("templates/metadata-namespaces-template.ttl"
+        , "templates/addDatasetModifiedDate.ttl");
+      val triplesString: String =MappingPediaEngine.generateStringFromTemplateFiles(
+          mapValues, templateFiles)
       logger.info(s"adding triples to virtuoso: ${triplesString}");
 
       if(triplesString != null) {
@@ -269,15 +271,15 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
           null
         }
 
-          logger.debug(s"responseStatus = $responseStatus")
-          logger.debug(s"responseStatusText = $responseStatusText")
+        logger.debug(s"responseStatus = $responseStatus")
+        logger.debug(s"responseStatusText = $responseStatusText")
 
-          if (responseStatus == null || responseStatus < 200 || responseStatus >= 300) {
-            val errorMessage = s"failed to add a distribution file: ${responseStatusText}"
-            errorOccured = true;
-            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-          }
-        });
+        if (responseStatus == null || responseStatus < 200 || responseStatus >= 300) {
+          val errorMessage = s"failed to add a distribution file: ${responseStatusText}"
+          errorOccured = true;
+          collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+        }
+      });
     }
 
 
@@ -449,8 +451,8 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         ckanAddPackageResponse.getStatus
       }
     }
-/*    val ckanAddResourceResponseStatusCode:Integer = if(addDistributionResult == null) {
-      null } else { addDistributionResult.ckanStoreResourceStatus }*/
+    /*    val ckanAddResourceResponseStatusCode:Integer = if(addDistributionResult == null) {
+          null } else { addDistributionResult.ckanStoreResourceStatus }*/
     //distribution.ckanResourceId = if(addDistributionResult == null) { null } else {addDistributionResult.getDistribution_id }
     //val ckanResponseStatusText = ckanAddPackageResponseText + "," + ckanAddResourceResponseStatus;
 

@@ -1,6 +1,2 @@
 #addDistributionModifiedDate.ttl
-@prefix mpidd: <http://mappingpedia.linkeddata.es/instance/dataset/distribution/> .
-@prefix dcterms: <http://purl.org/dc/elements/1.1/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
 mpidd:distribution-$distributionID dcterms:modified "$distributionModified"^^xsd:dateTime .

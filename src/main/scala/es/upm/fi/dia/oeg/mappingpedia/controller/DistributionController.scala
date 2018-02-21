@@ -136,8 +136,10 @@ class DistributionController(val ckanClient:CKANUtility
         , "$distributionModified" -> distribution.dctModified
       );
 
-      val triplesString: String = MappingPediaEngine.generateStringFromTemplateFile(
-        mapValues, "templates/addDistributionModifiedDate.ttl")
+      val templateFiles = List("templates/metadata-namespaces-template.ttl"
+        , "templates/addDistributionModifiedDate.ttl")
+      val triplesString: String = MappingPediaEngine.generateStringFromTemplateFiles(
+        mapValues, templateFiles)
       logger.info(s"adding triples to virtuoso: ${triplesString}");
 
       if(triplesString != null) {

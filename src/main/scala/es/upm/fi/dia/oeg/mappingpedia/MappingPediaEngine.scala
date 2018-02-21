@@ -111,9 +111,40 @@ object MappingPediaEngine {
 
 
 
+  def generateStringFromTemplateFiles(map: Map[String, String]
+                                     , templateFilesPaths:Iterable[String]) : String = {
+    try {
 
+      val templateLines:String = templateFilesPaths.map(templateFilePath => {
+        val templateStream: InputStream = getClass.getResourceAsStream(
+          "/" + templateFilePath);
+        val templateLinesAux:String = scala.io.Source.fromInputStream(templateStream)
+          .getLines.mkString("\n");
+        templateLinesAux
+      }).mkString("\n\n")
 
-	def generateStringFromTemplateFile(map: Map[String, String], templateFilePath:String) : String = {
+      val generatedLines = map.foldLeft(templateLines)( (acc, kv) => {
+        val mapValue:String = map.get(kv._1).getOrElse("");
+        if(mapValue ==null){
+          logger.debug("the input value for " + kv._1 + " is null");
+          acc.replaceAllLiterally(kv._1, "")
+        } else {
+          acc.replaceAllLiterally(kv._1, mapValue)
+        }
+      });
+
+      generatedLines;
+    } catch {
+      case e:Exception => {
+        logger.error("error generating file from template: " + templateFilesPaths);
+        e.printStackTrace();
+        throw e
+      }
+    }
+  }
+
+	def generateStringFromTemplateFile(map: Map[String, String]
+																		 , templateFilePath:String) : String = {
 		//logger.info(s"Generating string from template file: $templateFilePath ...")
 		try {
 
