@@ -23,6 +23,10 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
     this(new Agent(), dctIdentifier)
   }
 
+  def this(organizationId:String, dctIdentifier:String) {
+    this(new Agent(organizationId), dctIdentifier);
+  }
+
   var dctTitle: String = null;
   var dctDescription: String = null;
   var dctIssued: String = createdDate;

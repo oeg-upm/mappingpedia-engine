@@ -116,6 +116,28 @@ public class MappingPediaController {
                 String.format(template, name));
     }
 
+    @RequestMapping(value="/distributions/{organization_id}/{dataset_id}/{distribution_id}/modified"
+            , method= RequestMethod.PUT)
+    public GeneralResult putDistributionsModifiedDate(
+            @PathVariable("organization_id") String organizationId
+            , @PathVariable("dataset_id") String datasetId
+            , @PathVariable("distribution_id") String distributionId
+    )
+    {
+        logger.info("[PUT] /distributions/{organization_id}/{dataset_id}");
+        logger.info("organization_id = " + organizationId);
+        logger.info("dataset_id = " + datasetId);
+        logger.info("distribution_id = " + distributionId);
+
+        Distribution distribution = new UnannotatedDistribution(
+                organizationId, datasetId, distributionId);
+
+        this.distributionController.addDistributionModifiedDate(distribution);
+
+        return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
+
+    }
+
     @RequestMapping(value="/ontology/resource_details", method= RequestMethod.GET)
     public OntologyResource getOntologyResourceDetails(
             @RequestParam(value="resource") String resource) {
@@ -1146,22 +1168,7 @@ public class MappingPediaController {
                 , generateManifestFile, storeToCKAN);
     }
 
-    @RequestMapping(value = "/distributions/{organization_id}/{dataset_id}/{distribution_id}"
-            , method= RequestMethod.PUT)
-    public GeneralResult putDistribution(
-            @PathVariable("organization_id") String organizationId
-            , @PathVariable("dataset_id") String datasetId
-            , @PathVariable("distribution_id") String distributionId
 
-    )
-    {
-        logger.info("[POST] /distributions/{organization_id}/{dataset_id}/{distribution_id}");
-        logger.info("organization_id = " + organizationId);
-        logger.info("dataset_id = " + datasetId);
-        logger.info("distribution_id = " + distributionId);
-
-        return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
-    }
 
     @RequestMapping(value = "/distributions/{organization_id}/{dataset_id}", method= RequestMethod.POST)
     public AddDistributionResult postDistributions(

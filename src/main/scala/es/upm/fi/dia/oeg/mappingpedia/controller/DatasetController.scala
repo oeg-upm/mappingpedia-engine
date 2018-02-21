@@ -341,7 +341,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         if(manifestFile != null) {
           logger.info(s"STORING TRIPLES OF THE MANIFEST OF DATASET ${dataset.dctIdentifier} ON VIRTUOSO ...")
-          MappingPediaEngine.virtuosoClient.store(manifestFile)
+          MappingPediaEngine.virtuosoClient.storeFromFile(manifestFile)
           "OK"
         } else {
           "No manifest has been generated/provided";

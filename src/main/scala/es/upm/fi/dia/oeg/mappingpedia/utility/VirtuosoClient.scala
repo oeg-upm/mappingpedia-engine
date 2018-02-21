@@ -28,21 +28,24 @@ class VirtuosoClient(val virtuosoJDBC:String, val virtuosoUser:String, val virtu
     VirtuosoQueryExecutionFactory.create(queryString, this.databaseModel)
   }
 
-  def store(file:File) : Unit = {
+  def storeFromFile(file:File) : Unit = {
     val filePath = file.getPath;
-    this.store(filePath)
+    this.storeFromFilePath(filePath)
   }
 
-  def store(filePath:String) : Unit = {
+  def storeFromFilePath(filePath:String) : Unit = {
     val model = this.readModelFromFile(filePath);
     val triples = MappingPediaUtility.toTriples(model);
-
-    //val prop = Application.prop;
-
-    this.store(triples);
+    this.storeFromTriples(triples);
   }
 
-  def store(pTriples:List[Triple]) : Unit = {
+  def storeFromString(modelText:String) : Unit = {
+    val model = this.readModelFromString(modelText);
+    val triples = MappingPediaUtility.toTriples(model);
+    this.storeFromTriples(triples);
+  }
+
+  def storeFromTriples(pTriples:List[Triple]) : Unit = {
     this.store(pTriples, false, null);
   }
 
@@ -69,17 +72,22 @@ class VirtuosoClient(val virtuosoJDBC:String, val virtuosoUser:String, val virtu
     this.readModelFromFile(filePath, "TURTLE");
   }
 
+  def readModelFromFile(filePath:String, lang:String) : Model = {
+    val inputStream = FileManager.get().open(filePath);
+    val model = this.readModelFromInputStream(inputStream, lang);
+    model;
+  }
+
+  def readModelFromString(modelText:String) : Model = {
+    this.readModelFromString(modelText, "TURTLE");
+  }
+
   def readModelFromString(modelText:String, lang:String) : Model = {
     val inputStream = new ByteArrayInputStream(modelText.getBytes());
     val model = this.readModelFromInputStream(inputStream, lang);
     model;
   }
 
-  def readModelFromFile(filePath:String, lang:String) : Model = {
-    val inputStream = FileManager.get().open(filePath);
-    val model = this.readModelFromInputStream(inputStream, lang);
-    model;
-  }
 
   def readModelFromInputStream(inputStream:InputStream, lang:String) : Model = {
     val model = ModelFactory.createDefaultModel();

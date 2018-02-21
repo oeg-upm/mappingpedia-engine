@@ -146,7 +146,7 @@ object MappingPediaEngine {
 			generatedLines;
 		} catch {
 			case e:Exception => {
-				logger.error("error generating file from template: " + e.getMessage);
+				logger.error("error generating file from template: " + templateFilePath);
 				e.printStackTrace();
 				throw e
 			}
@@ -214,7 +214,7 @@ object MappingPediaEngine {
 			val file = MappingPediaUtility.multipartFileToFile(fileRef)
 			val filePath = file.getPath
 			logger.info("file path = " + filePath)
-			this.virtuosoClient.store(filePath)
+			this.virtuosoClient.storeFromFilePath(filePath)
 			val errorCode = HttpURLConnection.HTTP_CREATED
 			val status = "success, file uploaded to: " + filePath
 			logger.info("file inserted.")

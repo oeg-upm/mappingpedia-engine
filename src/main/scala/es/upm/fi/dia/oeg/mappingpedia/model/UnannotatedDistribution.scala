@@ -4,9 +4,15 @@ import java.util.UUID
 
 class UnannotatedDistribution (dataset: Dataset, dctIdentifier:String)
   extends Distribution(dataset, dctIdentifier) {
+
   def this(dataset: Dataset) {
     this(dataset, UUID.randomUUID.toString)
   }
+
+  def this(organizationId:String, datasetId:String, dctIdentifier:String) {
+    this(new Dataset(organizationId, datasetId), dctIdentifier);
+  }
+
 }
 
 object UnannotatedDistribution {

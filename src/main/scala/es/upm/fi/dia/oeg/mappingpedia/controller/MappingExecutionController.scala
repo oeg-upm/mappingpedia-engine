@@ -703,7 +703,7 @@ object MappingExecutionController {
     if(manifestFile != null) {
       logger.info("storing the manifest triples of a mapping execution result on virtuoso ...")
       logger.debug("manifestFile = " + manifestFile);
-      MappingPediaEngine.virtuosoClient.store(manifestFile)
+      MappingPediaEngine.virtuosoClient.storeFromFile(manifestFile)
       logger.info("manifest triples stored on virtuoso.")
       "OK";
     } else {

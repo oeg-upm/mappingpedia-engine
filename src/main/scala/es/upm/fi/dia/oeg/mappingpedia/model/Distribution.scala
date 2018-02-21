@@ -17,6 +17,9 @@ abstract class Distribution (val dataset: Dataset, val dctIdentifier:String) ext
     this(dataset, UUID.randomUUID.toString)
   }
 
+  def this(organizationId:String, datasetId:String, dctIdentifier:String) {
+    this(new Dataset(organizationId, datasetId), dctIdentifier);
+  }
 
   val createdDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date())
   val logger: Logger = LoggerFactory.getLogger(this.getClass);

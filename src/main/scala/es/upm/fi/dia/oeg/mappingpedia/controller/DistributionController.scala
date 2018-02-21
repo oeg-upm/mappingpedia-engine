@@ -2,6 +2,8 @@ package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.io.File
 import java.net.HttpURLConnection
+import java.text.SimpleDateFormat
+import java.util.Date
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
@@ -123,6 +125,32 @@ class DistributionController(val ckanClient:CKANUtility
     githubResponse;
   }
 
+  def addDistributionModifiedDate(distribution: Distribution) = {
+    val now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date())
+    distribution.dctModified = now;
+
+    try {
+      val mapValues: Map[String, String] = Map(
+        "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+        , "$distributionID" -> distribution.dctIdentifier
+        , "$distributionModified" -> distribution.dctModified
+      );
+
+      val triplesString: String = MappingPediaEngine.generateStringFromTemplateFile(
+        mapValues, "templates/addDistributionModifiedDate.ttl")
+      logger.info(s"adding triples to virtuoso: ${triplesString}");
+
+      if(triplesString != null) {
+        this.virtuosoClient.storeFromString(triplesString);
+      }
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+      }
+    }
+
+  }
+
   def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile
                       , generateManifestFile:String, storeToCKAN:Boolean
                 ) : AddDistributionResult = {
@@ -176,45 +204,6 @@ class DistributionController(val ckanClient:CKANUtility
     else { addDistributionFileGitHubResponse.getStatusText }
 
 
-
-
-    /*
-    //STORING DATASET & RESOURCE ON CKAN
-    val ckanAddResourceResponse = try {
-      if(MappingPediaEngine.mappingpediaProperties.ckanEnable) {
-
-        logger.info("storing distribution on CKAN ...")
-        val (addResourceStatus, addResourceEntity) =
-          if(distribution != null) {
-            ckanClient.createResource(distribution);
-          } else {
-            (null, null)
-          }
-
-        if(addResourceStatus != null) {
-          if (addResourceStatus.getStatusCode < 200 || addResourceStatus.getStatusCode >= 300) {
-            val errorMessage = "failed to add the distribution file to CKAN storage. response status line from was: " + addResourceStatus
-            throw new Exception(errorMessage);
-          }
-          logger.info("dataset stored on CKAN.")
-        }
-
-        (addResourceStatus, addResourceEntity)
-      } else {
-        (null, null)
-      }
-    } catch {
-      case e: Exception => {
-        errorOccured = true;
-        e.printStackTrace()
-        val errorMessage = "error storing dataset file on CKAN: " + e.getMessage
-        logger.error(errorMessage)
-        collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-        null
-      }
-    }
-    */
-
     //STORING DISTRIBUTION FILE AS RESOURCE ON CKAN
     val ckanAddResourceResponse = try {
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && storeToCKAN) {
@@ -248,17 +237,6 @@ class DistributionController(val ckanClient:CKANUtility
         ckanAddResourceResponse.getStatusLine.getStatusCode
       }
     }
-
-/*    distribution.ckanResourceId = {
-      if(ckanAddResourceResponse == null) {
-        null
-      } else {
-        val httpEntity  = ckanAddResourceResponse.getEntity
-        val entity = EntityUtils.toString(httpEntity)
-        val responseEntity = new JSONObject(entity);
-        responseEntity.getJSONObject("result").getString("id");
-      }
-    }*/
     distribution.ckanResourceId = CKANUtility.getResultId(ckanAddResourceResponse);
     logger.info(s"distribution.ckanResourceId = ${distribution.ckanResourceId}");
 
@@ -310,7 +288,7 @@ class DistributionController(val ckanClient:CKANUtility
       if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
         if(manifestFile != null) {
           logger.info(s"STORING TRIPLES OF THE MANIFEST FILE FOR DISTRIBUTION ${distribution.dctIdentifier} ON VIRTUOSO...")
-          MappingPediaEngine.virtuosoClient.store(manifestFile)
+          MappingPediaEngine.virtuosoClient.storeFromFile(manifestFile)
           "OK"
         } else {
           "No manifest has been generated/provided";
@@ -471,4 +449,6 @@ object DistributionController {
       }
     }
   }
+
+
 }
