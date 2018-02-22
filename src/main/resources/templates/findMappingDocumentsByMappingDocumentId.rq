@@ -14,7 +14,7 @@ WHERE {
     { ?md a mpv:MappingDocument . }
 
     ?md dcterms:identifier ?mdID .
-    ?md mpv:sha ?mdSHA .
+    ?md mpv:hash ?mdSHA .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
     OPTIONAL { ?md mpv:hasTriplesMaps ?tm . }
