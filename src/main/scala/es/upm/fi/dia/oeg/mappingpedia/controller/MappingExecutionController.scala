@@ -13,15 +13,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility._
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory, MorphRDBProperties, MorphRDBRunnerFactory}
-import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.query.QueryFactory
-import org.apache.jena.query.QueryExecutionFactory
 import com.fasterxml.jackson.databind.ObjectMapper
-import es.upm.fi.dia.oeg.mappingpedia.controller.MappingExecutionController.logger
-import org.apache.jena.riot.RDFDataMgr
-import org.eclipse.rdf4j.model.impl.LinkedHashModel
-import org.eclipse.rdf4j.rio.helpers.StatementCollector
-import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
 import org.json.JSONObject
 import org.springframework.http.HttpStatus
 
@@ -29,8 +21,6 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
-import org.apache.jena.riot.Lang
-import org.apache.jena.riot.RDFDataMgr
 
 class MappingExecutionController(val ckanClient:CKANUtility
                                  , val githubClient:GitHubUtility

@@ -33,6 +33,7 @@ class MappingDocument(val dctIdentifier:String) {
   //var multipartFile: MultipartFile = null;
   var mappingDocumentFile:File = null;
   var hash:String = null;
+  var isOutdated:Boolean = false;
 
   // TODO it is a hack by Freddy, refactor this
   /*
@@ -122,4 +123,6 @@ class MappingDocument(val dctIdentifier:String) {
       this.downloadURL = pDownloadURL2;
     }
   }
+
+  def getIsOutdated = this.isOutdated;
 }

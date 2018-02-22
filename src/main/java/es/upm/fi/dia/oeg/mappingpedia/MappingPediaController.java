@@ -132,7 +132,7 @@ public class MappingPediaController {
         Distribution distribution = new UnannotatedDistribution(
                 organizationId, datasetId, distributionId);
 
-        this.distributionController.addDistributionModifiedDate(distribution);
+        this.distributionController.addModifiedDate(distribution);
 
         return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
     }
@@ -150,7 +150,7 @@ public class MappingPediaController {
 
         Dataset dataset = new Dataset(organizationId, datasetId);
 
-        this.datasetController.addDistributionModifiedDate(dataset);
+        this.datasetController.addModifiedDate(dataset);
 
         return new GeneralResult(HttpStatus.OK.getReasonPhrase(), HttpStatus.OK.value());
     }
@@ -702,31 +702,46 @@ public class MappingPediaController {
         logger.info("mapping_document_file = " + mappingDocumentFileMultipartFile);
         logger.info("mapping_document_download_url = " + pMappingDocumentDownloadURL1);
 
-
         try {
+
+
             String datasetId = pDatasetID;
 
-            if(datasetId == null) {
-                if(ckanPackageId != null) {
-                    ListResult datasetsByCKANPackageId = this.datasetController.findDatasetsByCKANPackageId(ckanPackageId);
-                    if(datasetsByCKANPackageId != null && datasetsByCKANPackageId.results().size() > 0) {
-                        Dataset dataset = (Dataset) datasetsByCKANPackageId.results().iterator().next();
-                        datasetId =  dataset.getId();
-                    }
-                }
-            }
-
-            if(datasetId == null) {
-                ListResult datasetsByCKANPackageName = this.datasetController.findDatasetsByCKANPackageName(ckanPackageName);
-                if(datasetsByCKANPackageName != null && datasetsByCKANPackageName.results().size() > 0) {
-                    Dataset dataset = (Dataset) datasetsByCKANPackageName.results().iterator().next();
+            String datasetIdByCKANPackageId = null;
+            if(datasetId == null && ckanPackageId != null) {
+                ListResult datasetsByCKANPackageId = this.datasetController.findDatasetsByCKANPackageId(ckanPackageId);
+                if(datasetsByCKANPackageId != null && datasetsByCKANPackageId.results().size() > 0) {
+                    Dataset dataset = (Dataset) datasetsByCKANPackageId.results().iterator().next();
+                    datasetIdByCKANPackageId = dataset.getId();
                     datasetId =  dataset.getId();
                 }
             }
+            logger.info("datasetIdByCKANPackageId = " + datasetIdByCKANPackageId);
 
+            String datasetIdByCKANPackageName = null;
+            if(datasetId == null && ckanPackageName != null ) {
+                ListResult datasetsByCKANPackageName = this.datasetController.findDatasetsByCKANPackageName(ckanPackageName);
+                if(datasetsByCKANPackageName != null && datasetsByCKANPackageName.results().size() > 0) {
+                    Dataset dataset = (Dataset) datasetsByCKANPackageName.results().iterator().next();
+                    datasetIdByCKANPackageName = dataset.getId();
+                    datasetId =  dataset.getId();
+                }
+            }
+            logger.info("datasetIdByCKANPackageName = " + datasetIdByCKANPackageName);
+
+            String newDatasetId = null;
             if(datasetId == null) {
                 logger.warn("datasetId = " + datasetId);
+                Agent organization = new Agent(organizationID);
+                Dataset dataset = new Dataset(organization);
+                dataset.ckanPackageId_$eq(ckanPackageId);
+                dataset.ckanPackageName_$eq(ckanPackageName);
+                this.datasetController.addDataset(dataset, null, true, false);
+                newDatasetId = dataset.getId();
+                datasetId =  dataset.getId();
             }
+            logger.info("newDatasetId = " + newDatasetId);
+
 
 
             return this.postMappings1(organizationID
@@ -766,7 +781,7 @@ public class MappingPediaController {
             , @RequestParam(value="mappingDocumentDownloadURL", required = false) String pMappingDocumentDownloadURL2
 
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
-            , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", defaultValue="true") String pGenerateManifestFile
             , @RequestParam(value="mappingDocumentTitle", defaultValue="") String mappingDocumentTitle
             , @RequestParam(value="mappingDocumentCreator", defaultValue="") String mappingDocumentCreator
             , @RequestParam(value="mappingDocumentSubjects", defaultValue="") String mappingDocumentSubjects
@@ -785,6 +800,8 @@ public class MappingPediaController {
         logger.debug("ckanResourceId = " + ckanResourceId);
 
         try {
+            boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
+
             /*
             Agent organization = new Agent(organizationID);
             Dataset dataset = new Dataset(organization, datasetID);
@@ -884,7 +901,7 @@ public class MappingPediaController {
             , @RequestParam(value="output_mediatype", required = false) String outputMediaType
 
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String pGenerateManifestFile
 
             , @RequestParam(value="use_cache", required = false, defaultValue="true") String pUseCache
             , @RequestParam(value="callback_url", required = false) String callbackURL
@@ -892,6 +909,7 @@ public class MappingPediaController {
     )
     {
         logger.info("[POST] /datasets_mappings_execute");
+        boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
 
         Agent organization = new Agent(organizationID);
 
@@ -933,7 +951,7 @@ public class MappingPediaController {
 
 
         AddDatasetResult addDatasetResult = this.datasetController.addDataset(
-                dataset, manifestFileRef, generateManifestFile, "true");
+                dataset, manifestFileRef, generateManifestFile, true);
         int addDatasetResultStatusCode = addDatasetResult.getStatus_code();
         if(addDatasetResultStatusCode >= 200 && addDatasetResultStatusCode < 300) {
             MappingDocument mappingDocument = new MappingDocument();
@@ -1049,7 +1067,7 @@ public class MappingPediaController {
 
             //OTHER FIELDS
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String pGenerateManifestFile
             , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
             , @RequestParam(value="store_to_ckan", required = false, defaultValue = "true") String pStoreToCKAN
     )
@@ -1070,6 +1088,8 @@ public class MappingPediaController {
         logger.info("was_influenced_by = " + provWasInfluencedBy);
 
         try {
+            boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
+
             Dataset dataset = Dataset.apply(organizationId, datasetID);
             dataset.setTitle(pDatasetTitle1, pDatasetTitle2);
             dataset.setDescription(pDatasetDescription1, pDatasetDescription2);
@@ -1107,8 +1127,9 @@ public class MappingPediaController {
                 dataset.addDistribution(distribution);
             }
 
+            boolean storeToCKAN = MappingPediaUtility.stringToBoolean(pStoreToCKAN);
             return this.datasetController.addDataset(dataset, manifestFileRef
-                    , generateManifestFile, pStoreToCKAN);
+                    , generateManifestFile, storeToCKAN);
         } catch(Exception e) {
             return new AddDatasetResult(HttpURLConnection.HTTP_INTERNAL_ERROR, e.getMessage()
                     , null
@@ -1130,7 +1151,7 @@ public class MappingPediaController {
             , @RequestParam(value="datasetPublisher", required = false) String datasetPublisher
             , @RequestParam(value="datasetLanguage", required = false) String datasetLanguage
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String pGenerateManifestFile
 
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
@@ -1144,6 +1165,7 @@ public class MappingPediaController {
         logger.info("[POST] /datasets/{organization_id}/{dataset_id}");
         logger.info("organization_id = " + organizationId);
         logger.info("dataset_id = " + datasetId);
+        boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
 
         Agent organization = new Agent(organizationId);
 
@@ -1193,7 +1215,7 @@ public class MappingPediaController {
             , @PathVariable("dataset_id") String datasetID
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
-            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String generateManifestFile
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String pGenerateManifestFile
             //, @RequestParam(value="datasetFile", required = false) MultipartFile datasetMultipartFile
             , @RequestParam(value="distribution_file", required = false) MultipartFile distributionMultipartFile
             , @RequestParam(value="distribution_title", required = false) String distributionTitle
@@ -1213,6 +1235,7 @@ public class MappingPediaController {
         logger.info("dataset_id = " + datasetID);
         logger.info("distribution_download_url = " + distributionDownloadURL);
         logger.info("distribution_file = " + distributionMultipartFile);
+        boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
 
         Agent organization = new Agent(organizationID);
 

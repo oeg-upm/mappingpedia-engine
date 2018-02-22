@@ -2,7 +2,6 @@ package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.io.File
 import java.net.HttpURLConnection
-import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -11,8 +10,6 @@ import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, AddDistributionResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility, VirtuosoClient}
-import org.apache.http.util.EntityUtils
-import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
 
@@ -125,8 +122,8 @@ class DistributionController(val ckanClient:CKANUtility
     githubResponse;
   }
 
-  def addDistributionModifiedDate(distribution: Distribution) = {
-    val now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date())
+  def addModifiedDate(distribution: Distribution) = {
+    val now = MappingPediaEngine.sdf.format(new Date())
     distribution.dctModified = now;
 
     try {
@@ -153,7 +150,7 @@ class DistributionController(val ckanClient:CKANUtility
   }
 
   def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile
-                      , generateManifestFile:String, storeToCKAN:Boolean
+                      , generateManifestFile:Boolean, storeToCKAN:Boolean
                 ) : AddDistributionResult = {
 
     //val dataset = distribution.dataset
@@ -249,7 +246,7 @@ class DistributionController(val ckanClient:CKANUtility
         logger.info("Manifest file generated. (manifestFileRef is not null)")
         generatedFile
       } else { // if the user does not provide any manifest file
-        if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+        if(generateManifestFile) {
           //MANIFEST FILE GENERATION
           val generatedFile = DistributionController.generateManifestFile(distribution);
           generatedFile

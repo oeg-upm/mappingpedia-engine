@@ -1,5 +1,7 @@
 package es.upm.fi.dia.oeg.mappingpedia
 
+import java.text.SimpleDateFormat
+
 import org.apache.jena.rdf.model.ResourceFactory
 
 
@@ -87,4 +89,5 @@ object MappingPediaConstant {
 	val CKAN_RESOURCE_CLASS = "class";
 	val CKAN_RESOURCE_CLASSES = "tag_string";
 
+	val SDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 }

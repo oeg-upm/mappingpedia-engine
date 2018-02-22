@@ -2,36 +2,25 @@ package es.upm.fi.dia.oeg.mappingpedia.controller
 
 import java.io.File
 import java.net.HttpURLConnection
-import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
-import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
-import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, ListResult}
-import es.upm.fi.dia.oeg.mappingpedia.utility.GitHubUtility.logger
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
 import es.upm.fi.dia.oeg.mappingpedia.utility.{CKANUtility, GitHubUtility, MappingPediaUtility, VirtuosoClient}
-import org.apache.http.client.methods.CloseableHttpResponse
-import org.apache.http.util.EntityUtils
-import org.json.JSONObject
 import org.springframework.web.multipart.MultipartFile
-import virtuoso.jena.driver.{VirtModel, VirtuosoQueryExecutionFactory}
-
-import scala.collection.JavaConversions._
 
 class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient)  {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient: VirtuosoClient);
   val mapper = new ObjectMapper();
 
-  def addDistributionModifiedDate(dataset: Dataset) = {
-    val now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date())
+  def addModifiedDate(dataset: Dataset) = {
+
+    val now = MappingPediaEngine.sdf.format(new Date())
     dataset.dctModified = now;
 
     try {
@@ -96,7 +85,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   }
 
   def findDatasets(queryString: String): ListResult[Dataset] = {
-    logger.info(s"queryString = $queryString");
+    logger.debug(s"queryString = $queryString");
 
     /*    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
           , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
@@ -158,17 +147,8 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
 
   def addDataset(dataset:Dataset, manifestFileRef:MultipartFile
-                 , generateManifestFile:String, pStoreToCKAN:String
+                 , generateManifestFile:Boolean, storeToCKAN:Boolean
                 ) : AddDatasetResult = {
-
-    val storeToCKAN = if("true".equalsIgnoreCase(pStoreToCKAN) || "yes".equalsIgnoreCase(pStoreToCKAN)) {
-      true
-    } else {
-      false
-    }
-
-    //val organization: Organization = dataset.dctPublisher;
-    //val distribution = dataset.getDistribution();
     val distributions = dataset.dcatDistributions;
 
     var errorOccured = false;
@@ -253,7 +233,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         logger.info(s"distribution = " + distribution);
         val addDistributionResult = if(distribution != null) {
           this.distributionController.addDistribution(distribution, manifestFileRef:MultipartFile
-            , generateManifestFile:String, storeToCKAN)
+            , generateManifestFile, storeToCKAN)
         } else {
           null
         }
@@ -331,7 +311,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         logger.info("Manifest file generated. (manifestFileRef is not null)")
         generatedFile
       } else { // if the user does not provide any manifest file
-        if("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+        if(generateManifestFile) {
           //MANIFEST FILE GENERATION
           val generatedFile = DatasetController.generateManifestFile(dataset);
           generatedFile

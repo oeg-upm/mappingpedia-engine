@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.sdf
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility._
@@ -55,9 +54,9 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
 
 
   def addNewMappingDocument(dataset: Dataset, manifestFileRef: MultipartFile
-                       , replaceMappingBaseURI: String, generateManifestFile: String
-                       , mappingDocument: MappingDocument
-                      ): AddMappingDocumentResult = {
+                            , replaceMappingBaseURI: String, generateManifestFile: Boolean
+                            , mappingDocument: MappingDocument
+                           ): AddMappingDocumentResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
 
@@ -104,7 +103,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
         MappingPediaUtility.multipartFileToFile(manifestFileRef, dataset.dctIdentifier)
       } else {
         logger.info("Manifest file is not provided")
-        if ("true".equalsIgnoreCase(generateManifestFile) || "yes".equalsIgnoreCase(generateManifestFile)) {
+        if (generateManifestFile) {
           //GENERATE MANIFEST FILE IF NOT PROVIDED
           MappingDocumentController.generateManifestFile(mappingDocument, dataset);
         } else {
@@ -328,7 +327,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
-  logger.debug(s"queryString = \n$queryString")
+    logger.debug(s"queryString = \n$queryString")
 
     var results: List[String] = List.empty;
     try {
@@ -344,9 +343,9 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
         results = s"$mappedClass -- $count" :: results;
       }
     }
-      catch {
-        case e:Exception => { e.printStackTrace()}
-      }
+    catch {
+      case e:Exception => { e.printStackTrace()}
+    }
     finally qexec.close
 
     val listResult = new ListResult[String](results.length, results);
@@ -453,6 +452,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    logger.info(s"queryString = ${queryString}")
     this.findMappingDocuments(queryString);
   }
 
@@ -498,7 +498,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val allMappedClasses:List[String] = this.findAllMappedClasses().results.toList
 
     val intersectedClasses = subclassesURIs.intersect(allMappedClasses);
-    
+
     val mappingDocuments = intersectedClasses.flatMap(intersectedClass => {
       this.findMappingDocumentsByMappedClassAndProperty(intersectedClass, aProperty).getResults();
     });
@@ -603,6 +603,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
         val datasetId = MappingPediaUtility.getStringOrElse(qs, "datasetId", null);
 
         md.dataset = new Dataset(datasetId)
+        md.dataset.dctModified = MappingPediaUtility.getStringOrElse(qs, "datasetModified", null);
         md.dataset.dctTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null);
 
         val distribution = new UnannotatedDistribution(md.dataset);
@@ -633,6 +634,9 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
         //logger.info(s"md.distributionSHA = ${md.distributionSHA}");
         //logger.info(s"md.sha = ${md.sha}");
 
+        md.isOutdated = MappingDocumentController.isOutdatedMappingDocument(
+          md.dctDateSubmitted, md.dataset.dctModified);
+
         if(!retrievedMappings.contains(md.hash)) {
           //logger.warn(s"retrieving mapping document with sha ${md.sha}.")
           //results = md :: results;
@@ -646,7 +650,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
       }
     } finally qexec.close
 
-    //logger.info(s"results = ${results}")
+    logger.info(s"results.length = ${results.length}")
 
     val listResult = new ListResult[MappingDocument](results.length, results);
     listResult
@@ -666,7 +670,7 @@ object MappingDocumentController {
       MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA_NAMESPACE
       , MappingPediaConstant.TEMPLATE_MAPPINGDOCUMENT_METADATA);
 
-    val mappingDocumentDateTimeSubmitted = sdf.format(new Date())
+    val mappingDocumentDateTimeSubmitted = MappingPediaEngine.sdf.format(new Date())
 
     val mapValues: Map[String, String] = Map(
       "$mappingDocumentID" -> mappingDocument.dctIdentifier
@@ -725,5 +729,21 @@ object MappingDocumentController {
       "r2rml"
     }
     mappingLanguage
+  }
+
+  def isOutdatedMappingDocument(pMdSubmitted:String, pDatasetModified:String) = {
+    val mdSubmitted:Date = if(pMdSubmitted != null) {MappingPediaEngine.sdf.parse(pMdSubmitted); } else { null }
+    val dsModified:Date = if(pDatasetModified != null) { MappingPediaEngine.sdf.parse(pDatasetModified); } else { null}
+
+    val isOutdated = if(dsModified == null || mdSubmitted == null) { false }
+    else {
+      if( dsModified.after(mdSubmitted)) {
+        true
+      } else {
+        false
+      }
+    }
+
+    isOutdated
   }
 }
