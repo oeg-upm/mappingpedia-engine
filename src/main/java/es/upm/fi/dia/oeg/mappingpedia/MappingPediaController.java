@@ -680,7 +680,7 @@ public class MappingPediaController {
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="mappingFile", required = false) MultipartFile mappingFileMultipartFile
             , @RequestParam(value="mapping_document_file", required = false) MultipartFile mappingDocumentFileMultipartFile
-            , @RequestParam(value="mapping_document_url", required = false) String pMappingDocumentDownloadURL1
+            , @RequestParam(value="mapping_document_download_url", required = false) String pMappingDocumentDownloadURL1
             , @RequestParam(value="mappingDocumentDownloadURL", required = false) String pMappingDocumentDownloadURL2
             , @RequestParam(value="replaceMappingBaseURI", defaultValue="true") String replaceMappingBaseURI
             , @RequestParam(value="generateManifestFile", defaultValue="true") String generateManifestFile
@@ -700,7 +700,7 @@ public class MappingPediaController {
         logger.info("ckan_package_name = " + ckanPackageName);
         logger.info("mappingFile = " + mappingFileMultipartFile);
         logger.info("mapping_document_file = " + mappingDocumentFileMultipartFile);
-        logger.info("mapping_document_url = " + pMappingDocumentDownloadURL1);
+        logger.info("mapping_document_download_url = " + pMappingDocumentDownloadURL1);
 
 
         try {
