@@ -13,6 +13,8 @@ class UnannotatedDistribution (dataset: Dataset, dctIdentifier:String)
     this(new Dataset(organizationId, datasetId), dctIdentifier);
   }
 
+  dataset.addDistribution(this);
+
 }
 
 object UnannotatedDistribution {

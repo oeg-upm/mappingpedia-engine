@@ -20,6 +20,14 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
   val mapper = new ObjectMapper();
   val datasetController = new DatasetController(ckanClient, githubClient, virtuosoClient);
 
+  def findOrCreate(id:String): MappingDocument = {
+    val existingMappingDocument = if(id != null) {this.findById(id);} else { null }
+    val mappingDocument = if(existingMappingDocument == null) {
+      new MappingDocument();
+    } else { existingMappingDocument }
+    mappingDocument
+  }
+
   def storeMappingDocumentOnGitHub(mappingDocument:MappingDocument, dataset: Dataset) = {
     val organization = dataset.dctPublisher;
 
@@ -33,7 +41,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val mappingDocumentFilePath = s"${organization.dctIdentifier}/${dataset.dctIdentifier}/${mappingDocumentFileName}";
     logger.info(s"mappingDocumentFilePath = $mappingDocumentFilePath")
 
-    val commitMessage = s"add a new mapping document file ${mappingDocumentFileName}"
+    val commitMessage = s"add mapping document file ${mappingDocumentFileName}"
     //val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
 
     logger.info("STORING MAPPING DOCUMENT FILE ON GITHUB ...")
@@ -63,7 +71,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val organization = dataset.dctPublisher;
     val ckanPackageId = if(dataset.ckanPackageId == null) {
       try {
-        val foundDataset = this.datasetController.findDatasetsByCKANPackageName(dataset.dctIdentifier);
+        val foundDataset = this.datasetController.findByCKANPackageName(dataset.dctIdentifier);
         if(foundDataset != null) {
           foundDataset.results.iterator.next.ckanPackageId
         } else { null }
@@ -158,7 +166,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val addNewManifestResponse = try {
       if (manifestFile != null) {
         logger.info("STORING MANIFEST FILE ON GITHUB ...")
-        val addNewManifestCommitMessage = s"Add a new manifest file for mapping document: ${mappingDocument.dctIdentifier}"
+        val addNewManifestCommitMessage = s"Add mapping document manifest: ${mappingDocument.dctIdentifier}"
 
         val mappingDocumentManifestFilePath = s"${organization.dctIdentifier}/${dataset.dctIdentifier}/${mappingDocument.dctIdentifier}/${manifestFile.getName}";
         logger.info(s"mappingDocumentManifestFilePath = $mappingDocumentManifestFilePath")
@@ -386,7 +394,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
   }
 
 
-  def findAllMappingDocuments() = {
+  def findAll() = {
 
     //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
     val mapValues: Map[String, String] = Map(
@@ -396,30 +404,30 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
       mapValues, "templates/findAllMappingDocuments.rq")
 
-    this.findMappingDocuments(queryString);
+    this.findByQueryString(queryString);
 
   }
 
-  def findMappingDocuments(searchType: String, searchTerm: String): ListResult[MappingDocument] = {
+  def findByTerm(searchType: String, searchTerm: String): ListResult[MappingDocument] = {
     val result = if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_CLASS.equals(searchType) && searchTerm != null) {
 
-      val listResult = this.findMappingDocumentsByMappedClass(searchTerm)
+      val listResult = this.findByClass(searchTerm)
       listResult
     } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_PROPERTY.equals(searchType) && searchTerm != null) {
       logger.info("findMappingDocumentsByMappedProperty:" + searchTerm)
-      val listResult = this.findMappingDocumentsByMappedProperty(searchTerm)
+      val listResult = this.findByProperty(searchTerm)
       listResult
     } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_TABLE.equals(searchType) && searchTerm != null) {
       logger.info("findMappingDocumentsByMappedTable:" + searchTerm)
-      val listResult = this.findMappingDocumentsByMappedTable(searchTerm)
+      val listResult = this.findByTable(searchTerm)
       listResult
     } else if (MappingPediaConstant.SEARCH_MAPPINGDOCUMENT_BY_COLUMN.equals(searchType) && searchTerm != null) {
       logger.info("findMappingDocumentsByMappedColumn:" + searchTerm)
-      val listResult = this.findMappingDocumentsByMappedColumn(searchTerm)
+      val listResult = this.findByColumn(searchTerm)
       listResult
     } else {
       logger.info("findAllMappingDocuments")
-      val listResult = this.findAllMappingDocuments
+      val listResult = this.findAll
       listResult
     }
     //logger.info("result = " + result)
@@ -427,7 +435,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     result;
   }
 
-  def findMappingDocumentsByDatasetId(pDatasetId: String, pCKANPackageId:String
+  def findByDatasetId(pDatasetId: String, pCKANPackageId:String
                                       , pCKANPackageName:String) = {
 
     val queryTemplateFile = "templates/findMappingDocumentsByDatasetId.rq";
@@ -452,11 +460,11 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    logger.info(s"queryString = ${queryString}")
-    this.findMappingDocuments(queryString);
+    logger.debug(s"queryString = ${queryString}")
+    this.findByQueryString(queryString);
   }
 
-  def findMappingDocumentsByMappedClass(mappedClass: String) = {
+  def findByClass(mappedClass: String) = {
     //logger.info("findMappingDocumentsByMappedClass:" + mappedClass)
     val queryTemplateFile = "templates/findTriplesMapsByMappedClass.rq";
 
@@ -467,10 +475,10 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findMappingDocuments(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findMappingDocumentsByMappedClassAndProperty(mappedClass: String, mappedProperty:String): ListResult[MappingDocument] = {
+  def findByClassAndProperty(mappedClass: String, mappedProperty:String): ListResult[MappingDocument] = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedClassAndProperty.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -480,10 +488,10 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findMappingDocuments(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findMappingDocumentsByMappedClassAndProperty(aClass: String, aProperty:String, subclass: Boolean): ListResult[MappingDocument] = {
+  def findByClassAndProperty(aClass: String, aProperty:String, subclass: Boolean): ListResult[MappingDocument] = {
     val classURI = MappingPediaUtility.getClassURI(aClass);
 
     val normalizedClassURI = this.jenaClient.mapNormalizedTerms.getOrElse(classURI, classURI);
@@ -500,14 +508,14 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val intersectedClasses = subclassesURIs.intersect(allMappedClasses);
 
     val mappingDocuments = intersectedClasses.flatMap(intersectedClass => {
-      this.findMappingDocumentsByMappedClassAndProperty(intersectedClass, aProperty).getResults();
+      this.findByClassAndProperty(intersectedClass, aProperty).getResults();
     });
 
     val listResult = new ListResult[MappingDocument](mappingDocuments.size, mappingDocuments)
     listResult
   }
 
-  def findMappingDocumentsByDistributionId(distributionId: String) = {
+  def findByDistributionId(distributionId: String) = {
     logger.info("findMappingDocumentsByDistributionId:" + distributionId)
     val queryTemplateFile = "templates/findMappingDocumentsByDistributionId.rq";
 
@@ -517,10 +525,10 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findMappingDocuments(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findMappingDocumentsByMappingDocumentId(mappingDocumentId: String): MappingDocument = {
+  def findById(mappingDocumentId: String): MappingDocument = {
     logger.info("findMappingDocumentsByMappingDocumentId:" + mappingDocumentId)
     val queryTemplateFile = "templates/findMappingDocumentsByMappingDocumentId.rq";
 
@@ -530,17 +538,18 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    val resultAux = this.findMappingDocuments(queryString).getResults();
-    val result = if(resultAux != null) {
+    logger.debug(s"queryString = ${queryString}")
+
+    val resultAux = this.findByQueryString(queryString).getResults();
+    val result = if(resultAux != null && resultAux.iterator.size > 0) {
       resultAux.iterator().next()
     } else {
       null
     }
     result
-
   }
 
-  def findMappingDocumentsByMappedProperty(mappedProperty: String) = {
+  def findByProperty(mappedProperty: String) = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedProperty.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -549,10 +558,10 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findMappingDocuments(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findMappingDocumentsByMappedColumn(mappedColumn: String) = {
+  def findByColumn(mappedColumn: String) = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedColumn.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -561,10 +570,10 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findMappingDocuments(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findMappingDocumentsByMappedTable(mappedTable: String) = {
+  def findByTable(mappedTable: String) = {
     val queryTemplateFile = "templates/findTriplesMapsByMappedTable.rq";
 
     val mapValues: Map[String, String] = Map(
@@ -573,10 +582,10 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findMappingDocuments(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findMappingDocuments(queryString: String): ListResult[MappingDocument] = {
+  def findByQueryString(queryString: String): ListResult[MappingDocument] = {
     //logger.info(s"queryString = $queryString");
     /*
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
@@ -628,10 +637,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
 
         md.ckanResourceId = MappingPediaUtility.getStringOrElse(qs, "resourceId", null);
 
-        val mdDownloadURL = MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null);
-
-        md.setDownloadURL(mdDownloadURL);
-        //logger.info(s"md.distributionSHA = ${md.distributionSHA}");
+        md.setDownloadURL(MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null));
         //logger.info(s"md.sha = ${md.sha}");
 
         md.isOutdated = MappingDocumentController.isOutdatedMappingDocument(
@@ -650,7 +656,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
       }
     } finally qexec.close
 
-    logger.info(s"results.length = ${results.length}")
+    logger.debug(s"results.length = ${results.length}")
 
     val listResult = new ListResult[MappingDocument](results.length, results);
     listResult

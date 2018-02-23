@@ -32,7 +32,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
     ckanClient, githubClient, virtuosoClient, jenaClient);
   val mapper = new ObjectMapper();
 
-  def findMappingExecutionURLByHash(mdHash:String, datasetDistributionHash:String) = {
+  def findByHash(mdHash:String, datasetDistributionHash:String) = {
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
       , "$mdHash" -> mdHash
@@ -78,7 +78,6 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
                       , useCache:Boolean
                       , callbackURL:String
-                      , callbackField:String
                     ) : ExecuteMappingResult = {
     val f = this.executeMappingWithFuture(
       md:MappingDocument
@@ -96,8 +95,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
       , useCache:Boolean
       , callbackURL:String
-      , callbackField:String
     );
+    logger.info(s"dataset.unannotatedDistributions.length = ${dataset.getUnannotatedDistributions.length}")
 
     val executeMappingResult = if(callbackURL == null) {
       logger.info("Await.result");
@@ -204,8 +203,6 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
                                 , useCache:Boolean
                                 , callbackURL:String
-                                , callbackField:String
-
                               ) : Future[ExecuteMappingResult] = {
     val f = Future {
       var errorOccured = false;
@@ -213,8 +210,9 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
 
       val organization = dataset.dctPublisher
-      val unannotatedDistributions = dataset.unannotatedDistribution
-      val unannotatedDatasetHash = MappingPediaUtility.calculateHash(dataset);
+      val unannotatedDistributions = dataset.getUnannotatedDistributions
+      val unannotatedDatasetHash = MappingPediaUtility.calculateHash(
+        unannotatedDistributions);
 
       val mdDownloadURL = md.getDownloadURL();
       if (md.hash == null && mdDownloadURL != null ) {
@@ -222,7 +220,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
         md.hash = hashValue
       }
 
-      val cacheExecutionURL = this.findMappingExecutionURLByHash(md.hash, unannotatedDatasetHash);
+      val cacheExecutionURL = this.findByHash(md.hash, unannotatedDatasetHash);
       logger.debug(s"cacheExecutionURL = ${cacheExecutionURL}");
 
       if(cacheExecutionURL == null || cacheExecutionURL.results.isEmpty || !useCache) {
@@ -276,9 +274,10 @@ class MappingExecutionController(val ckanClient:CKANUtility
             if(jdbcConnection != null) {
               MappingExecutionController.executeR2RMLMappingWithRDB(md, localOutputFilepath, queryFileName, jdbcConnection);
             } else {
-              MappingExecutionController.executeR2RMLMappingWithCSV(md, unannotatedDistributions
-                , localOutputFilepath, queryFileName);
-              logger.info(s"unannotatedDataset.dcatDistributions.size = ${dataset.dcatDistributions.size} after")
+              MappingExecutionController.executeR2RMLMappingWithCSV(
+                md, unannotatedDistributions, localOutputFilepath, queryFileName);
+              logger.info(s"dataset.unannotatedDistributions.size = ${dataset.getUnannotatedDistributions.size} after")
+              logger.info(s"dataset.annotatedDistributions.size = ${dataset.getAnnotatedDistributions.size} after")
             }
           } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
             val unannotatedDistribution = unannotatedDistributions.iterator.next();
@@ -490,7 +489,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
     logger.info(s"useCache = ${useCache}");
 
     val mappingDocuments =
-      this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
+      this.mappingDocumentController.findByClassAndProperty(
         aClass, null, true).results
 
     var executedMappingDocuments:List[(String, String)]= Nil;
@@ -527,7 +526,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
           None
         } else {
           if(i < maxMappingDocuments) {
-            val mappingExecutionURLs = if(useCache) { this.findMappingExecutionURLByHash(md.hash,unannotatedDistribution.hash); }
+            val mappingExecutionURLs = if(useCache) { this.findByHash(md.hash,unannotatedDistribution.hash); }
             else { null }
 
             if(useCache && mappingExecutionURLs != null && mappingExecutionURLs.results.size > 0) {
@@ -556,7 +555,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
                 , false, true, false
                 , null
                 , useCache
-                , null, null
+                , null
               );
               //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
@@ -678,7 +677,9 @@ object MappingExecutionController {
                         , outputFilepath:String) = {
     logger.info("Executing RML mapping ...")
 
-    val unannotatedDistribution = unannotatedDataset.getDistribution();
+    //TODO FIX THIS RML Engine only supports one distribution file
+    val unannotatedDistribution = unannotatedDataset.getUnannotatedDistributions.iterator.next();
+
     val datasetDistributionDownloadURL = unannotatedDistribution.dcatDownloadURL;
     logger.info(s"datasetDistributionDownloadURL = $datasetDistributionDownloadURL")
 

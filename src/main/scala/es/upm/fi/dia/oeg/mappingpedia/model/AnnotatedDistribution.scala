@@ -8,6 +8,8 @@ class AnnotatedDistribution (dataset: Dataset, dctIdentifier:String)
   def this(dataset: Dataset) {
     this(dataset, UUID.randomUUID.toString)
   }
+
+  dataset.addDistribution(this);
 }
 
 object AnnotatedDistribution {

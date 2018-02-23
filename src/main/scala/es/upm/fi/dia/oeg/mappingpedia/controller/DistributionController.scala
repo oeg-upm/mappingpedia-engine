@@ -54,7 +54,7 @@ class DistributionController(val ckanClient:CKANUtility
     listResult
   }
 
-  def findDistributionByCKANResourceId(ckanResourceId:String) = {
+  def findByCKANResourceId(ckanResourceId:String) = {
     logger.info("findDistributionByCKANResourceId")
     val queryTemplateFile = "templates/findDistributionByCKANResourceId.rq";
 

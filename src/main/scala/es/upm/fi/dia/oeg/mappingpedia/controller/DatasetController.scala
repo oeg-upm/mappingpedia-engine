@@ -19,20 +19,20 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   val distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient: VirtuosoClient);
   val mapper = new ObjectMapper();
 
-  def findDataset(datasetId:String, ckanPackageId:String, ckanPackageName:String) : Dataset = {
+  def find(datasetId:String, ckanPackageId:String, ckanPackageName:String) : Dataset = {
     try {
       val dataset:Dataset = if(datasetId != null) {
-        val datasetsByDatasetId = this.findDatasetsByDatasetId(datasetId);
+        val datasetsByDatasetId = this.findById(datasetId);
         if (datasetsByDatasetId != null && datasetsByDatasetId.results.size > 0) {
           datasetsByDatasetId.results.iterator.next
         } else { null }
       } else if(ckanPackageId != null) {
-          val datasetsByCKANPackageId = this.findDatasetsByCKANPackageId(ckanPackageId)
+          val datasetsByCKANPackageId = this.findByCKANPackageId(ckanPackageId)
           if (datasetsByCKANPackageId != null && datasetsByCKANPackageId.results.size > 0) {
             datasetsByCKANPackageId.results.iterator.next
           } else { null }
       } else if(ckanPackageName != null) {
-          val datasetsByCKANPackageName = this.findDatasetsByCKANPackageName(ckanPackageName)
+          val datasetsByCKANPackageName = this.findByCKANPackageName(ckanPackageName)
             if (datasetsByCKANPackageName != null && datasetsByCKANPackageName.results.size > 0) {
               datasetsByCKANPackageName.results.iterator.next
             }
@@ -50,14 +50,14 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     }
   }
 
-  def findOrCreateDataset(organizationId:String, datasetId:String, ckanPackageId:String, ckanPackageName:String) : Dataset = {
-    val existingDataset = this.findDataset(datasetId, ckanPackageId, ckanPackageName);
+  def findOrCreate(organizationId:String, datasetId:String, ckanPackageId:String, ckanPackageName:String) : Dataset = {
+    val existingDataset = this.find(datasetId, ckanPackageId, ckanPackageName);
     val dataset = if(existingDataset == null) {
       val organization = new Agent(organizationId);
       val newDataset = new Dataset(organization);
       newDataset.ckanPackageId = ckanPackageId;
       newDataset.ckanPackageName = ckanPackageName;
-      this.addDataset(newDataset, null, true, false)
+      this.add(newDataset, null, true, false)
       newDataset
     } else { existingDataset }
 
@@ -92,7 +92,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     }
   }
 
-  def findAllDatasets() = {
+  def findAll() = {
     logger.info("findDatasets")
     val queryTemplateFile = "templates/findAllDatasets.rq";
 
@@ -101,10 +101,10 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findDatasets(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findDatasetsByDatasetId(datasetId:String) = {
+  def findById(datasetId:String) = {
     logger.info("findDatasetByDatasetId")
     val queryTemplateFile = "templates/findDatasetByDatasetId.rq";
 
@@ -114,10 +114,10 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findDatasets(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findDatasetsByCKANPackageId(ckanPackageId:String) = {
+  def findByCKANPackageId(ckanPackageId:String) = {
     logger.info("findDatasetsByCKANPackageId")
     val queryTemplateFile = "templates/findDatasetByCKANPackageId.rq";
 
@@ -127,10 +127,10 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findDatasets(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findDatasetsByCKANPackageName(ckanPackageName:String) = {
+  def findByCKANPackageName(ckanPackageName:String) = {
     logger.info("findDatasetsByCKANPackageName")
     val queryTemplateFile = "templates/findDatasetByCKANPackageName.rq";
 
@@ -140,10 +140,10 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findDatasets(queryString);
+    this.findByQueryString(queryString);
   }
 
-  def findDatasets(queryString: String): ListResult[Dataset] = {
+  def findByQueryString(queryString: String): ListResult[Dataset] = {
     logger.debug(s"queryString = $queryString");
 
     /*    val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
@@ -205,10 +205,11 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   }
 
 
-  def addDataset(dataset:Dataset, manifestFileRef:MultipartFile
+  def add(dataset:Dataset, manifestFileRef:MultipartFile
                  , generateManifestFile:Boolean, storeToCKAN:Boolean
                 ) : AddDatasetResult = {
-    val distributions = dataset.dcatDistributions;
+    //val distributions = dataset.dcatDistributions;
+    val unannotatedDistributions = dataset.getUnannotatedDistributions;
 
     var errorOccured = false;
     var collectiveErrorMessage:List[String] = Nil;
@@ -286,8 +287,8 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
     }
     */
 
-    if(distributions != null) {
-      distributions.map(distribution => {
+    if(unannotatedDistributions != null) {
+      unannotatedDistributions.map(distribution => {
         //CALLING ADD DISTRIBUTION IN DISTRIBUTIONCONTROLLER
         logger.info(s"distribution = " + distribution);
         val addDistributionResult = if(distribution != null) {

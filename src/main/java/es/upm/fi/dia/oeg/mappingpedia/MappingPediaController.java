@@ -105,7 +105,7 @@ public class MappingPediaController {
         logger.info("mappingDocumentSHA = " + mappingDocumentSHA);
         logger.info("datasetDistributionSHA = " + datasetDistributionSHA);
 
-        return this.mappingExecutionController.findMappingExecutionURLByHash(
+        return this.mappingExecutionController.findByHash(
                 mappingDocumentSHA, datasetDistributionSHA);
     }
 
@@ -275,10 +275,10 @@ public class MappingPediaController {
                 || !"".equals(ckanPackageName.trim())
                 ) {
 
-            listResult = this.mappingDocumentController.findMappingDocumentsByDatasetId(
+            listResult = this.mappingDocumentController.findByDatasetId(
                     datasetId, ckanPackageId, ckanPackageName);
         } else if(!"".equalsIgnoreCase(distributionId.trim())) {
-            listResult = this.mappingDocumentController.findMappingDocumentsByDistributionId(distributionId);
+            listResult = this.mappingDocumentController.findByDistributionId(distributionId);
         }
 
         return listResult;
@@ -310,11 +310,11 @@ public class MappingPediaController {
         ListResult listResult;
 
         if(ckanPackageId != null && ckanPackageName == null) {
-            listResult = this.datasetController.findDatasetsByCKANPackageId(ckanPackageId);
+            listResult = this.datasetController.findByCKANPackageId(ckanPackageId);
         } else if(ckanPackageId == null && ckanPackageName != null) {
-            listResult = this.datasetController.findDatasetsByCKANPackageName(ckanPackageName);
+            listResult = this.datasetController.findByCKANPackageName(ckanPackageName);
         } else {
-            listResult = this.datasetController.findAllDatasets();
+            listResult = this.datasetController.findAll();
         }
         logger.info("datasets result = " + listResult);
 
@@ -328,7 +328,8 @@ public class MappingPediaController {
         logger.info("/distributions ...");
         logger.info("ckan_resource_id = " + ckanResourceId);
 
-        ListResult listResult = this.distributionController.findDistributionByCKANResourceId(ckanResourceId);
+        ListResult listResult = this.distributionController.findByCKANResourceId(
+                ckanResourceId);
 
         logger.info("/distributions listResult = " + listResult);
 
@@ -383,14 +384,14 @@ public class MappingPediaController {
             logger.info("get all mapping documents by mapped class and its subclasses ...");
 /*            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClass(
                     searchClass, true);*/
-            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClassAndProperty(
+            ListResult listResult = this.mappingDocumentController.findByClassAndProperty(
                     searchedClass, searchedProperty, true);
 
             //logger.info("listResult = " + listResult);
             return listResult;
         } else {
             //ListResult listResult = this.mappingDocumentController.findMappingDocuments(searchType, searchTerm);
-            ListResult listResult = this.mappingDocumentController.findMappingDocumentsByMappedClass(searchedClass);
+            ListResult listResult = this.mappingDocumentController.findByClass(searchedClass);
 
             //logger.info("listResult = " + listResult);
             return listResult;
@@ -402,8 +403,13 @@ public class MappingPediaController {
     @RequestMapping(value="/executions", method= RequestMethod.POST)
     public ExecuteMappingResult postExecutions(
             @RequestParam(value="organization_id", required = false) String organizationId
-            , @RequestParam(value="dataset_id", required = false) String datasetId
 
+            //Dataset related fields
+            , @RequestParam(value="dataset_id", required = false) String pDatasetId
+            , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
+            , @RequestParam(value="ckan_package_name", required = false) String ckanPackageName
+
+            //Distribution related fields
             , @RequestParam(value="ckan_resources_ids", required = false) String ckanResourcesIds
             , @RequestParam(value="distribution_access_url", required = false) String distributionAccessURL
             , @RequestParam(value="distribution_download_url", required = false) String pDistributionDownloadURL
@@ -411,74 +417,72 @@ public class MappingPediaController {
             , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
             , @RequestParam(value="field_separator", required = false) String fieldSeparator
 
+            //Mapping document related fields
             , @RequestParam(value="mapping_document_id", required = false) String mappingDocumentId
-            , @RequestParam(value="mapping_document_download_url", required = false) String mappingDocumentDownloadURL
+            , @RequestParam(value="mapping_document_download_url", required = false) String pMappingDocumentDownloadURL
             , @RequestParam(value="mapping_language", required = false) String pMappingLanguage
-            , @RequestParam(value="mapping_document_hash", required = false) String mappingDocumentHash
+            , @RequestParam(value="use_cache", required = false) String pUseCache
+            , @RequestParam(value="callback_url", required = false) String callbackURL
 
+            //Execution related field
             , @RequestParam(value="query_file", required = false) String queryFile
             , @RequestParam(value="output_filename", required = false) String outputFilename
             , @RequestParam(value="output_fileextension", required = false) String outputFileExtension
             , @RequestParam(value="output_mediatype", required = false) String outputMediaType
 
+            //jdbc related field
             , @RequestParam(value="db_username", required = false) String dbUserName
             , @RequestParam(value="db_password", required = false) String dbPassword
             , @RequestParam(value="db_name", required = false) String dbName
             , @RequestParam(value="jdbc_url", required = false) String jdbc_url
             , @RequestParam(value="database_driver", required = false) String databaseDriver
             , @RequestParam(value="database_type", required = false) String databaseType
-
-            , @RequestParam(value="use_cache", required = false) String pUseCache
-            , @RequestParam(value="callback_url", required = false) String callbackURL
-            , @RequestParam(value="callback_field", required = false) String callbackField
-
     )
     {
-        try {
-            logger.info("\n\n\nPOST /executions");
-            logger.info("organization_id = " + organizationId);
-            logger.info("dataset_id = " + datasetId);
-            logger.info("distributionDownloadURL = " + pDistributionDownloadURL);
-            logger.info("ckan_resources_ids = " + ckanResourcesIds);
-            logger.info("mapping_document_id = " + mappingDocumentId);
-            logger.info("mappingDocumentDownloadURL = " + mappingDocumentDownloadURL);
-            logger.info("distribution_encoding = " + distributionEncoding);
-            logger.info("use_cache = " + pUseCache);
-            logger.info("output_filename = " + outputFilename);
-            logger.info("output_fileextension = " + outputFileExtension);
-            logger.info("output_mediatype = " + outputMediaType);
-            logger.info("callback_url = " + callbackURL);
+        logger.info("\n\n\nPOST /executions");
+        logger.info("organization_id = " + organizationId);
+        logger.info("dataset_id = " + pDatasetId);
+        logger.info("ckan_package_id = " + ckanPackageId);
+        logger.info("ckan_package_name = " + ckanPackageName);
+        logger.info("distributionDownloadURL = " + pDistributionDownloadURL);
+        logger.info("ckan_resources_ids = " + ckanResourcesIds);
+        logger.info("mapping_document_id = " + mappingDocumentId);
+        logger.info("mappingDocumentDownloadURL = " + pMappingDocumentDownloadURL);
+        logger.info("distribution_encoding = " + distributionEncoding);
+        logger.info("use_cache = " + pUseCache);
+        logger.info("output_filename = " + outputFilename);
+        logger.info("output_fileextension = " + outputFileExtension);
+        logger.info("output_mediatype = " + outputMediaType);
+        logger.info("callback_url = " + callbackURL);
 
-            MappingDocument md;
-            if(mappingDocumentId != null) {
-                //md = new MappingDocument(mappingDocumentId);
-                md = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
-            } else {
-                md = new MappingDocument();
-            }
+        try {
+            Agent organization = Agent.apply(organizationId);
+
+            Dataset dataset = this.datasetController.findOrCreate(
+                    organizationId, pDatasetId, ckanPackageId, ckanPackageName);
+            logger.info("dataset.dctIdentifier() = " + dataset.dctIdentifier());
+
+            MappingDocument md = this.mappingDocumentController.findOrCreate(
+                    mappingDocumentId);
             logger.info("md.dctIdentifier() = " + md.dctIdentifier());
 
-            if(mappingDocumentDownloadURL != null) {
-                md.setDownloadURL(mappingDocumentDownloadURL);
-            } else {
-                if(mappingDocumentId != null) {
-                    MappingDocument foundMappingDocument = this.mappingDocumentController.findMappingDocumentsByMappingDocumentId(mappingDocumentId);
-                    md.setDownloadURL(foundMappingDocument.getDownloadURL());
-                }
+            if(pMappingDocumentDownloadURL != null) {
+                md.setDownloadURL(pMappingDocumentDownloadURL);
             }
-            logger.debug("md.getDownloadURL() = " + md.getDownloadURL());
+            logger.info("md.getDownloadURL() = " + md.getDownloadURL());
             String mdDownloadURL = md.getDownloadURL();
 
-            if(mappingDocumentHash == null && mdDownloadURL != null) {
-                md.hash_$eq(MappingPediaUtility.calculateHash(
-                        mdDownloadURL, "UTF-8"));
+            if(md.hash() == null && mdDownloadURL != null) {
+                    md.hash_$eq(MappingPediaUtility.calculateHash(
+                            mdDownloadURL, "UTF-8"));
             }
             logger.debug("md.sha = " + md.hash());
 
             if(pMappingLanguage != null) {
                 md.mappingLanguage_$eq(pMappingLanguage);
-            } else {
-                String mappingLanguage = MappingDocumentController.detectMappingLanguage(mappingDocumentDownloadURL);
+            } else if(md.mappingLanguage() == null){
+                String mappingLanguage = MappingDocumentController.detectMappingLanguage(
+                        mdDownloadURL);
                 md.mappingLanguage_$eq(mappingLanguage);
             }
             logger.debug("md.getMapping_language() = " + md.getMapping_language());
@@ -487,31 +491,14 @@ public class MappingPediaController {
             if(pDistributionDownloadURL != null) {
                 arrayDistributionDownloadURLs = pDistributionDownloadURL.split(",");
             }
-            logger.debug("arrayDistributionDownloadURLs = " + Arrays.toString(arrayDistributionDownloadURLs));
-
-
-            Agent organization;
-            if(organizationId == null) {
-                organization = new Agent();
-            } else {
-                organization = new Agent(organizationId);
-            }
-
-            Dataset dataset;
-            if(datasetId == null) {
-                dataset = new Dataset(organization);
-            } else {
-                dataset = new Dataset(organization, datasetId);
-            }
-
-/*            Dataset unannotatedDataset = new Dataset(organization);
-            unannotatedDataset.superset_$eq(originalDataset);*/
+            logger.info("arrayDistributionDownloadURLs = " + Arrays.toString(arrayDistributionDownloadURLs));
 
             for(String distributionDownloadURL:arrayDistributionDownloadURLs) {
                 String distributionDownloadURLTrimmed = distributionDownloadURL.trim();
                 logger.debug("distributionDownloadURLTrimmed = " + distributionDownloadURLTrimmed);
 
                 UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(dataset);
+                dataset.addDistribution(unannotatedDistribution );
                 if(distributionAccessURL != null) {
                     unannotatedDistribution.dcatAccessURL_$eq(distributionAccessURL);
                 }
@@ -520,12 +507,12 @@ public class MappingPediaController {
                 } else {
                     unannotatedDistribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
                 }
+                logger.info("unannotatedDistribution.getDownload_url() = " + unannotatedDistribution.getDownload_url());
+
                 if(fieldSeparator != null) {
                     unannotatedDistribution.csvFieldSeparator_$eq(fieldSeparator);
                 }
                 unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
-
-
             }
 
             JDBCConnection jdbcConnection = new JDBCConnection(dbUserName, dbPassword
@@ -535,6 +522,8 @@ public class MappingPediaController {
 
             Boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
 
+            logger.info("md.getMapping_language() = " + md.getMapping_language());
+
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return mappingExecutionController.executeMapping(
                     md, dataset
@@ -543,7 +532,7 @@ public class MappingPediaController {
                     ,  true, true
                     , true
                     , null, useCache
-                    , callbackURL, callbackField
+                    , callbackURL
             );
 
             /*
@@ -703,7 +692,7 @@ public class MappingPediaController {
         logger.info("mapping_document_download_url = " + pMappingDocumentDownloadURL1);
 
         try {
-            Dataset dataset = this.datasetController.findOrCreateDataset(
+            Dataset dataset = this.datasetController.findOrCreate(
                     organizationID, pDatasetID, ckanPackageId, ckanPackageName);
             String datasetId = dataset.dctIdentifier();
 
@@ -796,11 +785,10 @@ public class MappingPediaController {
         logger.info("[POST] /mappings/{organization_id}/{dataset_id}");
         logger.info("organization_id = " + organizationID);
         logger.info("dataset_id = " + datasetID);
-        logger.debug("mapping_language = " + pMappingLanguage1);
-        logger.debug("mappingLanguage = " + pMappingLanguage2);
-        logger.debug("ckanPackageId = " + ckanPackageId);
-        logger.debug("ckanResourceId = " + ckanResourceId);
-
+        logger.info("ckan_package_id = " + ckanPackageId);
+        logger.info("ckan_package_name = " + ckanPackageName);
+        logger.info("mapping_language = " + pMappingLanguage1);
+        logger.info("mappingLanguage = " + pMappingLanguage2);
         try {
             boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
 
@@ -949,7 +937,7 @@ public class MappingPediaController {
         }
 
 
-        AddDatasetResult addDatasetResult = this.datasetController.addDataset(
+        AddDatasetResult addDatasetResult = this.datasetController.add(
                 dataset, manifestFileRef, generateManifestFile, true);
         int addDatasetResultStatusCode = addDatasetResult.getStatus_code();
         if(addDatasetResultStatusCode >= 200 && addDatasetResultStatusCode < 300) {
@@ -992,8 +980,7 @@ public class MappingPediaController {
 
                                         , null
                                         , useCache
-                                        , callbackURL, callbackField
-
+                                        , callbackURL
                                 );
 
                         return new AddDatasetMappingExecuteResult (HttpURLConnection.HTTP_OK, addDatasetResult, addMappingDocumentResult, executeMappingResult);
@@ -1018,7 +1005,7 @@ public class MappingPediaController {
     }
 
     @RequestMapping(value = "/datasets/{organization_id}", method= RequestMethod.POST)
-    public AddDatasetResult postDatasets(
+    public AddDatasetResult postDatasets2(
             @PathVariable("organization_id") String organizationId
 
             //FIELDS RELATED TO DATASET/PACKAGE
@@ -1127,7 +1114,7 @@ public class MappingPediaController {
             }
 
             boolean storeToCKAN = MappingPediaUtility.stringToBoolean(pStoreToCKAN);
-            return this.datasetController.addDataset(dataset, manifestFileRef
+            return this.datasetController.add(dataset, manifestFileRef
                     , generateManifestFile, storeToCKAN);
         } catch(Exception e) {
             return new AddDatasetResult(HttpURLConnection.HTTP_INTERNAL_ERROR, e.getMessage()
@@ -1141,7 +1128,7 @@ public class MappingPediaController {
 
     //LEGACY ENDPOINT, use /distributions/{organizationID}/{datasetID} instead
     @RequestMapping(value = "/datasets/{organization_id}/{dataset_id}", method= RequestMethod.POST)
-    public AddDistributionResult postDatasets(
+    public AddDistributionResult postDatasets1(
             @PathVariable("organization_id") String organizationId
             , @PathVariable("dataset_id") String datasetId
             , @RequestParam(value="datasetFile", required = false) MultipartFile distributionFileRef
@@ -1238,7 +1225,7 @@ public class MappingPediaController {
         boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
 
         try {
-            Dataset dataset = this.datasetController.findOrCreateDataset(
+            Dataset dataset = this.datasetController.findOrCreate(
                     organizationID, pDatasetId, ckanPackageId, ckanPackageName);
 
             Distribution distribution = new UnannotatedDistribution(dataset);

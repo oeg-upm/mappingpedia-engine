@@ -275,7 +275,9 @@ object MappingPediaUtility {
   }
 
   def calculateHash(dataset:Dataset) : String = {
-    val distributions = dataset.dcatDistributions;
+    val distributions = dataset.getDistributions;
+    logger.info(s"{distributions.length = ${distributions.length}")
+
     this.calculateHash(distributions);
   }
 
@@ -283,7 +285,7 @@ object MappingPediaUtility {
   val datasetHashValue = distributions.foldLeft(0)((acc, distribution) => {
       val distributionHashValue = MappingPediaUtility.calculateHash(
         distribution.dcatDownloadURL, distribution.encoding);
-      logger.debug(s"distributionHashValue = ${distributionHashValue}")
+      logger.info(s"distributionHashValue = ${distributionHashValue}")
       acc + distributionHashValue.toInt
     })
 
