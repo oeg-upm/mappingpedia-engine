@@ -165,10 +165,12 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         dataset.ckanPackageId = MappingPediaUtility.getStringOrElse(qs, "ckanPackageId", null)
         dataset.ckanPackageName = MappingPediaUtility.getStringOrElse(qs, "ckanPackageName", null)
 
+        /*
         val distributionID = MappingPediaUtility.getStringOrElse(qs, "distributionID", null)
         val distribution = new UnannotatedDistribution(dataset, distributionID);
         distribution.dcatAccessURL = MappingPediaUtility.getStringOrElse(qs, "distributionAccessURL", null)
         distribution.dcatDownloadURL = MappingPediaUtility.getStringOrElse(qs, "distributionDownloadURL", null)
+        */
 
         val mdID = MappingPediaUtility.getStringOrElse(qs, "mdID", null)
         val md = new MappingDocument(mdID);
