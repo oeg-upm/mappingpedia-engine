@@ -703,8 +703,11 @@ public class MappingPediaController {
         logger.info("mapping_document_download_url = " + pMappingDocumentDownloadURL1);
 
         try {
+            Dataset dataset = this.datasetController.findOrCreateDataset(
+                    organizationID, pDatasetID, ckanPackageId, ckanPackageName);
+            String datasetId = dataset.dctIdentifier();
 
-
+            /*
             String datasetId = pDatasetID;
 
             String datasetIdByCKANPackageId = null;
@@ -741,8 +744,7 @@ public class MappingPediaController {
                 datasetId =  dataset.getId();
             }
             logger.info("newDatasetId = " + newDatasetId);
-
-
+            */
 
             return this.postMappings1(organizationID
                     , datasetId, ckanPackageId, ckanPackageName
@@ -802,11 +804,8 @@ public class MappingPediaController {
         try {
             boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
 
-            /*
             Agent organization = new Agent(organizationID);
             Dataset dataset = new Dataset(organization, datasetID);
-            */
-            Dataset dataset = Dataset.apply(organizationID, datasetID);
             dataset.ckanPackageId_$eq(ckanPackageId);
 
             MappingDocument mappingDocument = new MappingDocument();
@@ -1207,10 +1206,81 @@ public class MappingPediaController {
                 , generateManifestFile, storeToCKAN);
     }
 
+    @RequestMapping(value = "/distributions/{organization_id}", method= RequestMethod.POST)
+    public AddDistributionResult postDistributions2(
+            @PathVariable("organization_id") String organizationID
+            , @RequestParam(value="dataset_id", required = false) String pDatasetId
+            , @RequestParam(value="ckan_package_id", required = false) String ckanPackageId
+            , @RequestParam(value="ckan_package_name", required = false) String ckanPackageName
+            , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
+            , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
+            , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String pGenerateManifestFile
+            //, @RequestParam(value="datasetFile", required = false) MultipartFile datasetMultipartFile
+            , @RequestParam(value="distribution_file", required = false) MultipartFile distributionMultipartFile
+            , @RequestParam(value="distribution_title", required = false) String distributionTitle
+            , @RequestParam(value="distributionAccessURL", required = false) String distributionAccessURL
+            , @RequestParam(value="distributionMediaType", required = false, defaultValue="text/csv") String distributionMediaType
+            , @RequestParam(value="distributionDescription", required = false) String distributionDescription
+            , @RequestParam(value="distribution_encoding", required = false, defaultValue="UTF-8") String distributionEncoding
+            , @RequestParam(value="store_to_ckan", defaultValue = "true") String pStoreToCKAN
+            , @RequestParam(value="distribution_language", required = false) String distributionLanguage
+            , @RequestParam(value="distribution_license", required = false) String distributionLicense
+            , @RequestParam(value="distribution_rights", required = false) String distributionRights
+    )
+    {
+        logger.info("[POST] /distributions/{organization_id}");
+        logger.info("organization_id = " + organizationID);
+        logger.info("dataset_id = " + pDatasetId);
+        logger.info("ckan_package_id = " + ckanPackageId);
+        logger.info("ckan_package_name = " + ckanPackageName);
+        logger.info("distribution_download_url = " + distributionDownloadURL);
+        logger.info("distribution_file = " + distributionMultipartFile);
+        boolean generateManifestFile = MappingPediaUtility.stringToBoolean(pGenerateManifestFile);
 
+        try {
+            Dataset dataset = this.datasetController.findOrCreateDataset(
+                    organizationID, pDatasetId, ckanPackageId, ckanPackageName);
+
+            Distribution distribution = new UnannotatedDistribution(dataset);
+            distribution.setTitle(distributionTitle);
+            distribution.setDescription(distributionDescription);
+            distribution.dcatDownloadURL_$eq(distributionDownloadURL);
+            distribution.setAccessURL(distributionAccessURL, distributionDownloadURL);
+            distribution.dcatMediaType_$eq(distributionMediaType);
+            if(distributionMultipartFile != null) {
+                distribution.distributionFile_$eq(MappingPediaUtility.multipartFileToFile(
+                        distributionMultipartFile , dataset.dctIdentifier()));
+            }
+            distribution.encoding_$eq(distributionEncoding);
+            distribution.setLanguage(distributionLanguage);
+            distribution.dctLicense_$eq(distributionLicense);
+            distribution.dctRights_$eq(distributionRights);
+            dataset.addDistribution(distribution);
+
+            boolean storeToCKAN = true;
+            if("false".equalsIgnoreCase("pStoreToCKAN")
+                    || "no".equalsIgnoreCase(pStoreToCKAN)) {
+                storeToCKAN = false;
+            }
+
+            return this.distributionController.addDistribution(distribution, manifestFileRef
+                    , generateManifestFile, storeToCKAN);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AddDistributionResult(
+                    HttpURLConnection.HTTP_INTERNAL_ERROR, e.getMessage()
+                    , null
+                    , null, null
+                    , null, null
+                    , null
+                    , null
+            );
+        }
+    }
 
     @RequestMapping(value = "/distributions/{organization_id}/{dataset_id}", method= RequestMethod.POST)
-    public AddDistributionResult postDistributions(
+    public AddDistributionResult postDistributions1(
             @PathVariable("organization_id") String organizationID
             , @PathVariable("dataset_id") String datasetID
             , @RequestParam(value="distribution_download_url", required = false) String distributionDownloadURL
@@ -1227,7 +1297,6 @@ public class MappingPediaController {
             , @RequestParam(value="distribution_language", required = false) String distributionLanguage
             , @RequestParam(value="distribution_license", required = false) String distributionLicense
             , @RequestParam(value="distribution_rights", required = false) String distributionRights
-
     )
     {
         logger.info("[POST] /distributions/{organization_id}/{dataset_id}");

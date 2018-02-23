@@ -7,6 +7,7 @@ import java.util.Date
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
 import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
+import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddDatasetResult, ListResult}
@@ -17,6 +18,51 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val distributionController = new DistributionController(ckanClient, githubClient, virtuosoClient: VirtuosoClient);
   val mapper = new ObjectMapper();
+
+  def findDataset(datasetId:String, ckanPackageId:String, ckanPackageName:String) : Dataset = {
+    try {
+      val dataset:Dataset = if(datasetId != null) {
+        val datasetsByDatasetId = this.findDatasetsByDatasetId(datasetId);
+        if (datasetsByDatasetId != null && datasetsByDatasetId.results.size > 0) {
+          datasetsByDatasetId.results.iterator.next
+        } else { null }
+      } else if(ckanPackageId != null) {
+          val datasetsByCKANPackageId = this.findDatasetsByCKANPackageId(ckanPackageId)
+          if (datasetsByCKANPackageId != null && datasetsByCKANPackageId.results.size > 0) {
+            datasetsByCKANPackageId.results.iterator.next
+          } else { null }
+      } else if(ckanPackageName != null) {
+          val datasetsByCKANPackageName = this.findDatasetsByCKANPackageName(ckanPackageName)
+            if (datasetsByCKANPackageName != null && datasetsByCKANPackageName.results.size > 0) {
+              datasetsByCKANPackageName.results.iterator.next
+            }
+          else { null }
+      } else {
+        null
+      }
+
+      dataset;
+    } catch {
+      case e:Exception => {
+        e.printStackTrace()
+        null
+      }
+    }
+  }
+
+  def findOrCreateDataset(organizationId:String, datasetId:String, ckanPackageId:String, ckanPackageName:String) : Dataset = {
+    val existingDataset = this.findDataset(datasetId, ckanPackageId, ckanPackageName);
+    val dataset = if(existingDataset == null) {
+      val organization = new Agent(organizationId);
+      val newDataset = new Dataset(organization);
+      newDataset.ckanPackageId = ckanPackageId;
+      newDataset.ckanPackageName = ckanPackageName;
+      this.addDataset(newDataset, null, true, false)
+      newDataset
+    } else { existingDataset }
+
+    dataset
+  }
 
   def addModifiedDate(dataset: Dataset) = {
 
@@ -52,6 +98,19 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    this.findDatasets(queryString);
+  }
+
+  def findDatasetsByDatasetId(datasetId:String) = {
+    logger.info("findDatasetByDatasetId")
+    val queryTemplateFile = "templates/findDatasetByDatasetId.rq";
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$datasetID" -> datasetId
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)

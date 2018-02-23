@@ -31,7 +31,10 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     logger.info("CREATING A RESOURCE ON CKAN ... ")
     //val dataset = distribution.dataset;
 
-    val packageId = distribution.dataset.dctIdentifier;
+    //val packageId = distribution.dataset.dctIdentifier;
+    val datasetPackageId = distribution.dataset.ckanPackageId;
+    val packageId = if(datasetPackageId == null) { distribution.dataset.dctIdentifier } else { datasetPackageId }
+
     logger.info(s"packageId = $packageId")
     logger.info(s"url = ${distribution.dcatDownloadURL}")
 

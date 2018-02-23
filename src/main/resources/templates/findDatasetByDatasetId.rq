@@ -1,4 +1,4 @@
-#findDatasetByCKANPackageId.rq
+#findDatasetByDatasetId.rq
 
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
 prefix rr: <http://www.w3.org/ns/r2rml#>
@@ -11,8 +11,9 @@ SELECT DISTINCT *
 FROM <$graphURL>
 WHERE {
     ?dataset a mpv:Dataset .
+    ?dataset dcterms:identifier ?datasetID .
     ?dataset mpv:ckanPackageId ?ckanPackageId .
     ?dataset mpv:ckanPackageName ?ckanPackageName .
     ?dataset dcterms:identifier ?datasetID .
-    FILTER regex(str(?ckanPackageId), "$ckanPackageId", "i")
+    FILTER regex(str(?datasetID), "$datasetId", "i")
 }
