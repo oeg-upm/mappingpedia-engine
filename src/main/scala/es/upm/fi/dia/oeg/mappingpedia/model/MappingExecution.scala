@@ -1,18 +1,55 @@
 package es.upm.fi.dia.oeg.mappingpedia.model
 
-class MappingExecution(val mappingDocument:MappingDocument, val dataset: Dataset) {
-  //val dataset: Dataset = null;
-  var outputFileName = "output.txt";
-  var queryFilePath:String = null;
-  var storeToCKAN:Boolean = true;
+import java.util.UUID
 
-  def setStoreToCKAN(pStoreToCKAN:String) = {
-    if(pStoreToCKAN != null) {
-      if("true".equalsIgnoreCase(pStoreToCKAN) || "yes".equalsIgnoreCase(pStoreToCKAN)) {
-        storeToCKAN = true;
-      }
+class MappingExecution(val mappingDocument:MappingDocument
+                       , val unannotatedDistributions: List[UnannotatedDistribution]
+                       , val jdbcConnection: JDBCConnection
+                       , val queryFileName:String
+                       , val pOutputFileName:String
+                       , val pOutputFileExtension:String
+                      ) {
+  /*
+    def this(mappingDocument:MappingDocument
+             , unannotatedDistributions: List[UnannotatedDistribution]
+             , queryFileName:String
+             , pOutputFileDirectory:String
+             , pOutputFilename:String
+             , pOutputFileExtension:String
+            ) {
+      this(mappingDocument, unannotatedDistributions, null, queryFileName
+        , pOutputFileDirectory, pOutputFilename, pOutputFileExtension);
     }
 
+    def this(mappingDocument:MappingDocument
+             , jdbcConnection: JDBCConnection
+             , queryFileName:String
+             , pOutputFileDirectory:String
+             , pOutputFilename:String
+             , pOutputFileExtension:String
+            ) {
+      this(mappingDocument, null, jdbcConnection, queryFileName
+        , pOutputFileDirectory, pOutputFilename, pOutputFileExtension);
+    }
+  */
+
+  //val dataset: Dataset = null;
+  //var outputFileName = "output.txt";
+  var outputDirectory:String = null;
+
+  var storeToCKAN:Boolean = true;
+
+  val outputFileName = if (pOutputFileName == null) {
+    UUID.randomUUID.toString
+  } else {
+    pOutputFileName;
   }
+  val outputFileExtension = if(pOutputFileExtension == null) {
+    "txt"
+  } else {
+    pOutputFileExtension
+  }
+
+  def getOutputFileWithExtension = s"${outputFileName}.${outputFileExtension}";
 
 }

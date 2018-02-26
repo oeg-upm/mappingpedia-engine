@@ -57,7 +57,12 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
       val newDataset = new Dataset(organization);
       newDataset.ckanPackageId = ckanPackageId;
       newDataset.ckanPackageName = ckanPackageName;
-      this.add(newDataset, null, true, false)
+
+      val manifestFileRef:MultipartFile = null
+      val generateManifestFile:Boolean = true
+      val storeToCKAN:Boolean = false;
+
+      this.add(newDataset, manifestFileRef, generateManifestFile, storeToCKAN)
       newDataset
     } else { existingDataset }
 

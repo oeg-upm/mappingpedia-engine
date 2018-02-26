@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -524,11 +525,18 @@ public class MappingPediaController {
 
             logger.info("md.getMapping_language() = " + md.getMapping_language());
 
+
+            MappingExecution mappingExecution = new MappingExecution(md
+                    , dataset.getUnannotatedDistributions()
+                    , jdbcConnection
+                    , queryFile
+                    , outputFilename
+                    , outputFileExtension
+            );
             //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
             return mappingExecutionController.executeMapping(
-                    md, dataset
-                    , queryFile
-                    , outputFilename, outputFileExtension, outputMediaType
+                    mappingExecution
+                    , outputMediaType
                     ,  true, true
                     , true
                     , null, useCache
@@ -966,13 +974,18 @@ public class MappingPediaController {
             boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
             if("true".equalsIgnoreCase(executeMapping)) {
                 if(addMappingDocumentResultStatusCode >= 200 && addMappingDocumentResultStatusCode < 300) {
+
                     try {
+                        MappingExecution mappingExecution = new MappingExecution(
+                                mappingDocument, dataset.getUnannotatedDistributions()
+                                , null, queryFileDownloadURL
+                                , outputFilename, outputFileExtension
+                        );
+
                         ExecuteMappingResult executeMappingResult =
                                 this.mappingExecutionController.executeMapping(
-                                        mappingDocument
-                                        , dataset
-                                        , queryFileDownloadURL
-                                        , outputFilename, outputFileExtension, outputMediaType
+                                        mappingExecution
+                                        , outputMediaType
 
                                         , true
                                         , true

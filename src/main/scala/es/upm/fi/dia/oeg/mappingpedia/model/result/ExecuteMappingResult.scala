@@ -1,33 +1,20 @@
 package es.upm.fi.dia.oeg.mappingpedia.model.result
 
-import es.upm.fi.dia.oeg.mappingpedia.model.{AnnotatedDistribution, Distribution, MappingDocument, UnannotatedDistribution}
+import es.upm.fi.dia.oeg.mappingpedia.model._
 
 class ExecuteMappingResult (
                              val errorCode:Integer, val status:String
-                             //, val distributionDownloadURL:String
-                             //, val unannotatedDistribution:UnannotatedDistribution
-                             //, val mappingDocumentDownloadURL:String
-                             , val mappingDocument:MappingDocument
-                             , val queryURL:String
+                             , val mappingExecution:MappingExecution
                              , val mappingExecutionResult:AnnotatedDistribution
-                             //, val mappingExecutionResultURL:String
-                             //, val mappingExecutionResultDownloadURL:String
-                             //, val ckanResponseStatus:Integer
-                             //, val mappingExecutionResultId:String
-                             //, val manifestAccessURL:String
-                             //, val manifestDownloadURL:String
                            ){
+  val mappingDocument = mappingExecution.mappingDocument;
+  val queryURL = mappingExecution.queryFileName
 
   def this(errorCode:Integer, status:String) {
-    this(errorCode, status
-      , null, null, null
+    this(errorCode, status, null, null
     )
   }
 
-  //val distributionDownloadURL = unannotatedDistribution.getDownload_url;
-  //def getDatasetURL() = distributionDownloadURL;
-  //def getDistribution_download_url() = distributionDownloadURL;
-  //def getDistribution_sha() = unannotatedDistribution.getSHA;
 
   val mappingDocumentDownloadURL = mappingDocument.getDownloadURL();
   def getMappingURL() = mappingDocumentDownloadURL;

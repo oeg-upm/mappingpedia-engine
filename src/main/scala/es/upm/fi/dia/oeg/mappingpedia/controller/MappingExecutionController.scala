@@ -63,11 +63,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
   @throws(classOf[Exception])
   def executeMapping(
-                      md:MappingDocument
-                      , dataset:Dataset
-                      , queryFileName:String
-                      , pOutputFilename: String
-                      , pOutputFileExtension: String
+                      mappingExecution: MappingExecution
                       , pOutputMediaType: String
 
                       , pStoreToCKAN:Boolean
@@ -80,11 +76,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
                       , callbackURL:String
                     ) : ExecuteMappingResult = {
     val f = this.executeMappingWithFuture(
-      md:MappingDocument
-      , dataset:Dataset
-      , queryFileName:String
-      , pOutputFilename: String
-      , pOutputFileExtension: String
+      mappingExecution
       , pOutputMediaType: String
 
       , pStoreToCKAN:Boolean
@@ -96,7 +88,6 @@ class MappingExecutionController(val ckanClient:CKANUtility
       , useCache:Boolean
       , callbackURL:String
     );
-    logger.info(s"dataset.unannotatedDistributions.length = ${dataset.getUnannotatedDistributions.length}")
 
     val executeMappingResult = if(callbackURL == null) {
       logger.info("Await.result");
@@ -165,9 +156,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
       logger.info("In Progress");
       new ExecuteMappingResult(
         HttpURLConnection.HTTP_ACCEPTED, HttpStatus.ACCEPTED.getReasonPhrase
-        //, unannotatedDistribution
-        , md
-        , queryFileName
+        , mappingExecution
         , null
       )
     }
@@ -186,13 +175,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
   @throws(classOf[Exception])
   def executeMappingWithFuture(
-                                md:MappingDocument
-                                //, unannotatedDistributions: List[UnannotatedDistribution]
-                                //, unannotatedDistribution: UnannotatedDistribution
-                                , dataset:Dataset
-                                , queryFileName:String
-                                , pOutputFilename: String
-                                , pOutputFileExtension: String
+                                mappingExecution: MappingExecution
                                 , pOutputMediaType: String
 
                                 , pStoreToCKAN:Boolean
@@ -208,9 +191,12 @@ class MappingExecutionController(val ckanClient:CKANUtility
       var errorOccured = false;
       var collectiveErrorMessage: List[String] = Nil;
 
+      val md = mappingExecution.mappingDocument
+      val unannotatedDistributions = mappingExecution.unannotatedDistributions
+      val dataset = unannotatedDistributions.iterator.next().dataset;
 
       val organization = dataset.dctPublisher
-      val unannotatedDistributions = dataset.getUnannotatedDistributions
+      //val unannotatedDistributions = dataset.getUnannotatedDistributions
       val unannotatedDatasetHash = MappingPediaUtility.calculateHash(
         unannotatedDistributions);
 
@@ -251,20 +237,12 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
         val mappingExecutionDirectory = s"executions/$organizationId/$datasetId/${md.dctIdentifier}";
 
-        val outputFileName = if (pOutputFilename == null) {
-          UUID.randomUUID.toString
-        } else {
-          pOutputFilename;
-        }
-        val outputFileExtension = if(pOutputFileExtension == null) {
-          "txt"
-        } else {
-          pOutputFileExtension
-        }
-        val outputFileNameWithExtension:String = s"${outputFileName}.${outputFileExtension}"
+        val outputFileNameWithExtension:String = mappingExecution.getOutputFileWithExtension;
 
         val githubOutputFilepath:String = s"$mappingExecutionDirectory/$outputFileNameWithExtension"
-        val localOutputFilepath:String = s"$mappingExecutionDirectory/$mappingExecutionId/$outputFileNameWithExtension"
+        val localOutputDirectory = s"$mappingExecutionDirectory/$mappingExecutionId";
+        mappingExecution.outputDirectory = localOutputDirectory;
+        val localOutputFilepath:String = s"$localOutputDirectory/$outputFileNameWithExtension"
         val localOutputFile: File = new File(localOutputFilepath)
         annotatedDistribution.distributionFile = localOutputFile;
 
@@ -272,16 +250,13 @@ class MappingExecutionController(val ckanClient:CKANUtility
         try {
           if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
             if(jdbcConnection != null) {
-              MappingExecutionController.executeR2RMLMappingWithRDB(md, localOutputFilepath, queryFileName, jdbcConnection);
+              MappingExecutionController.executeR2RMLMappingWithRDB(mappingExecution);
             } else {
-              MappingExecutionController.executeR2RMLMappingWithCSV(
-                md, unannotatedDistributions, localOutputFilepath, queryFileName);
-              logger.info(s"dataset.unannotatedDistributions.size = ${dataset.getUnannotatedDistributions.size} after")
-              logger.info(s"dataset.annotatedDistributions.size = ${dataset.getAnnotatedDistributions.size} after")
+              MappingExecutionController.executeR2RMLMappingWithCSV(mappingExecution);
             }
           } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
             val unannotatedDistribution = unannotatedDistributions.iterator.next();
-            MappingExecutionController.executeRMLMapping(md, dataset, localOutputFilepath);
+            MappingExecutionController.executeRMLMapping(mappingExecution);
           } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
             throw new Exception(mappingLanguage + " Language is not supported yet");
           } else {
@@ -460,9 +435,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
         new ExecuteMappingResult(
           responseStatus, responseStatusText
-          //, unannotatedDistribution
-          , md
-          , queryFileName
+          , mappingExecution
           , annotatedDistribution
         )
       } else {
@@ -470,12 +443,9 @@ class MappingExecutionController(val ckanClient:CKANUtility
         val annotatedDistribution = new AnnotatedDistribution(dataset);
         annotatedDistribution.dcatDownloadURL = mappingExecutionResultURL;
 
-
         new ExecuteMappingResult(
           HttpURLConnection.HTTP_OK, "OK"
-          //, unannotatedDistribution
-          , md
-          , queryFileName
+          , mappingExecution
           , annotatedDistribution
         )
       }
@@ -505,12 +475,14 @@ class MappingExecutionController(val ckanClient:CKANUtility
         } else {
           null
         }
-        val outputFilename = UUID.randomUUID.toString + ".nt"
+        val outputFileName = UUID.randomUUID.toString
+        val outputFileExtension = ".nt";
         //val mappingDocumentDownloadURL = md.getDownloadURL();
 
         val dataset = new Dataset(new Agent());
         val unannotatedDistribution = new UnannotatedDistribution(dataset);
-        dataset.addDistribution(unannotatedDistribution);
+        val unannotatedDistributions = List(unannotatedDistribution);
+        //dataset.addDistribution(unannotatedDistribution);
         unannotatedDistribution.dcatDownloadURL = md.dataset.getDistribution().dcatDownloadURL;
         unannotatedDistribution.hash = md.dataset.getDistribution().hash
         if (unannotatedDistribution.hash == null && unannotatedDistribution.dcatDownloadURL != null ) {
@@ -526,6 +498,12 @@ class MappingExecutionController(val ckanClient:CKANUtility
           None
         } else {
           if(i < maxMappingDocuments) {
+            val jDBCConnection = null;
+            val queryFileName = null;
+            val mappingExecution = new MappingExecution(md, unannotatedDistributions
+              , jDBCConnection, queryFileName
+              , outputFileName, outputFileExtension);
+
             val mappingExecutionURLs = if(useCache) { this.findByHash(md.hash,unannotatedDistribution.hash); }
             else { null }
 
@@ -539,19 +517,15 @@ class MappingExecutionController(val ckanClient:CKANUtility
               mappingExecutionResult.dcatDownloadURL = cachedMappingExecutionResultURL;
 
               Some(new ExecuteMappingResult(HttpURLConnection.HTTP_OK, "OK"
-                //, unannotatedDistribution
-                , md, null, mappingExecutionResult))
+                , mappingExecution, mappingExecutionResult))
             } else {
-              val mappingExecution = new MappingExecution(md, dataset);
-              mappingExecution.setStoreToCKAN("false")
-              mappingExecution.queryFilePath = null;
-              mappingExecution.outputFileName = outputFilename;
+              val unannotatedDistributions = dataset.getUnannotatedDistributions;
+              val storeToCKAN = MappingPediaUtility.stringToBoolean("false");
+              mappingExecution.storeToCKAN = storeToCKAN
 
               //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-              val executionResult = this.executeMapping(md
-                , dataset
-                , mappingExecution.queryFilePath
-                , outputFilename, "txt", "text/txt"
+              val executionResult = this.executeMapping(mappingExecution
+                , "text/txt"
                 , false, true, false
                 , null
                 , useCache
@@ -597,6 +571,8 @@ class MappingExecutionController(val ckanClient:CKANUtility
 object MappingExecutionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
+
+
   /*
   val ckanUtility = new CKANUtility(
     MappingPediaEngine.mappingpediaProperties.ckanURL, MappingPediaEngine.mappingpediaProperties.ckanKey)
@@ -604,17 +580,18 @@ object MappingExecutionController {
   */
 
 
-  def executeR2RMLMappingWithRDB(md:MappingDocument
-                                 , outputFilepath:String, queryFileName:String
-                                 /*
-                                 , dbUserName:String, dbPassword:String
-                                 , dbName:String, jdbc_url:String
-                                 , databaseDriver:String, databaseType:String
-                                 */
-                                 , jdbcConnection: JDBCConnection
-
-                                ) = {
+  def executeR2RMLMappingWithRDB(mappingExecution: MappingExecution) = {
     logger.info("Executing R2RML mapping ...")
+    val md = mappingExecution.mappingDocument;
+    val mappingDocumentDownloadURL = md.getDownloadURL();
+    logger.info(s"mappingDocumentDownloadURL = $mappingDocumentDownloadURL");
+
+    val outputFilepath = if(mappingExecution.outputDirectory == null) { mappingExecution.getOutputFileWithExtension; }
+    else { s"${mappingExecution.outputDirectory}/${mappingExecution.getOutputFileWithExtension}"}
+    logger.info(s"outputFilepath = $outputFilepath");
+
+    val jDBCConnection = mappingExecution.jdbcConnection
+
     //val distribution = dataset.getDistribution();
     val randomUUID = UUID.randomUUID.toString
     val databaseName =  s"executions/${md.dctIdentifier}/${randomUUID}"
@@ -622,13 +599,13 @@ object MappingExecutionController {
 
     val properties: MorphRDBProperties = new MorphRDBProperties
     properties.setNoOfDatabase(1)
-    properties.setDatabaseUser(jdbcConnection.dbUserName)
-    properties.setDatabasePassword(jdbcConnection.dbPassword)
-    properties.setDatabaseName(jdbcConnection.dbName)
-    properties.setDatabaseURL(jdbcConnection.jdbc_url)
-    properties.setDatabaseDriver(jdbcConnection.databaseDriver)
-    properties.setDatabaseType(jdbcConnection.databaseType)
-    properties.setMappingDocumentFilePath(md.getDownloadURL())
+    properties.setDatabaseUser(jDBCConnection.dbUserName)
+    properties.setDatabasePassword(jDBCConnection.dbPassword)
+    properties.setDatabaseName(jDBCConnection.dbName)
+    properties.setDatabaseURL(jDBCConnection.jdbc_url)
+    properties.setDatabaseDriver(jDBCConnection.databaseDriver)
+    properties.setDatabaseType(jDBCConnection.databaseType)
+    properties.setMappingDocumentFilePath(mappingDocumentDownloadURL)
     properties.setOutputFilePath(outputFilepath)
 
 
@@ -637,11 +614,15 @@ object MappingExecutionController {
     runner.run
   }
 
-  def executeR2RMLMappingWithCSV(md:MappingDocument
-                                 , unannotatedDistributions: List[UnannotatedDistribution]
-                                 //, unannotatedDataset:Dataset
-                                 , outputFilepath:String, queryFileName:String) = {
+  def executeR2RMLMappingWithCSV(mappingExecution:MappingExecution) = {
     logger.info("Executing R2RML mapping ...")
+    val md = mappingExecution.mappingDocument;
+    val unannotatedDistributions = mappingExecution.unannotatedDistributions
+    val queryFileName = mappingExecution.queryFileName
+    val outputFilepath = if(mappingExecution.outputDirectory == null) { mappingExecution.getOutputFileWithExtension; }
+    else { s"${mappingExecution.outputDirectory}/${mappingExecution.getOutputFileWithExtension}"}
+    logger.info(s"outputFilepath = $outputFilepath");
+
     val mappingDocumentDownloadURL = md.getDownloadURL();
     logger.info(s"mappingDocumentDownloadURL = $mappingDocumentDownloadURL");
 
@@ -672,22 +653,11 @@ object MappingExecutionController {
     runner.run
   }
 
-  def executeRMLMapping(md:MappingDocument
-                        , unannotatedDataset: Dataset
-                        , outputFilepath:String) = {
+  def executeRMLMapping(mappingExecution: MappingExecution) = {
     logger.info("Executing RML mapping ...")
 
-    //TODO FIX THIS RML Engine only supports one distribution file
-    val unannotatedDistribution = unannotatedDataset.getUnannotatedDistributions.iterator.next();
-
-    val datasetDistributionDownloadURL = unannotatedDistribution.dcatDownloadURL;
-    logger.info(s"datasetDistributionDownloadURL = $datasetDistributionDownloadURL")
-
-    val mdDownloadURL = md.getDownloadURL();
-    logger.info(s"mdDownloadURL = $mdDownloadURL")
-
     val rmlConnector = new RMLMapperConnector();
-    rmlConnector.executeWithMain(datasetDistributionDownloadURL, mdDownloadURL, outputFilepath);
+    rmlConnector.executeWithMain(mappingExecution);
   }
 
   def storeManifestOnVirtuoso(manifestFile:File) = {
