@@ -5,6 +5,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -271,15 +272,17 @@ public class MappingPediaController {
         logger.info("distribution_id = " + distributionId);
 
         ListResult listResult = null;
-        if(!"".equals(datasetId.trim())
-                || !"".equals(ckanPackageId.trim())
-                || !"".equals(ckanPackageName.trim())
-                ) {
 
+        if(!"".equals(datasetId.trim())) {
             listResult = this.mappingDocumentController.findByDatasetId(
                     datasetId, ckanPackageId, ckanPackageName);
+        } else if(!"".equals(ckanPackageId.trim())) {
+            listResult = this.mappingDocumentController.findByCKANPackageId(
+                    ckanPackageId);
         } else if(!"".equalsIgnoreCase(distributionId.trim())) {
             listResult = this.mappingDocumentController.findByDistributionId(distributionId);
+        } else {
+
         }
 
         return listResult;

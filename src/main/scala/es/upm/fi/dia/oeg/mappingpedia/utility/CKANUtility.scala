@@ -298,14 +298,47 @@ object CKANUtility {
     new ListResult[String](datasetList.size, datasetList)
   }
 
+  def getResult(response:CloseableHttpResponse) = {
+    if(response == null) {
+      null
+    } else {
+      val httpEntity  = response.getEntity
+      val entity = EntityUtils.toString(httpEntity)
+      val responseEntity = new JSONObject(entity);
+      responseEntity.getJSONObject("result");
+    }
+  }
+
   def getResultId(response:CloseableHttpResponse) = {
     if(response == null) {
-      ""
+      null
     } else {
       val httpEntity  = response.getEntity
       val entity = EntityUtils.toString(httpEntity)
       val responseEntity = new JSONObject(entity);
       responseEntity.getJSONObject("result").getString("id");
+    }
+  }
+
+  def getResultUrl(response:CloseableHttpResponse) = {
+    if(response == null) {
+      null
+    } else {
+      val httpEntity  = response.getEntity
+      val entity = EntityUtils.toString(httpEntity)
+      val responseEntity = new JSONObject(entity);
+      responseEntity.getJSONObject("result").getString("url");
+    }
+  }
+
+  def getResultPackageId(response:CloseableHttpResponse) = {
+    if(response == null) {
+      null
+    } else {
+      val httpEntity  = response.getEntity
+      val entity = EntityUtils.toString(httpEntity)
+      val responseEntity = new JSONObject(entity);
+      responseEntity.getJSONObject("result").getString("package_id");
     }
   }
 }

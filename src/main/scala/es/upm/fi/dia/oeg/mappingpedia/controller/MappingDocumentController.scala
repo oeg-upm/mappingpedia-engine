@@ -455,8 +455,26 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
       , "$datasetId" -> datasetId
-      , "$ckanPackageName" -> ckanPackageId
-      , "$ckanPackageId" -> ckanPackageName
+      , "$ckanPackageId" -> ckanPackageId
+      , "$ckanPackageName" -> ckanPackageName
+    );
+
+    val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
+    logger.debug(s"queryString = ${queryString}")
+    this.findByQueryString(queryString);
+  }
+
+  def findByCKANPackageId(pCKANPackageId:String) = {
+
+    val queryTemplateFile = "templates/findMappingDocumentsByCKANPackageId.rq";
+
+    val ckanPackageId = if(pCKANPackageId != null) {
+      pCKANPackageId
+    } else { "" }
+
+    val mapValues: Map[String, String] = Map(
+      "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$ckanPackageId" -> pCKANPackageId
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)

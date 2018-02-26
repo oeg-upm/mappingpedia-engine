@@ -112,18 +112,21 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
           val manifestFile = forkExecuteMappingResult.getManifest_download_url;
           val jsonObj = if(manifestFile == null ) {
+            val annotatedDistributionURL = forkExecuteMappingResult.getMapping_execution_result_download_url;
+            logger.debug(s"annotatedDistributionURL = ${annotatedDistributionURL}");
+
             val newJsonObj = new JSONObject();
             newJsonObj.put("@id", forkExecuteMappingResult.mappingExecutionResult.dctIdentifier);
-            newJsonObj.put("downloadURL", forkExecuteMappingResult.getMapping_execution_result_download_url);
+            newJsonObj.put("downloadURL", annotatedDistributionURL);
 
             val context = new JSONObject();
             newJsonObj.put("@context", context);
 
-            val downloadURL = new JSONObject();
-            context.put("downloadURL", downloadURL);
+            val downloadURLContext = new JSONObject();
+            context.put("downloadURL", downloadURLContext);
 
-            downloadURL.put("type", "@id")
-            downloadURL.put("@id", "http://www.w3.org/ns/dcat#downloadURL")
+            downloadURLContext.put("type", "@id")
+            downloadURLContext.put("@id", "http://www.w3.org/ns/dcat#downloadURL")
 
             newJsonObj
           } else {
@@ -210,17 +213,18 @@ class MappingExecutionController(val ckanClient:CKANUtility
       logger.debug(s"cacheExecutionURL = ${cacheExecutionURL}");
 
       if(cacheExecutionURL == null || cacheExecutionURL.results.isEmpty || !useCache) {
-        val mappingLanguage = if (md.mappingLanguage == null) {
-          MappingPediaConstant.MAPPING_LANGUAGE_R2RML
-        } else {
-          md.mappingLanguage
-        }
+        val mappingLanguage =
+          if (md.mappingLanguage == null) { MappingPediaConstant.MAPPING_LANGUAGE_R2RML }
+          else { md.mappingLanguage }
 
-        val organizationId = if(organization != null) {
-          organization.dctIdentifier
-        } else {
-          UUID.randomUUID.toString
-        }
+        val mappedClasses:String = try {
+          this.mappingDocumentController.findMappedClassesByMappingDocumentId(
+            md.dctIdentifier).results.mkString(",");
+        } catch { case e:Exception => null }
+        logger.info(s"mappedClasses = $mappedClasses")
+
+        val organizationId = if(organization != null) { organization.dctIdentifier }
+        else { UUID.randomUUID.toString }
 
         val datasetId = dataset.dctIdentifier
 
@@ -255,7 +259,6 @@ class MappingExecutionController(val ckanClient:CKANUtility
               MappingExecutionController.executeR2RMLMappingWithCSV(mappingExecution);
             }
           } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
-            val unannotatedDistribution = unannotatedDistributions.iterator.next();
             MappingExecutionController.executeRMLMapping(mappingExecution);
           } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
             throw new Exception(mappingLanguage + " Language is not supported yet");
@@ -326,6 +329,59 @@ class MappingExecutionController(val ckanClient:CKANUtility
         annotatedDistribution.dcatDownloadURL = mappingExecutionResultDownloadURL;
 
 
+
+        //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
+        val ckanAddResourceResponse = try {
+          if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
+            logger.info("STORING MAPPING EXECUTION RESULT ON CKAN ...")
+            val unannotatedDistributionsDownloadURLs = unannotatedDistributions.map(distribution => distribution.dcatDownloadURL);
+            val mapTextBody:Map[String, String] = Map(
+              MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> unannotatedDistributionsDownloadURLs.mkString(",")
+              , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
+              , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> annotatedDistribution.manifestDownloadURL
+              , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClasses
+              //, "$manifestDownloadURL" -> annotatedDistribution.manifestDownloadURL
+              //, MappingPediaConstant.CKAN_RESOURCE_CLASSES -> mappedClasses
+            )
+            ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
+          } else {
+            null
+          }
+        }
+        catch {
+          case e: Exception => {
+            errorOccured = true;
+            e.printStackTrace()
+            val errorMessage = "Error storing mapping execution result on CKAN: " + e.getMessage
+            logger.error(errorMessage)
+            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
+            null
+          }
+        }
+
+        val ckanAddResourceResponseStatusCode:Integer = {
+          if(ckanAddResourceResponse == null) { null }
+          else { ckanAddResourceResponse.getStatusLine.getStatusCode }
+        }
+
+        if(ckanAddResourceResponseStatusCode != null && ckanAddResourceResponseStatusCode >= 200
+          && ckanAddResourceResponseStatusCode <300) {
+          try {
+            val ckanAddResourceResult = CKANUtility.getResult(ckanAddResourceResponse);
+            val packageId = ckanAddResourceResult.getString("package_id")
+            val resourceId = ckanAddResourceResult.getString("id")
+            val resourceURL = ckanAddResourceResult.getString("url")
+
+            annotatedDistribution.dcatAccessURL= s"${this.ckanClient.ckanUrl}/dataset/${packageId}/resource/${resourceId}";
+            logger.debug(s"annotatedDistribution.dcatAccessURL = ${annotatedDistribution.dcatAccessURL}")
+
+            annotatedDistribution.dcatDownloadURL = resourceURL;
+            logger.debug(s"annotatedDistribution.dcatDownloadURL = ${annotatedDistribution.dcatDownloadURL}")
+          } catch { case e:Exception => { e.printStackTrace() } }
+        }
+
+
+
         //GENERATING MANIFEST FILE
         val manifestFile = MappingExecutionController.generateManifestFile(
           annotatedDistribution, unannotatedDistributions, md)
@@ -356,53 +412,12 @@ class MappingExecutionController(val ckanClient:CKANUtility
         //val manifestDownloadURL = this.githubClient.getDownloadURL(manifestAccessURL)
         annotatedDistribution.manifestDownloadURL = this.githubClient.getDownloadURL(annotatedDistribution.manifestAccessURL);
 
-        val mappedClasses:String = try {
-          this.mappingDocumentController.findMappedClassesByMappingDocumentId(
-            md.dctIdentifier).results.mkString(",");
-        } catch {
-          case e:Exception => null
-        }
-        logger.info(s"mappedClasses = $mappedClasses")
 
-        //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
-        val ckanAddResourceResponse = try {
-          if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
-            logger.info("STORING MAPPING EXECUTION RESULT ON CKAN ...")
 
-            val unannotatedDistributionsDownloadURLs = unannotatedDistributions.map(distribution => distribution.dcatDownloadURL);
 
-            val mapTextBody:Map[String, String] = Map(
-              MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> unannotatedDistributionsDownloadURLs.mkString(",")
-              , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
-              , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> annotatedDistribution.manifestDownloadURL
-              , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClasses
-              //, "$manifestDownloadURL" -> annotatedDistribution.manifestDownloadURL
-              //, MappingPediaConstant.CKAN_RESOURCE_CLASSES -> mappedClasses
-            )
-            ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
 
-          } else {
-            null
-          }
-        }
-        catch {
-          case e: Exception => {
-            errorOccured = true;
-            e.printStackTrace()
-            val errorMessage = "Error storing mapping execution result on CKAN: " + e.getMessage
-            logger.error(errorMessage)
-            collectiveErrorMessage = errorMessage :: collectiveErrorMessage
-            null
-          }
-        }
 
-        val ckanAddResourceResponseStatusCode:Integer = {
-          if(ckanAddResourceResponse == null) {
-            null
-          } else {
-            ckanAddResourceResponse.getStatusLine.getStatusCode
-          }
-        }
+
 
         //STORING MANIFEST FILE AS TRIPLES ON VIRTUOSO
         val addManifestVirtuosoResponse:String = try {
