@@ -151,7 +151,7 @@ class DistributionController(val ckanClient:CKANUtility
 
   def addDistribution(distribution: Distribution, manifestFileRef:MultipartFile
                       , generateManifestFile:Boolean, storeToCKAN:Boolean
-                ) : AddDistributionResult = {
+                     ) : AddDistributionResult = {
 
     //val dataset = distribution.dataset
     val organization: Agent = distribution.dataset.dctPublisher;
@@ -227,16 +227,26 @@ class DistributionController(val ckanClient:CKANUtility
       }
     }
     logger.info(s"ckanAddResourceResponse= ${ckanAddResourceResponse}");
-
     val ckanAddResourceResponseStatusCode:Integer = {
-      if(ckanAddResourceResponse == null) {
-        null
-      } else {
-        ckanAddResourceResponse.getStatusLine.getStatusCode
-      }
+      if(ckanAddResourceResponse == null) { null }
+      else { ckanAddResourceResponse.getStatusLine.getStatusCode }
     }
-    distribution.ckanResourceId = CKANUtility.getResultId(ckanAddResourceResponse);
+
+    if(ckanAddResourceResponseStatusCode != null && ckanAddResourceResponseStatusCode >= 200
+      && ckanAddResourceResponseStatusCode <300) {
+      try {
+        val ckanAddResourceResult = CKANUtility.getResult(ckanAddResourceResponse);
+        val packageId = ckanAddResourceResult.getString("package_id")
+        val resourceId = ckanAddResourceResult.getString("id")
+        val resourceURL = ckanAddResourceResult.getString("url")
+
+        distribution.ckanResourceId = resourceId;
+        distribution.dcatAccessURL= s"${this.ckanClient.ckanUrl}/dataset/${packageId}/resource/${resourceId}";
+        distribution.dcatDownloadURL = resourceURL;
+      } catch { case e:Exception => { e.printStackTrace() } }
+    }
     logger.info(s"distribution.ckanResourceId = ${distribution.ckanResourceId}");
+
 
     //MANIFEST FILE
     val manifestFile:File = try {
@@ -372,7 +382,7 @@ class DistributionController(val ckanClient:CKANUtility
       logger.info(s"addDistributionResultAsJson = ${addDistributionResultAsJson}\n\n");
     } catch {
       case e:Exception => {
-      logger.error(s"addDistributionResult = ${addDistributionResult}")
+        logger.error(s"addDistributionResult = ${addDistributionResult}")
       }
     }
 
