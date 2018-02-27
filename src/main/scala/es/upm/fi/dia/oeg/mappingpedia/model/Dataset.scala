@@ -55,10 +55,10 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
   var ckanTemporal: String = null;
   var ckanSpatial: String = null;
   var ckanAccrualPeriodicity: String = null;
-
   var superset: Dataset = null;
-
   var mvpCategory: String = null;
+  var dcatLandingPage:String = null;
+
 
 
   //var mappingDocuments:List[MappingDocument] = Nil;

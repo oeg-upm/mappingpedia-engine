@@ -6,7 +6,7 @@ import java.util.Date
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine
+import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import es.upm.fi.dia.oeg.mappingpedia.controller.DatasetController.logger
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
@@ -255,14 +255,14 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
       null
     }
 
-
-
     if(ckanAddPackageResponseResult != null) {
       dataset.ckanPackageId = ckanAddPackageResponseResult.getString("id");
+      dataset.dcatLandingPage = s"${this.ckanClient.ckanUrl}/dataset/${dataset.ckanPackageId}";
       dataset.ckanPackageName = ckanAddPackageResponseResult.getString("name");
     }
 
     logger.info(s"dataset.ckanPackageId = ${dataset.ckanPackageId}");
+    logger.info(s"dataset.dcatLandingPage = ${dataset.dcatLandingPage}");
     logger.info(s"dataset.ckanPackageName = ${dataset.ckanPackageName}");
 
 

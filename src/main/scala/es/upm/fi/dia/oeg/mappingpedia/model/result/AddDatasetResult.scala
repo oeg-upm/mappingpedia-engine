@@ -4,34 +4,26 @@ import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution}
 
 class AddDatasetResult(val errorCode:Integer, val status:String
                        , val dataset:Dataset
-                        , val storeManifestResponseStatus:Integer, val storeManifestResponseStatusText:String
-                        //, val storeDatasetResponseStatus:Integer, val storeDatasetResponseStatusText:String
-                        , val virtuosoStoreManifestResponseStatusText:String
-                        , val ckanStorePackageStatus:Integer
-                       //, val ckanStoreResourceStatus:Integer
+                       , val storeManifestResponseStatus:Integer, val storeManifestResponseStatusText:String
+                       , val virtuosoStoreManifestResponseStatusText:String
+                       , val ckanStorePackageStatus:Integer
                       ) {
-
-
   def getStatus= this.status
   def getErrorCode = this.errorCode
   def getStatus_code = this.errorCode
+
+  def getDatasetId = dataset.dctIdentifier
+  def getDataset_id = dataset.dctIdentifier
+  def getLanding_page = dataset.dcatLandingPage;
 
   def getManifestURL = dataset.manifestAccessURL
   def getManifest_access_url = dataset.manifestAccessURL
   def getManifest_download_url = dataset.manifestDownloadURL
 
-
-  //def getVirtuosoStoreManifestStatus = this.virtuosoStoreManifestResponseStatusText;
   def getVirtuoso_store_manifest_status = this.virtuosoStoreManifestResponseStatusText;
 
-  //def getCKANStorePackageStatus = this.ckanStorePackageStatus;
+
   def getCKAN_store_package_status = this.ckanStorePackageStatus;
-
-  //def getCKANStoreResourceStatus = this.ckanStoreResourceStatus
-  //def getCKAN_store_resource_status = this.ckanStoreResourceStatus
-
-  def getDatasetId = dataset.dctIdentifier
-  def getDataset_id = dataset.dctIdentifier
 
   val distribution = dataset.getDistribution();
   def getDatasetURL = if(distribution == null ) { null } else { distribution.dcatAccessURL; }
@@ -42,5 +34,6 @@ class AddDatasetResult(val errorCode:Integer, val status:String
   def getDistribution_hash= if(distribution == null ) { null } else { distribution.hash }
   def getDistribution_id = if(distribution == null ) { null } else { distribution.dctIdentifier}
   def getDistribution_ckan_resource_id = if(distribution == null ) { null } else { distribution.ckanResourceId}
+
 
 }
