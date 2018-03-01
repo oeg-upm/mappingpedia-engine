@@ -465,6 +465,7 @@ public class MappingPediaController {
             Dataset dataset = this.datasetController.findOrCreate(
                     organizationId, pDatasetId, ckanPackageId, ckanPackageName);
             logger.info("dataset.dctIdentifier() = " + dataset.dctIdentifier());
+            logger.info("dataset.ckanPackageId = " + dataset.ckanPackageId());
 
             MappingDocument md = this.mappingDocumentController.findOrCreate(
                     mappingDocumentId);

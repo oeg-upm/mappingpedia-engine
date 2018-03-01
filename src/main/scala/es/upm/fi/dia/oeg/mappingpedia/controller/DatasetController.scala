@@ -115,7 +115,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
-      , "$datasetID" -> datasetId
+      , "$datasetId" -> datasetId
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
