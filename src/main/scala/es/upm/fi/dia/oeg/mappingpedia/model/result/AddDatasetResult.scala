@@ -34,6 +34,6 @@ class AddDatasetResult(val errorCode:Integer, val status:String
   def getDistribution_hash= if(distribution == null ) { null } else { distribution.hash }
   def getDistribution_id = if(distribution == null ) { null } else { distribution.dctIdentifier}
   def getDistribution_ckan_resource_id = if(distribution == null ) { null } else { distribution.ckanResourceId}
-
+  def getCKAN_package_id = dataset.ckanPackageId
 
 }
