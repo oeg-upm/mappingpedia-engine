@@ -432,13 +432,13 @@ public class MappingPediaController {
             , @RequestParam(value="query_file", required = false) String queryFile
             , @RequestParam(value="output_filename", required = false) String outputFilename
             , @RequestParam(value="output_fileextension", required = false) String outputFileExtension
-            , @RequestParam(value="output_mediatype", required = false) String outputMediaType
+            , @RequestParam(value="output_mediatype", required = false, defaultValue="text/txt") String outputMediaType
 
             //jdbc related field
             , @RequestParam(value="db_username", required = false) String dbUserName
             , @RequestParam(value="db_password", required = false) String dbPassword
             , @RequestParam(value="db_name", required = false) String dbName
-            , @RequestParam(value="jdbc_url", required = false) String jdbc_url
+            , @RequestParam(value="jdbc_url", required = false) String jdbcURL
             , @RequestParam(value="database_driver", required = false) String databaseDriver
             , @RequestParam(value="database_type", required = false) String databaseType
     )
@@ -519,32 +519,33 @@ public class MappingPediaController {
                 unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
             }
 
-            JDBCConnection jdbcConnection = new JDBCConnection(dbUserName, dbPassword
-                    , dbName, jdbc_url
-                    , databaseDriver, databaseType);
+            JDBCConnection jdbcConnection = null;
+            if(dbUserName != null && dbPassword != null && dbName != null
+                    && jdbcURL != null && databaseDriver != null && databaseType != null) {
+                jdbcConnection = new JDBCConnection(dbUserName, dbPassword
+                        , dbName, jdbcURL
+                        , databaseDriver, databaseType);
+            }
 
 
             Boolean useCache = MappingPediaUtility.stringToBoolean(pUseCache);
 
             logger.info("md.getMapping_language() = " + md.getMapping_language());
-
-
             MappingExecution mappingExecution = new MappingExecution(md
                     , dataset.getUnannotatedDistributions()
                     , jdbcConnection
                     , queryFile
                     , outputFilename
                     , outputFileExtension
-            );
-            //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
-            return mappingExecutionController.executeMapping(
-                    mappingExecution
                     , outputMediaType
-                    ,  true, true
                     , true
-                    , null, useCache
+                    , true
+                    , true
+                    , useCache
                     , callbackURL
             );
+            //IN THIS PARTICULAR CASE WE HAVE TO STORE THE EXECUTION RESULT ON CKAN
+            return mappingExecutionController.executeMapping(mappingExecution);
 
             /*
         MappingExecution mappingExecution = new MappingExecution(md, dataset);
@@ -896,7 +897,7 @@ public class MappingPediaController {
             , @RequestParam(value="query_file_download_url", required = false) String queryFileDownloadURL
             , @RequestParam(value="output_file_name", required = false) String outputFilename
             , @RequestParam(value="output_fileextension", required = false) String outputFileExtension
-            , @RequestParam(value="output_mediatype", required = false) String outputMediaType
+            , @RequestParam(value="output_mediatype", required = false, defaultValue="text/txt") String outputMediaType
 
             , @RequestParam(value="manifestFile", required = false) MultipartFile manifestFileRef
             , @RequestParam(value="generateManifestFile", required = false, defaultValue="true") String pGenerateManifestFile
@@ -982,22 +983,18 @@ public class MappingPediaController {
                         MappingExecution mappingExecution = new MappingExecution(
                                 mappingDocument, dataset.getUnannotatedDistributions()
                                 , null, queryFileDownloadURL
-                                , outputFilename, outputFileExtension
+                                , outputFilename, outputFileExtension, outputMediaType
+                                , true
+                                , true
+                                , true
+
+                                , useCache
+                                , callbackURL
                         );
 
                         ExecuteMappingResult executeMappingResult =
                                 this.mappingExecutionController.executeMapping(
-                                        mappingExecution
-                                        , outputMediaType
-
-                                        , true
-                                        , true
-                                        , true
-
-                                        , null
-                                        , useCache
-                                        , callbackURL
-                                );
+                                        mappingExecution);
 
                         return new AddDatasetMappingExecuteResult (HttpURLConnection.HTTP_OK, addDatasetResult, addMappingDocumentResult, executeMappingResult);
 

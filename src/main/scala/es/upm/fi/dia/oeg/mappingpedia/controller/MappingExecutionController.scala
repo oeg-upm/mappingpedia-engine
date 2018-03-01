@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.json.JSONObject
 import org.springframework.http.HttpStatus
 
+import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,12 +26,19 @@ import scala.util.{Failure, Success}
 class MappingExecutionController(val ckanClient:CKANUtility
                                  , val githubClient:GitHubUtility
                                  , val virtuosoClient: VirtuosoClient
-                                 , val jenaClient:JenaClient)
+                                 , val jenaClient:JenaClient
+                                )
 {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mappingDocumentController:MappingDocumentController = new MappingDocumentController(
     ckanClient, githubClient, virtuosoClient, jenaClient);
-  val mapper = new ObjectMapper();
+  //val mapper = new ObjectMapper();
+
+  val helper = new MappingExecutionControllerHelper(this);
+  val helperThread = new Thread(helper);
+  helperThread.start();
+
+
 
   def findByHash(mdHash:String, datasetDistributionHash:String) = {
     val mapValues: Map[String, String] = Map(
@@ -64,34 +72,20 @@ class MappingExecutionController(val ckanClient:CKANUtility
   @throws(classOf[Exception])
   def executeMapping(
                       mappingExecution: MappingExecution
-                      , pOutputMediaType: String
-
-                      , pStoreToCKAN:Boolean
-                      , pStoreToGithub:Boolean
-                      , pStoreExecutionResultToVirtuoso:Boolean
-
-                      , jdbcConnection: JDBCConnection
-
-                      , useCache:Boolean
-                      , callbackURL:String
                     ) : ExecuteMappingResult = {
-    val f = this.executeMappingWithFuture(
-      mappingExecution
-      , pOutputMediaType: String
+    val mapper = new ObjectMapper();
 
-      , pStoreToCKAN:Boolean
-      , pStoreToGithub:Boolean
-      , pStoreExecutionResultToVirtuoso:Boolean
+    this.helper.executionQueue.enqueue(mappingExecution);
+    //MappingExecutionController.executionQueue.enqueue(mappingExecution);
 
-      , jdbcConnection: JDBCConnection
 
-      , useCache:Boolean
-      , callbackURL:String
-    );
-
+/*    val f = this.executeMappingWithFuture(mappingExecution);
+    val mapper = new ObjectMapper();
+    val callbackURL = mappingExecution.callbackURL
     val executeMappingResult = if(callbackURL == null) {
       logger.info("Await.result");
       val result = Await.result(f, 60 second)
+      MappingExecutionController.executionQueue.dequeue()
       result;
     } else {
       f.onComplete {
@@ -100,15 +94,6 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
           val forkExecuteMappingResultAsString = mapper.writeValueAsString(forkExecuteMappingResult)
           logger.info(s"forkExecuteMappingResultAsString = ${forkExecuteMappingResultAsString}");
-
-          //val mappingExecutionResultDownloadURL = forkExecuteMappingResult.getMapping_execution_result_download_url;
-          //logger.info(s"mappingExecutionResultDownloadURL = ${mappingExecutionResultDownloadURL}");
-
-          /*
-          val field = if(callbackField == null || "".equals(callbackField)) {
-            "notification"
-          } else { callbackField }
-          */
 
           val manifestFile = forkExecuteMappingResult.getManifest_download_url;
           val jsonObj = if(manifestFile == null ) {
@@ -149,12 +134,15 @@ class MappingExecutionController(val ckanClient:CKANUtility
             }
           }
 
+          MappingExecutionController.executionQueue.dequeue()
         }
         case Failure(e) => {
           logger.info("f.onComplete Success Failure");
           e.printStackTrace
+          MappingExecutionController.executionQueue.dequeue()
         }
       }
+
 
       logger.info("In Progress");
       new ExecuteMappingResult(
@@ -162,34 +150,34 @@ class MappingExecutionController(val ckanClient:CKANUtility
         , mappingExecution
         , null
       )
-    }
+    }*/
+
+    val executeMappingResult2 = new ExecuteMappingResult(
+      HttpURLConnection.HTTP_ACCEPTED, HttpStatus.ACCEPTED.getReasonPhrase
+      , mappingExecution
+      , null
+    )
 
     try {
-      val executeMappingResultAsString = this.mapper.writeValueAsString(executeMappingResult);
-      logger.info(s"executeMappingResultAsString = ${executeMappingResultAsString}");
+      val executeMappingResultAsString = mapper.writeValueAsString(executeMappingResult2);
+      logger.info(s"executeMappingResult2 = ${executeMappingResult2}");
     } catch {
       case e:Exception => {
-        logger.error(s"executeMappingResult = ${executeMappingResult}")
+        logger.error(s"executeMappingResult2 = ${executeMappingResult2}")
       }
     }
 
-    executeMappingResult
+    executeMappingResult2
   }
 
   @throws(classOf[Exception])
   def executeMappingWithFuture(
                                 mappingExecution: MappingExecution
-                                , pOutputMediaType: String
-
-                                , pStoreToCKAN:Boolean
-                                , pStoreToGithub:Boolean
-                                , pStoreExecutionResultToVirtuoso:Boolean
-
-                                , jdbcConnection: JDBCConnection
-
-                                , useCache:Boolean
-                                , callbackURL:String
                               ) : Future[ExecuteMappingResult] = {
+    val pStoreToGithub = mappingExecution.pStoreToGithub
+    val useCache = mappingExecution.useCache
+    val pStoreToCKAN = mappingExecution.storeToCKAN;
+
     val f = Future {
       var errorOccured = false;
       var collectiveErrorMessage: List[String] = Nil;
@@ -213,9 +201,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
       logger.debug(s"cacheExecutionURL = ${cacheExecutionURL}");
 
       if(cacheExecutionURL == null || cacheExecutionURL.results.isEmpty || !useCache) {
-        val mappingLanguage =
-          if (md.mappingLanguage == null) { MappingPediaConstant.MAPPING_LANGUAGE_R2RML }
-          else { md.mappingLanguage }
+
 
         val mappedClasses:String = try {
           this.mappingDocumentController.findMappedClassesByMappingDocumentId(
@@ -230,12 +216,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
         val mappingExecutionId = UUID.randomUUID.toString;
         val annotatedDistribution = new AnnotatedDistribution(dataset, mappingExecutionId)
-        val outputMediaType = if(pOutputMediaType == null) {
-          "text/txt"
-        } else {
-          pOutputMediaType
-        }
-        annotatedDistribution.dcatMediaType = outputMediaType
+        annotatedDistribution.dcatMediaType = mappingExecution.pOutputMediaType
         annotatedDistribution.dctDescription = "Annotated Dataset using the annotation: " + mdDownloadURL;
 
 
@@ -252,20 +233,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
         //EXECUTING MAPPING
         try {
-          if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
-            if(jdbcConnection != null) {
-              MappingExecutionController.executeR2RMLMappingWithRDB(mappingExecution);
-            } else {
-              MappingExecutionController.executeR2RMLMappingWithCSV(mappingExecution);
-            }
-          } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
-            MappingExecutionController.executeRMLMapping(mappingExecution);
-          } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
-            throw new Exception(mappingLanguage + " Language is not supported yet");
-          } else {
-            throw new Exception(mappingLanguage + " Language is not supported yet");
-          }
-          logger.info("mapping execution success!")
+          MappingExecutionController.executeMapping(mappingExecution);
         }
         catch {
           case e: Exception => {
@@ -515,9 +483,17 @@ class MappingExecutionController(val ckanClient:CKANUtility
           if(i < maxMappingDocuments) {
             val jDBCConnection = null;
             val queryFileName = null;
+            val outputMediaType = "text/turtle";
+
             val mappingExecution = new MappingExecution(md, unannotatedDistributions
               , jDBCConnection, queryFileName
-              , outputFileName, outputFileExtension);
+              , outputFileName, outputFileExtension, outputMediaType
+              , false
+              , true
+              , false
+              , useCache
+              , null
+            );
 
             val mappingExecutionURLs = if(useCache) { this.findByHash(md.hash,unannotatedDistribution.hash); }
             else { null }
@@ -539,13 +515,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
               mappingExecution.storeToCKAN = storeToCKAN
 
               //THERE IS NO NEED TO STORE THE EXECUTION RESULT IN THIS PARTICULAR CASE
-              val executionResult = this.executeMapping(mappingExecution
-                , "text/txt"
-                , false, true, false
-                , null
-                , useCache
-                , null
-              );
+              val executionResult = this.executeMapping(mappingExecution);
               //val executionResult = MappingExecutionController.executeMapping2(mappingExecution);
 
               executedMappingDocuments = (md.hash,unannotatedDistribution.hash) :: executedMappingDocuments;
@@ -585,6 +555,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
 object MappingExecutionController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  //var executionQueue = new mutable.Queue[MappingExecution];
 
 
 
@@ -596,7 +567,7 @@ object MappingExecutionController {
 
 
   def executeR2RMLMappingWithRDB(mappingExecution: MappingExecution) = {
-    logger.info("Executing R2RML mapping ...")
+    logger.info("Executing R2RML mapping (RDB) ...")
     val md = mappingExecution.mappingDocument;
     val mappingDocumentDownloadURL = md.getDownloadURL();
     logger.info(s"mappingDocumentDownloadURL = $mappingDocumentDownloadURL");
@@ -629,8 +600,35 @@ object MappingExecutionController {
     runner.run
   }
 
+  def executeMapping(mappingExecution:MappingExecution) = {
+    val md = mappingExecution.mappingDocument;
+    val mappingLanguage =
+      if (md.mappingLanguage == null) { MappingPediaConstant.MAPPING_LANGUAGE_R2RML }
+      else { md.mappingLanguage }
+
+    if (MappingPediaConstant.MAPPING_LANGUAGE_R2RML.equalsIgnoreCase(mappingLanguage)) {
+      //this.morphRDBQueue.enqueue(mappingExecution)
+      MappingExecutionController.executeR2RMLMapping(mappingExecution);
+    } else if (MappingPediaConstant.MAPPING_LANGUAGE_RML.equalsIgnoreCase(mappingLanguage)) {
+      MappingExecutionController.executeRMLMapping(mappingExecution);
+    } else if (MappingPediaConstant.MAPPING_LANGUAGE_xR2RML.equalsIgnoreCase(mappingLanguage)) {
+      throw new Exception(mappingLanguage + " Language is not supported yet");
+    } else {
+      throw new Exception(mappingLanguage + " Language is not supported yet");
+    }
+    logger.info("mapping execution done!")
+  }
+
+  def executeR2RMLMapping(mappingExecution:MappingExecution) = {
+    if(mappingExecution.jdbcConnection != null) {
+      this.executeR2RMLMappingWithRDB(mappingExecution)
+    } else if(mappingExecution.unannotatedDistributions != null) {
+      this.executeR2RMLMappingWithCSV(mappingExecution);
+    }
+  }
+
   def executeR2RMLMappingWithCSV(mappingExecution:MappingExecution) = {
-    logger.info("Executing R2RML mapping ...")
+    logger.info("Executing R2RML mapping (CSV) ...")
     val md = mappingExecution.mappingDocument;
     val unannotatedDistributions = mappingExecution.unannotatedDistributions
     val queryFileName = mappingExecution.queryFileName
@@ -670,7 +668,6 @@ object MappingExecutionController {
 
   def executeRMLMapping(mappingExecution: MappingExecution) = {
     logger.info("Executing RML mapping ...")
-
     val rmlConnector = new RMLMapperConnector();
     rmlConnector.executeWithMain(mappingExecution);
   }

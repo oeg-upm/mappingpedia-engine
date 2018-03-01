@@ -91,7 +91,7 @@ class Dataset(val dctPublisher:Agent, val dctIdentifier:String) extends Entity {
     } else {
       if (!this.dcatDistributions.contains(distribution)) {
         this.dcatDistributions = List(distribution) ++ this.dcatDistributions;
-        logger.info("distribution added to dataset.")
+        //logger.info("distribution added to dataset.")
       }
     }
   }

@@ -8,6 +8,12 @@ class MappingExecution(val mappingDocument:MappingDocument
                        , val queryFileName:String
                        , val pOutputFileName:String
                        , val pOutputFileExtension:String
+                       , val pOutputMediaType: String
+                       , val pStoreToCKAN:Boolean
+                       , val pStoreToGithub:Boolean
+                       , val pStoreExecutionResultToVirtuoso:Boolean
+                       , val useCache:Boolean
+                       , val callbackURL:String
                       ) {
   /*
     def this(mappingDocument:MappingDocument
