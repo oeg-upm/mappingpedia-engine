@@ -27,11 +27,10 @@ class MappingExecutionControllerHelper(
   override def run(): Unit = {
     while(true) {
       try {
-        //logger.info(s"${this} executionQueue = ${executionQueue.size}")
-        //logger.info(s"${this} isProcessing = ${isProcessing}")
-
         if(executionQueue.size > 0 && !isProcessing) {
           isProcessing = true;
+          logger.info(s"${this} executionQueue.size = ${executionQueue.size}")
+          logger.info(s"${this} isProcessing = ${isProcessing}")
           val mappingExecution = executionQueue.dequeue();
 
           val f = mappingExecutionController.executeMappingWithFuture(mappingExecution);
@@ -115,6 +114,7 @@ class MappingExecutionControllerHelper(
             )
           }
         }
+
         Thread.sleep(1000) // wait for 1000 millisecond
       } catch {
         case e:Exception => {

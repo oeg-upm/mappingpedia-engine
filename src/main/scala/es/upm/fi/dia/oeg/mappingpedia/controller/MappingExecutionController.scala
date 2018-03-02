@@ -74,100 +74,122 @@ class MappingExecutionController(val ckanClient:CKANUtility
                       mappingExecution: MappingExecution
                     ) : ExecuteMappingResult = {
     val mapper = new ObjectMapper();
+    val callbackURL = mappingExecution.callbackURL;
 
-    this.helper.executionQueue.enqueue(mappingExecution);
-    //MappingExecutionController.executionQueue.enqueue(mappingExecution);
-
-
-/*    val f = this.executeMappingWithFuture(mappingExecution);
-    val mapper = new ObjectMapper();
-    val callbackURL = mappingExecution.callbackURL
-    val executeMappingResult = if(callbackURL == null) {
-      logger.info("Await.result");
-      val result = Await.result(f, 60 second)
-      MappingExecutionController.executionQueue.dequeue()
-      result;
-    } else {
-      f.onComplete {
-        case Success(forkExecuteMappingResult:ExecuteMappingResult) => {
-          logger.info("f.onComplete Success");
-
-          val forkExecuteMappingResultAsString = mapper.writeValueAsString(forkExecuteMappingResult)
-          logger.info(s"forkExecuteMappingResultAsString = ${forkExecuteMappingResultAsString}");
-
-          val manifestFile = forkExecuteMappingResult.getManifest_download_url;
-          val jsonObj = if(manifestFile == null ) {
-            val annotatedDistributionURL = forkExecuteMappingResult.getMapping_execution_result_download_url;
-            logger.debug(s"annotatedDistributionURL = ${annotatedDistributionURL}");
-
-            val newJsonObj = new JSONObject();
-            newJsonObj.put("@id", forkExecuteMappingResult.mappingExecutionResult.dctIdentifier);
-            newJsonObj.put("downloadURL", annotatedDistributionURL);
-
-            val context = new JSONObject();
-            newJsonObj.put("@context", context);
-
-            val downloadURLContext = new JSONObject();
-            context.put("downloadURL", downloadURLContext);
-
-            downloadURLContext.put("type", "@id")
-            downloadURLContext.put("@id", "http://www.w3.org/ns/dcat#downloadURL")
-
-            newJsonObj
-          } else {
-            val manifestStringJsonLd = JenaClient.urlToString(manifestFile, Some("TURTLE"));
-            val jsonObjFromManifest = new JSONObject(manifestStringJsonLd);
-            jsonObjFromManifest
-          }
-
-          val response = Unirest.post(callbackURL)
-            .header("Content-Type", "application/json")
-            .body(jsonObj)
-            .asString();
-          logger.info(s"POST to ${callbackURL} with body = ${jsonObj.toString(3)}")
-
-          try {
-            logger.info(s"response from callback = ${response.getBody}")
-          } catch {
-            case e:Exception => {
-              e.printStackTrace()
-            }
-          }
-
-          MappingExecutionController.executionQueue.dequeue()
-        }
-        case Failure(e) => {
-          logger.info("f.onComplete Success Failure");
-          e.printStackTrace
-          MappingExecutionController.executionQueue.dequeue()
-        }
-      }
-
-
-      logger.info("In Progress");
+    val executeMappingResult = if(callbackURL != null) {
+      this.helper.executionQueue.enqueue(mappingExecution);
       new ExecuteMappingResult(
         HttpURLConnection.HTTP_ACCEPTED, HttpStatus.ACCEPTED.getReasonPhrase
         , mappingExecution
         , null
       )
-    }*/
+    } else {
+      var result:ExecuteMappingResult = null;
+      while(result == null) {
+        if(!this.helper.isProcessing && this.helper.executionQueue.size==0) {
+          this.helper.isProcessing = true;
+          val f = this.executeMappingWithFuture(mappingExecution);
+          logger.info("Await.result");
+          result = Await.result(f, 60 second)
+          this.helper.isProcessing = false;
+        } else {
+          Thread.sleep(1000) // wait for 1000 millisecond
+        }
+      }
 
-    val executeMappingResult2 = new ExecuteMappingResult(
-      HttpURLConnection.HTTP_ACCEPTED, HttpStatus.ACCEPTED.getReasonPhrase
-      , mappingExecution
-      , null
-    )
+      result;
+    }
+
+
+
+    //MappingExecutionController.executionQueue.enqueue(mappingExecution);
+
+
+    /*    val f = this.executeMappingWithFuture(mappingExecution);
+        val mapper = new ObjectMapper();
+        val callbackURL = mappingExecution.callbackURL
+        val executeMappingResult = if(callbackURL == null) {
+          logger.info("Await.result");
+          val result = Await.result(f, 60 second)
+          MappingExecutionController.executionQueue.dequeue()
+          result;
+        } else {
+          f.onComplete {
+            case Success(forkExecuteMappingResult:ExecuteMappingResult) => {
+              logger.info("f.onComplete Success");
+
+              val forkExecuteMappingResultAsString = mapper.writeValueAsString(forkExecuteMappingResult)
+              logger.info(s"forkExecuteMappingResultAsString = ${forkExecuteMappingResultAsString}");
+
+              val manifestFile = forkExecuteMappingResult.getManifest_download_url;
+              val jsonObj = if(manifestFile == null ) {
+                val annotatedDistributionURL = forkExecuteMappingResult.getMapping_execution_result_download_url;
+                logger.debug(s"annotatedDistributionURL = ${annotatedDistributionURL}");
+
+                val newJsonObj = new JSONObject();
+                newJsonObj.put("@id", forkExecuteMappingResult.mappingExecutionResult.dctIdentifier);
+                newJsonObj.put("downloadURL", annotatedDistributionURL);
+
+                val context = new JSONObject();
+                newJsonObj.put("@context", context);
+
+                val downloadURLContext = new JSONObject();
+                context.put("downloadURL", downloadURLContext);
+
+                downloadURLContext.put("type", "@id")
+                downloadURLContext.put("@id", "http://www.w3.org/ns/dcat#downloadURL")
+
+                newJsonObj
+              } else {
+                val manifestStringJsonLd = JenaClient.urlToString(manifestFile, Some("TURTLE"));
+                val jsonObjFromManifest = new JSONObject(manifestStringJsonLd);
+                jsonObjFromManifest
+              }
+
+              val response = Unirest.post(callbackURL)
+                .header("Content-Type", "application/json")
+                .body(jsonObj)
+                .asString();
+              logger.info(s"POST to ${callbackURL} with body = ${jsonObj.toString(3)}")
+
+              try {
+                logger.info(s"response from callback = ${response.getBody}")
+              } catch {
+                case e:Exception => {
+                  e.printStackTrace()
+                }
+              }
+
+              MappingExecutionController.executionQueue.dequeue()
+            }
+            case Failure(e) => {
+              logger.info("f.onComplete Success Failure");
+              e.printStackTrace
+              MappingExecutionController.executionQueue.dequeue()
+            }
+          }
+
+
+          logger.info("In Progress");
+          new ExecuteMappingResult(
+            HttpURLConnection.HTTP_ACCEPTED, HttpStatus.ACCEPTED.getReasonPhrase
+            , mappingExecution
+            , null
+          )
+        }*/
+
+
 
     try {
-      val executeMappingResultAsString = mapper.writeValueAsString(executeMappingResult2);
-      logger.info(s"executeMappingResult2 = ${executeMappingResult2}");
+      val executeMappingResultAsString = mapper.writeValueAsString(executeMappingResult);
+      logger.info(s"executeMappingResult = ${executeMappingResult}");
     } catch {
       case e:Exception => {
-        logger.error(s"executeMappingResult2 = ${executeMappingResult2}")
+        logger.error(s"executeMappingResult = ${executeMappingResult}")
       }
     }
 
-    executeMappingResult2
+    executeMappingResult
   }
 
   @throws(classOf[Exception])
