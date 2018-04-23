@@ -212,6 +212,21 @@ public class MappingPediaController {
         return MappingPediaEngine.mappingpediaProperties().ckanActionResourceCreate();
     }
 
+    @RequestMapping(value="/ckan_resource_id", method= RequestMethod.GET)
+    public String getCKANResourceIdByResourceUrl(
+            @RequestParam(value="package_id", required = true) String packageId
+            , @RequestParam(value="resource_url", required = true) String resourceUrl
+    ) {
+        logger.info("GET /ckan_resource_id ...");
+        logger.info("package_id = " + packageId);
+        logger.info("resource_url = " + resourceUrl);
+
+        String result = this.ckanClient.getResourceIdByResourceUrl(packageId, resourceUrl);
+
+        return result;
+
+    }
+
     @RequestMapping(value="/ckan_resource_url", method= RequestMethod.GET)
     public ListResult<String> getCKANResourceUrl(
             @RequestParam(value="resource_id", required = true) String resourceId
@@ -490,7 +505,6 @@ public class MappingPediaController {
                     unannotatedDistribution.ckanResourceId_$eq(resourceId);
                     String ckanResourceDownloadUrl = this.ckanClient.getResourcesUrlsAsJava(resourceId).iterator().next();
                     unannotatedDistribution.dcatDownloadURL_$eq(ckanResourceDownloadUrl);
-
                     if(fieldSeparator != null) {
                         unannotatedDistribution.csvFieldSeparator_$eq(fieldSeparator);
                     }
@@ -502,10 +516,11 @@ public class MappingPediaController {
                 List<String> listDistributionDownloadURLs = Arrays.asList(pDistributionDownloadURL.split(","));
                 logger.info("listDistributionDownloadURLs = " + listDistributionDownloadURLs);
                 for(String distributionDownloadURL:listDistributionDownloadURLs) {
-                    String distributionDownloadURLTrimmed = distributionDownloadURL.trim();
                     UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(dataset);
+                    String distributionDownloadURLTrimmed = distributionDownloadURL.trim();
+                    String resourceId = this.ckanClient.getResourceIdByResourceUrl(ckanPackageId, distributionDownloadURLTrimmed);
+                    unannotatedDistribution.ckanResourceId_$eq(resourceId);
                     unannotatedDistribution.dcatDownloadURL_$eq(distributionDownloadURLTrimmed);
-
                     if(fieldSeparator != null) {
                         unannotatedDistribution.csvFieldSeparator_$eq(fieldSeparator);
                     }

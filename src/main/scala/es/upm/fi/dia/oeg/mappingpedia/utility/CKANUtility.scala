@@ -269,6 +269,33 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     this.getResourcesUrls(resourcesIds).asJava
   }
 
+  def getResourceIdByResourceUrl(packageId:String, pResourceUrl:String) : String = {
+    val uri = s"${MappingPediaEngine.mappingpediaProperties.ckanActionPackageShow}?id=${packageId}"
+    logger.info(s"Hitting endpoint: $uri");
+
+    val response = Unirest.get(uri)
+      .header("Authorization", this.authorizationToken)
+      .asJson();
+    val resources = response.getBody.getObject.getJSONObject("result").getJSONArray("resources");
+    //logger.info(s"resources = $resources");
+
+    var result:String = null;
+    if(resources != null && resources.length() > 0) {
+      for(i <- 0 until resources.length()) {
+        val resource = resources.getJSONObject(i);
+        val resourceUrl = resource.getString("url");
+
+        if(pResourceUrl.trim.equals(resourceUrl)) {
+          val resourceId = resource.getString("id");
+          result = resourceId;
+        }
+      }
+    }
+
+    logger.info(s"result = $result");
+    return result;
+  }
+
   def getResourcesUrls(resourcesIds:String) : List[String]= {
     val splitResourcesIds = resourcesIds.split(",").toList;
 
