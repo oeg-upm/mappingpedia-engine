@@ -324,14 +324,18 @@ class MappingExecutionController(val ckanClient:CKANUtility
         val ckanAddResourceResponse = try {
           if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
             logger.info("STORING MAPPING EXECUTION RESULT ON CKAN ...")
-            val unannotatedDistributionsDownloadURLs = unannotatedDistributions.map(distribution => distribution.dcatDownloadURL);
+            //val unannotatedDistributionsDownloadURLs = unannotatedDistributions.map(distribution => distribution.dcatDownloadURL);
             val mapTextBody:Map[String, String] = Map(
-              MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL -> unannotatedDistributionsDownloadURLs.mkString(",")
+              MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DATASET_DISTRIBUTION_DOWNLOAD_URL ->
+                unannotatedDistributions.map(distribution => distribution.dcatDownloadURL).mkString(",")
               , MappingPediaConstant.CKAN_RESOURCE_MAPPING_DOCUMENT_DOWNLOAD_URL -> md.getDownloadURL()
-              , MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> annotatedDistribution.manifestDownloadURL
+              //, MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES -> annotatedDistribution.manifestDownloadURL
               , MappingPediaConstant.CKAN_RESOURCE_CLASS -> mappedClasses
               //, "$manifestDownloadURL" -> annotatedDistribution.manifestDownloadURL
               //, MappingPediaConstant.CKAN_RESOURCE_CLASSES -> mappedClasses
+              , MappingPediaConstant.CKAN_RESOURCE_IS_ANNOTATED -> "true"
+              , MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DISTRIBUTION_CKAN_ID ->
+                unannotatedDistributions.map(distribution => distribution.ckanResourceId).mkString(",")
             )
             ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
           } else {

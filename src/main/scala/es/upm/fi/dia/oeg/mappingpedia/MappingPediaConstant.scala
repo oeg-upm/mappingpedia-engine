@@ -88,6 +88,9 @@ object MappingPediaConstant {
 	val CKAN_RESOURCE_PROV_TRIPLES = "prov_triples";
 	val CKAN_RESOURCE_CLASS = "class";
 	val CKAN_RESOURCE_CLASSES = "tag_string";
+	val CKAN_RESOURCE_IS_ANNOTATED = "annotated_data";
+  val CKAN_RESOURCE_ORIGINAL_DISTRIBUTION_CKAN_ID = "original_resource";
+
 
 	val SDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 }

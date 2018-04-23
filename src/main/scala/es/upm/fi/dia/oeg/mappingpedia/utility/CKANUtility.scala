@@ -7,15 +7,16 @@ import java.util.Properties
 
 import com.mashape.unirest.http.Unirest
 import es.upm.fi.dia.oeg.mappingpedia.model.result.ListResult
-import es.upm.fi.dia.oeg.mappingpedia.model.{Dataset, Distribution, Agent}
+import es.upm.fi.dia.oeg.mappingpedia.model.{Agent, Dataset, Distribution}
 import es.upm.fi.dia.oeg.mappingpedia.utility.CKANUtility.logger
-import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaEngine, MappingPediaProperties}
+import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine, MappingPediaProperties}
 import eu.trentorise.opendata.jackan.CkanClient
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
-import scala.collection.JavaConversions
+import scala.collection.JavaConversions._
+
 import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.{CloseableHttpResponse, HttpPost}
@@ -23,6 +24,7 @@ import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
+
 
 class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
@@ -76,6 +78,10 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
 
       if(distribution.hash != null) {
         builder.addTextBody("hash", distribution.hash)
+      }
+
+      if(distribution.manifestDownloadURL != null) {
+        builder.addTextBody(MappingPediaConstant.CKAN_RESOURCE_PROV_TRIPLES, distribution.manifestDownloadURL)
       }
 
       if(textBodyMap != null && textBodyMap.isDefined) {
@@ -252,6 +258,32 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       .asJson();
     response.getStatus
 
+  }
+
+  def getResourcesUrlsAsListResult(resourcesIds:String) : ListResult[String]= {
+    val resourcesUrls = this.getResourcesUrls(resourcesIds).asJava
+    new ListResult[String](resourcesUrls.size(), resourcesUrls);
+  }
+
+  def getResourcesUrlsAsJava(resourcesIds:String) = {
+    this.getResourcesUrls(resourcesIds).asJava
+  }
+
+  def getResourcesUrls(resourcesIds:String) : List[String]= {
+    val splitResourcesIds = resourcesIds.split(",").toList;
+
+    if(splitResourcesIds.length == 1) {
+      val resourceId = splitResourcesIds.iterator.next()
+      val uri = s"${MappingPediaEngine.mappingpediaProperties.ckanActionResourceShow}?id=${resourceId}"
+      logger.info(s"Hitting endpoint: $uri");
+      val response = Unirest.get(uri)
+        .header("Authorization", this.authorizationToken)
+        .asJson();
+      val resourceUrl = response.getBody.getObject.getJSONObject("result").getString("url");
+      List(resourceUrl);
+    } else {
+      splitResourcesIds.flatMap(resourceId => { this.getResourcesUrls(resourceId)} )
+    }
   }
 
   def getDatasets(organizationId:String) = {

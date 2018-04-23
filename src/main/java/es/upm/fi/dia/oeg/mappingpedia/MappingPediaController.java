@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.mappingpedia;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
@@ -195,20 +196,30 @@ public class MappingPediaController {
 
     @RequestMapping(value="/ckan_api_action_organization_create", method= RequestMethod.GET)
     public String getCKANAPIActionOrganizationCreate() {
-        logger.info("GET //ckanActionOrganizationCreate ...");
+        logger.info("GET /ckanActionOrganizationCreate ...");
         return MappingPediaEngine.mappingpediaProperties().ckanActionOrganizationCreate();
     }
 
     @RequestMapping(value="/ckan_api_action_package_create", method= RequestMethod.GET)
     public String getCKANAPIActionPpackageCreate() {
-        logger.info("GET //ckanActionPackageCreate ...");
+        logger.info("GET /ckanActionPackageCreate ...");
         return MappingPediaEngine.mappingpediaProperties().ckanActionPackageCreate();
     }
 
     @RequestMapping(value="/ckan_api_action_resource_create", method= RequestMethod.GET)
     public String getCKANAPIActionResourceCreate() {
-        logger.info("GET //getCKANActionResourceCreate ...");
+        logger.info("GET /getCKANActionResourceCreate ...");
         return MappingPediaEngine.mappingpediaProperties().ckanActionResourceCreate();
+    }
+
+    @RequestMapping(value="/ckan_resource_url", method= RequestMethod.GET)
+    public ListResult<String> getCKANResourceUrl(
+            @RequestParam(value="resource_id", required = true) String resourceId
+    ) {
+        logger.info("GET /ckan_resource_url ...");
+        ListResult<String> result = this.ckanClient.getResourcesUrlsAsListResult(resourceId);
+        return result;
+
     }
 
     @RequestMapping(value="/ckanResource", method= RequestMethod.POST)
@@ -467,6 +478,43 @@ public class MappingPediaController {
             logger.info("dataset.dctIdentifier() = " + dataset.dctIdentifier());
             logger.info("dataset.ckanPackageId = " + dataset.ckanPackageId());
 
+            //List<String> listDistributionDownloadURLs = null;
+            //String[] arrayDistributionDownloadURLs = null;
+            //List<UnannotatedDistribution> unannotatedDistributions = new ArrayList<UnannotatedDistribution>();
+            if(ckanResourcesIds != null) {
+                List<String> listCKANResourcesIds = Arrays.asList(ckanResourcesIds.split(","));
+                logger.info("listCKANResourcesIds = " + listCKANResourcesIds);
+
+                for (String resourceId:listCKANResourcesIds) {
+                    UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(dataset);
+                    unannotatedDistribution.ckanResourceId_$eq(resourceId);
+                    String ckanResourceDownloadUrl = this.ckanClient.getResourcesUrlsAsJava(resourceId).iterator().next();
+                    unannotatedDistribution.dcatDownloadURL_$eq(ckanResourceDownloadUrl);
+
+                    if(fieldSeparator != null) {
+                        unannotatedDistribution.csvFieldSeparator_$eq(fieldSeparator);
+                    }
+                    unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
+
+                    dataset.addDistribution(unannotatedDistribution);
+                }
+            } else if(pDistributionDownloadURL != null) {
+                List<String> listDistributionDownloadURLs = Arrays.asList(pDistributionDownloadURL.split(","));
+                logger.info("listDistributionDownloadURLs = " + listDistributionDownloadURLs);
+                for(String distributionDownloadURL:listDistributionDownloadURLs) {
+                    String distributionDownloadURLTrimmed = distributionDownloadURL.trim();
+                    UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(dataset);
+                    unannotatedDistribution.dcatDownloadURL_$eq(distributionDownloadURLTrimmed);
+
+                    if(fieldSeparator != null) {
+                        unannotatedDistribution.csvFieldSeparator_$eq(fieldSeparator);
+                    }
+                    unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
+
+                    dataset.addDistribution(unannotatedDistribution );
+                }
+            }
+
             MappingDocument md = this.mappingDocumentController.findOrCreate(
                     mappingDocumentId);
             logger.info("md.dctIdentifier() = " + md.dctIdentifier());
@@ -492,33 +540,9 @@ public class MappingPediaController {
             }
             logger.debug("md.getMapping_language() = " + md.getMapping_language());
 
-            String[] arrayDistributionDownloadURLs = null;
-            if(pDistributionDownloadURL != null) {
-                arrayDistributionDownloadURLs = pDistributionDownloadURL.split(",");
-            }
-            logger.info("arrayDistributionDownloadURLs = " + Arrays.toString(arrayDistributionDownloadURLs));
 
-            for(String distributionDownloadURL:arrayDistributionDownloadURLs) {
-                String distributionDownloadURLTrimmed = distributionDownloadURL.trim();
-                logger.debug("distributionDownloadURLTrimmed = " + distributionDownloadURLTrimmed);
 
-                UnannotatedDistribution unannotatedDistribution = new UnannotatedDistribution(dataset);
-                dataset.addDistribution(unannotatedDistribution );
-                if(distributionAccessURL != null) {
-                    unannotatedDistribution.dcatAccessURL_$eq(distributionAccessURL);
-                }
-                if(distributionDownloadURLTrimmed != null) {
-                    unannotatedDistribution.dcatDownloadURL_$eq(distributionDownloadURLTrimmed);
-                } else {
-                    unannotatedDistribution.dcatDownloadURL_$eq(this.githubClient.getDownloadURL(distributionAccessURL));
-                }
-                logger.info("unannotatedDistribution.getDownload_url() = " + unannotatedDistribution.getDownload_url());
 
-                if(fieldSeparator != null) {
-                    unannotatedDistribution.csvFieldSeparator_$eq(fieldSeparator);
-                }
-                unannotatedDistribution.dcatMediaType_$eq(distributionMediaType);
-            }
 
             JDBCConnection jdbcConnection = null;
             if(dbUserName != null && dbPassword != null && dbName != null
