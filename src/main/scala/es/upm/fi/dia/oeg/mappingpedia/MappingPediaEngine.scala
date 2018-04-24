@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.mappingpedia
 
-import java.io.{BufferedWriter, File, FileWriter, InputStream}
+import java.io._
 import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Paths}
 import java.text.SimpleDateFormat
@@ -36,6 +36,8 @@ import scala.io.Source.fromFile
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.eclipse.egit.github.core.client.GitHubClient
 
+import scala.io.Source
+
 
 
 
@@ -53,6 +55,23 @@ object MappingPediaEngine {
 	var ckanClient:CKANUtility = null;
 	var virtuosoClient:VirtuosoClient = null;
 	var jenaClient:JenaClient = null;
+  val configurationFilename = "config.properties"
+
+	def init() : Unit = {
+    logger.info("Loading configuration file ...")
+
+    val url = getClass.getResource(configurationFilename);
+    if (url == null) {
+      logger.error("Sorry, unable to find " + configurationFilename)
+    } else {
+      val source = Source.fromURL(url)
+
+      val properties = new MappingPediaProperties();
+      properties.load(source.bufferedReader());
+      logger.info("Configuration file loaded.")
+      MappingPediaEngine.init(properties)
+    }
+	}
 
   def init(properties:MappingPediaProperties) = {
     this.mappingpediaProperties = properties;
