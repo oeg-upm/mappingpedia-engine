@@ -11,8 +11,13 @@ import org.slf4j.{Logger, LoggerFactory}
 	* Created by freddy on 10/08/2017.
 	*/
 class MappingPediaProperties(is:InputStream) extends Properties {
+  def this() { this(null) }
+
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
-	super.load(is);
+  if(is != null) {
+    super.load(is);
+  }
+
 
 	//VIRTUOSO
 	val virtuosoEnabled:Boolean = this.getPropertyAsBoolean("virtuoso.enabled", true)

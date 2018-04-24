@@ -16,7 +16,6 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
-
 import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.{CloseableHttpResponse, HttpPost}
@@ -24,6 +23,8 @@ import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
+
+import scala.collection.mutable.ListBuffer
 
 
 class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
@@ -294,6 +295,35 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
 
     logger.info(s"result = $result");
     return result;
+  }
+
+  def getAnnotatedDistribution(packageId:String) : List[String] = {
+    val uri = s"${MappingPediaEngine.mappingpediaProperties.ckanActionPackageShow}?id=${packageId}"
+    logger.info(s"Hitting endpoint: $uri");
+
+    val response = Unirest.get(uri)
+      .header("Authorization", this.authorizationToken)
+      .asJson();
+    val resources = response.getBody.getObject.getJSONObject("result").getJSONArray("resources");
+    //logger.info(s"resources = $resources");
+
+    var resultsBuffer:ListBuffer[String] = new ListBuffer[String]();
+    if(resources != null && resources.length() > 0) {
+      for(i <- 0 until resources.length()) {
+        val resource = resources.getJSONObject(i);
+        val isAnnotatedString = resource.getString(MappingPediaConstant.CKAN_RESOURCE_IS_ANNOTATED);
+        val isAnnotatedBoolean = MappingPediaUtility.stringToBoolean(isAnnotatedString);
+
+        if(isAnnotatedBoolean) {
+          val resourceId = resource.getString("id");
+          resultsBuffer += resourceId;
+        }
+      }
+    }
+    val results = resultsBuffer.toList
+
+    logger.info(s"results = $results");
+    return results;
   }
 
   def getResourcesUrls(resourcesIds:String) : List[String]= {
