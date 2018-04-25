@@ -297,7 +297,14 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     return result;
   }
 
-  def getAnnotatedDistribution(packageId:String) : List[String] = {
+  def getAnnotatedResourcesIdsAsListResult(packageId:String) : ListResult[String] = {
+    val resultAux = this.getAnnotatedResourcesIds(packageId);
+    new ListResult[String](resultAux);
+  }
+
+  def getAnnotatedResourcesIds(packageId:String) : List[String] = {
+    logger.info(s"MappingPediaEngine.mappingpediaProperties = ${MappingPediaEngine.mappingpediaProperties}");
+
     val uri = s"${MappingPediaEngine.mappingpediaProperties.ckanActionPackageShow}?id=${packageId}"
     logger.info(s"Hitting endpoint: $uri");
 
@@ -305,18 +312,20 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       .header("Authorization", this.authorizationToken)
       .asJson();
     val resources = response.getBody.getObject.getJSONObject("result").getJSONArray("resources");
-    //logger.info(s"resources = $resources");
+    logger.info(s"resources = $resources");
 
     var resultsBuffer:ListBuffer[String] = new ListBuffer[String]();
     if(resources != null && resources.length() > 0) {
       for(i <- 0 until resources.length()) {
         val resource = resources.getJSONObject(i);
-        val isAnnotatedString = resource.getString(MappingPediaConstant.CKAN_RESOURCE_IS_ANNOTATED);
-        val isAnnotatedBoolean = MappingPediaUtility.stringToBoolean(isAnnotatedString);
+        if(resource.has(MappingPediaConstant.CKAN_RESOURCE_IS_ANNOTATED)) {
+          val isAnnotatedString = resource.getString(MappingPediaConstant.CKAN_RESOURCE_IS_ANNOTATED);
+          val isAnnotatedBoolean = MappingPediaUtility.stringToBoolean(isAnnotatedString);
 
-        if(isAnnotatedBoolean) {
-          val resourceId = resource.getString("id");
-          resultsBuffer += resourceId;
+          if(isAnnotatedBoolean) {
+            val resourceId = resource.getString("id");
+            resultsBuffer += resourceId;
+          }
         }
       }
     }

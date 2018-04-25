@@ -36,7 +36,7 @@ import scala.io.Source.fromFile
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.eclipse.egit.github.core.client.GitHubClient
 
-import scala.io.Source
+import scala.io.{BufferedSource, Source}
 
 
 
@@ -57,24 +57,10 @@ object MappingPediaEngine {
 	var jenaClient:JenaClient = null;
   val configurationFilename = "config.properties"
 
-	def init() : Unit = {
-    logger.info("Loading configuration file ...")
-
-    val url = getClass.getResource(configurationFilename);
-    if (url == null) {
-      logger.error("Sorry, unable to find " + configurationFilename)
-    } else {
-      val source = Source.fromURL(url)
-
-      val properties = new MappingPediaProperties();
-      properties.load(source.bufferedReader());
-      logger.info("Configuration file loaded.")
-      MappingPediaEngine.init(properties)
-    }
-	}
-
   def init(properties:MappingPediaProperties) = {
     this.mappingpediaProperties = properties;
+    //val propertiesInString = this.mappingpediaProperties.mkString("\n");
+    //logger.info(s"propertiesInString = ${propertiesInString}");
 
     this.githubClient = if (mappingpediaProperties.githubEnabled) {
       try {

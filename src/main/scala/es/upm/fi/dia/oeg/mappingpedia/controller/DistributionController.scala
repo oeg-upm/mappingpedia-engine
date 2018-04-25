@@ -20,7 +20,7 @@ class DistributionController(val ckanClient:CKANUtility
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mapper = new ObjectMapper();
 
-  def findUnannotatedDistributions(queryString: String)= {
+  def findDistributions(queryString: String)= {
     logger.info(s"queryString = $queryString");
 
     val qexec = this.virtuosoClient.createQueryExecution(queryString);
@@ -64,7 +64,7 @@ class DistributionController(val ckanClient:CKANUtility
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    this.findUnannotatedDistributions(queryString);
+    this.findDistributions(queryString);
   }
 
   def storeManifestFileOnGitHub(file:File, distribution:Distribution) : HttpResponse[JsonNode] = {

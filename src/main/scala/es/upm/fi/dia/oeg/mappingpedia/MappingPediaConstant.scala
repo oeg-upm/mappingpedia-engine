@@ -93,4 +93,6 @@ object MappingPediaConstant {
 
 
 	val SDF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+	val DEFAULT_CONFIGURATION_FILENAME = "config.properties";
 }
