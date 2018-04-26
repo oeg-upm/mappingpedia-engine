@@ -344,7 +344,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
                 unannotatedDistributions.map(distribution => distribution.ckanResourceId).mkString(",")
             )
 
-            if(annotatedResourcesIds != null && annotatedResourcesIds.size > 0) {
+            if(annotatedResourcesIds != null && annotatedResourcesIds.size >= 1 && mappingExecution.updateResource) {
               val updateStatusList = annotatedResourcesIds.map(annotatedResourceId => {
                 annotatedDistribution.ckanResourceId = annotatedResourceId;
                 ckanClient.updateResource(annotatedDistribution, Some(mapTextBody));
@@ -483,7 +483,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
 
   }
 
-  def getInstances(aClass:String, maxMappingDocuments:Integer, useCache:Boolean) = {
+  def getInstances(aClass:String, maxMappingDocuments:Integer, useCache:Boolean, updateResource:Boolean) = {
     logger.info(s"useCache = ${useCache}");
 
     val mappingDocuments =
@@ -538,6 +538,7 @@ class MappingExecutionController(val ckanClient:CKANUtility
               , false
               , useCache
               , null
+              , updateResource
             );
 
             val mappingExecutionURLs = if(useCache) { this.findByHash(md.hash,unannotatedDistribution.hash); }

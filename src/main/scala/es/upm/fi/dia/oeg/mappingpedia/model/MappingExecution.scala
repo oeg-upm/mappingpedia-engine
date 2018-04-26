@@ -14,6 +14,7 @@ class MappingExecution(val mappingDocument:MappingDocument
                        , val pStoreExecutionResultToVirtuoso:Boolean
                        , val useCache:Boolean
                        , val callbackURL:String
+                       , val updateResource:Boolean
                       ) {
   /*
     def this(mappingDocument:MappingDocument
