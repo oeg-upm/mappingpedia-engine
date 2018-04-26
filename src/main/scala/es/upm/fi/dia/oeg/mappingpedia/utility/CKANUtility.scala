@@ -29,34 +29,58 @@ import scala.collection.mutable.ListBuffer
 
 class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val CKAN_API_ACTION_RESOURCE_CREATE = "/api/action/resource_create";
+  val CKAN_API_ACTION_RESOURCE_UPDATE = "/api/action/resource_update";
+
+  val CKAN_FIELD_NAME = "name";
+  val CKAN_FIELD_DESCRIPTION = "description";
+  val CKAN_FIELD_PACKAGE_ID = "package_id";
+  val CKAN_FIELD_URL = "url";
+
 
   def createResource(distribution: Distribution, textBodyMap:Option[Map[String, String]]) = {
     logger.info("CREATING A RESOURCE ON CKAN ... ")
+    this.createOrUpdateResource(CKAN_API_ACTION_RESOURCE_CREATE, distribution, textBodyMap);
+  }
+
+  def updateResource(distribution: Distribution, textBodyMap:Option[Map[String, String]]) = {
+    logger.info("UPDATING A RESOURCE ON CKAN ... ")
+    val textBodyMap2 = textBodyMap.get + ("id" -> distribution.ckanResourceId);
+    this.createOrUpdateResource(CKAN_API_ACTION_RESOURCE_UPDATE, distribution, Some(textBodyMap2));
+  }
+
+  def createOrUpdateResource(ckanAction:String, distribution: Distribution, textBodyMap:Option[Map[String, String]]) = {
     //val dataset = distribution.dataset;
 
     //val packageId = distribution.dataset.dctIdentifier;
     val datasetPackageId = distribution.dataset.ckanPackageId;
     val packageId = if(datasetPackageId == null) { distribution.dataset.dctIdentifier } else { datasetPackageId }
-
     logger.info(s"packageId = $packageId")
-    logger.info(s"url = ${distribution.dcatDownloadURL}")
+
+
+    logger.info(s"distribution.dcatDownloadURL = ${distribution.dcatDownloadURL}")
 
     val httpClient = HttpClientBuilder.create.build
     try {
 
-      val uploadFileUrl = ckanUrl + "/api/action/resource_create"
-      logger.info(s"Hitting endpoint: $uploadFileUrl");
+      val createOrUpdateUrl = ckanUrl + ckanAction
+      logger.info(s"Hitting endpoint: $createOrUpdateUrl");
 
-      val httpPostRequest = new HttpPost(uploadFileUrl)
+      val httpPostRequest = new HttpPost(createOrUpdateUrl)
       httpPostRequest.setHeader("Authorization", authorizationToken)
       val builder = MultipartEntityBuilder.create()
-        .addTextBody("package_id", packageId)
-        .addTextBody("url", distribution.dcatDownloadURL)
+        .addTextBody(CKAN_FIELD_PACKAGE_ID, packageId)
+        .addTextBody(CKAN_FIELD_URL, distribution.dcatDownloadURL)
       ;
+
+      logger.info(s"distribution.dctTitle = ${distribution.dctTitle}")
+      if(distribution.dctTitle != null) {
+        builder.addTextBody(CKAN_FIELD_NAME, distribution.dctTitle)
+      }
 
       logger.info(s"distribution.dctDescription = ${distribution.dctDescription}")
       if(distribution.dctDescription != null) {
-        builder.addTextBody("description", distribution.dctDescription)
+        builder.addTextBody(CKAN_FIELD_DESCRIPTION, distribution.dctDescription)
       }
 
       logger.info(s"dataset.dcatMediaType = ${distribution.dcatMediaType}")
@@ -113,7 +137,7 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
         logger.info(s"response.getStatusLine= ${response.getStatusLine}");
         logger.info(s"response.getStatusLine.getReasonPhrase= ${response.getStatusLine.getReasonPhrase}");
 
-        throw new Exception("Failed to add the file to CKAN storage. Response status line from " + uploadFileUrl + " was: " + response.getStatusLine)
+        throw new Exception("Failed to add the file to CKAN storage. Response status line from " + createOrUpdateUrl + " was: " + response.getStatusLine)
       }
 
       response

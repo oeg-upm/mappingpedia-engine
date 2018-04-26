@@ -14,6 +14,8 @@ import es.upm.fi.dia.oeg.mappingpedia.utility._
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.{MorphCSVProperties, MorphCSVRunnerFactory, MorphRDBProperties, MorphRDBRunnerFactory}
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.apache.http.client.methods.CloseableHttpResponse
+import org.apache.http.impl.client.CloseableHttpClient
 import org.json.JSONObject
 import org.springframework.http.HttpStatus
 
@@ -323,6 +325,10 @@ class MappingExecutionController(val ckanClient:CKANUtility
         //STORING MAPPING EXECUTION RESULT AS A RESOURCE ON CKAN
         val ckanAddResourceResponse = try {
           if(MappingPediaEngine.mappingpediaProperties.ckanEnable && pStoreToCKAN) {
+
+            val annotatedResourcesIds = ckanClient.getAnnotatedResourcesIds(dataset.ckanPackageId);
+            logger.info(s"annotatedResourcesIds = ${annotatedResourcesIds}");
+
             logger.info("STORING MAPPING EXECUTION RESULT ON CKAN ...")
             //val unannotatedDistributionsDownloadURLs = unannotatedDistributions.map(distribution => distribution.dcatDownloadURL);
             val mapTextBody:Map[String, String] = Map(
@@ -337,7 +343,20 @@ class MappingExecutionController(val ckanClient:CKANUtility
               , MappingPediaConstant.CKAN_RESOURCE_ORIGINAL_DISTRIBUTION_CKAN_ID ->
                 unannotatedDistributions.map(distribution => distribution.ckanResourceId).mkString(",")
             )
-            ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
+
+            if(annotatedResourcesIds != null && annotatedResourcesIds.size > 0) {
+              val updateStatusList = annotatedResourcesIds.map(annotatedResourceId => {
+                annotatedDistribution.ckanResourceId = annotatedResourceId;
+                ckanClient.updateResource(annotatedDistribution, Some(mapTextBody));
+              })
+
+              val updateStatus = updateStatusList.iterator.next();
+              updateStatus
+            } else {
+              val createStatus = ckanClient.createResource(annotatedDistribution, Some(mapTextBody));
+              createStatus
+            }
+
           } else {
             null
           }
