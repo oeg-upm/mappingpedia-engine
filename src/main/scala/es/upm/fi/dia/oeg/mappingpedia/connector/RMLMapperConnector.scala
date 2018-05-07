@@ -14,7 +14,8 @@ import es.upm.fi.dia.oeg.mappingpedia.model.MappingExecution
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.log4j.BasicConfigurator
-import org.openrdf.rio.RDFFormat
+import org.eclipse.rdf4j.rio.RDFFormat
+
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConversions._

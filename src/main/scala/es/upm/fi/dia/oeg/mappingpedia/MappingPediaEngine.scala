@@ -26,7 +26,7 @@ import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.impl.StatementImpl
 import org.apache.jena.vocabulary.RDF
 import org.apache.log4j.BasicConfigurator
-import org.openrdf.rio.RDFFormat
+//import org.openrdf.rio.RDFFormat
 import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtGraph, VirtModel, VirtuosoQueryExecutionFactory}
