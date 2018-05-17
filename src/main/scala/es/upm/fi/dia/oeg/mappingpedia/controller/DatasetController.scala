@@ -63,7 +63,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
       val manifestFileRef:MultipartFile = null
       val generateManifestFile:Boolean = true
-      val storeToCKAN:Boolean = true;
+      val storeToCKAN:Boolean = false;
       logger.info(s"storeToCKAN = ${storeToCKAN}");
 
 
