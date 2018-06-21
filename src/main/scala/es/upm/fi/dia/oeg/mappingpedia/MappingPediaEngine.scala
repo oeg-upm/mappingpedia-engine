@@ -1,10 +1,10 @@
 package es.upm.fi.dia.oeg.mappingpedia
 
-import java.io.{BufferedWriter, File, FileWriter, InputStream}
+import java.io._
 import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Paths}
 import java.text.SimpleDateFormat
-import java.util.{Date, UUID}
+import java.util.{Date, Properties, UUID}
 
 import be.ugent.mmlab.rml.config.RMLConfiguration
 import be.ugent.mmlab.rml.core.{StdMetadataRMLEngine, StdRMLEngine}
@@ -26,7 +26,7 @@ import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.impl.StatementImpl
 import org.apache.jena.vocabulary.RDF
 import org.apache.log4j.BasicConfigurator
-import org.openrdf.rio.RDFFormat
+//import org.openrdf.rio.RDFFormat
 import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.web.multipart.MultipartFile
 import virtuoso.jena.driver.{VirtGraph, VirtModel, VirtuosoQueryExecutionFactory}
@@ -35,6 +35,8 @@ import scala.collection.JavaConversions._
 import scala.io.Source.fromFile
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.eclipse.egit.github.core.client.GitHubClient
+
+import scala.io.{BufferedSource, Source}
 
 
 
@@ -48,11 +50,66 @@ object MappingPediaEngine {
 	val logger: Logger = LoggerFactory.getLogger(this.getClass);
 	val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 	var ontologyModel:OntModel = null;
-	var mappingpediaProperties:MappingPediaProperties = null;
+	var mappingpediaProperties:MappingPediaProperties = new MappingPediaProperties();
 	var githubClient:GitHubUtility = null;
 	var ckanClient:CKANUtility = null;
 	var virtuosoClient:VirtuosoClient = null;
 	var jenaClient:JenaClient = null;
+  val configurationFilename = "config.properties"
+
+  def init(properties:MappingPediaProperties) = {
+    this.mappingpediaProperties = properties;
+    //val propertiesInString = this.mappingpediaProperties.mkString("\n");
+    //logger.info(s"propertiesInString = ${propertiesInString}");
+
+    this.githubClient = if (mappingpediaProperties.githubEnabled) {
+      try {
+        new GitHubUtility(mappingpediaProperties.githubRepository, mappingpediaProperties.githubUser
+          , mappingpediaProperties.githubAccessToken)
+      } catch {
+        case e: Exception => {
+          e.printStackTrace();
+          null;
+        }
+      }
+    } else { null }
+
+
+    this.ckanClient = if(mappingpediaProperties.ckanEnable) {
+      try {
+        new CKANUtility(mappingpediaProperties.ckanURL, mappingpediaProperties.ckanKey);
+      } catch {
+        case e: Exception =>
+          e.printStackTrace()
+          null
+      }
+    } else { null }
+
+    this.virtuosoClient = if (mappingpediaProperties.virtuosoEnabled) {
+      try {
+        new VirtuosoClient(mappingpediaProperties.virtuosoJDBC
+          , mappingpediaProperties.virtuosoUser, mappingpediaProperties.virtuosoPwd, mappingpediaProperties.graphName)
+      } catch {
+        case e: Exception =>
+          e.printStackTrace()
+          null
+      }
+    } else { null }
+
+    this.jenaClient = if (virtuosoClient != null) {
+      try {
+        val schemaOntology = JenaClient.loadSchemaOrgOntology(virtuosoClient
+          , MappingPediaConstant.SCHEMA_ORG_FILE, MappingPediaConstant.FORMAT)
+        this.setOntologyModel(schemaOntology)
+        new JenaClient(schemaOntology)
+      } catch {
+        case e: Exception =>
+          e.printStackTrace();
+          null;
+      }
+    } else { null }
+  }
+
 
 	def getR2RMLMappingDocumentFilePathFromManifestFile(manifestFilePath:String) : String = {
 		logger.info("Reading manifest file : " + manifestFilePath);
@@ -70,15 +127,14 @@ object MappingPediaEngine {
 
 			var mappingDocumentFile = new File(mappingDocumentFilePath.toString());
 			val isMappingDocumentFilePathAbsolute = mappingDocumentFile.isAbsolute();
-			var r2rmlMappingDocumentPath : String = null;
-			if(isMappingDocumentFilePathAbsolute) {
-				r2rmlMappingDocumentPath = mappingDocumentFilePath
+			val r2rmlMappingDocumentPath = if(isMappingDocumentFilePathAbsolute) {
+				mappingDocumentFilePath
 			} else {
 				val manifestFile = new File(manifestFilePath);
 				if(manifestFile.isAbsolute()) {
-					r2rmlMappingDocumentPath = manifestFile.getParentFile().toString() + File.separator + mappingDocumentFile;
+					manifestFile.getParentFile().toString() + File.separator + mappingDocumentFile;
 				} else {
-					r2rmlMappingDocumentPath = mappingDocumentFilePath
+					mappingDocumentFilePath
 				}
 			}
 			r2rmlMappingDocumentPath

@@ -1,18 +1,74 @@
 package es.upm.fi.dia.oeg.mappingpedia
 
-import java.io.{InputStream, Reader}
+import java.io.{FileInputStream, InputStream, Reader}
 import java.util.Properties
 
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingPediaUtility.logger
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.io.Source
 
 
 /**
 	* Created by freddy on 10/08/2017.
 	*/
-class MappingPediaProperties(is:InputStream) extends Properties {
-	val logger: Logger = LoggerFactory.getLogger(this.getClass);
-	super.load(is);
+object MappingPediaProperties {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val configurationFilename = "config.properties"
+
+	def apply() : MappingPediaProperties = {
+    logger.info("Creating default properties ...")
+
+    val configResource = getClass.getResource(MappingPediaConstant.DEFAULT_CONFIGURATION_FILENAME);
+    
+    val properties = if (configResource == null) {
+      val is = new FileInputStream("src/main/resources/" + MappingPediaConstant.DEFAULT_CONFIGURATION_FILENAME);
+      /*
+      val properties2 = new Properties();
+      properties2.load(is);
+      val properties2KeySet = properties2.keySet()
+      logger.info(s"properties2KeySet = ${properties2KeySet}")
+      * 
+      */
+      
+      new MappingPediaProperties(is, null);
+    } else {
+      val source = Source.fromURL(configResource)
+      val reader = source.bufferedReader();
+      new MappingPediaProperties(null, reader);
+    }
+    logger.info("Configuration file loaded.")
+
+    val propertiesKeySet = properties.keySet()
+    logger.info(s"propertiesKeySet = ${propertiesKeySet}")
+
+    properties
+
+	}
+}
+
+class MappingPediaProperties(is:InputStream, reader:Reader) extends Properties {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  
+  def this() = { this(null, null) }
+
+  def this(is:InputStream) = { 
+    this(is, null);
+  }
+  
+  def this(reader:Reader) = { 
+    this(null, reader)
+  }
+  
+  if(is != null) {
+    this.load(is);
+    //logger.info(s"this.keySet() = ${this.keySet()}")    
+  }
+
+  if(reader != null) {
+    this.load(reader);
+  }
+  
+	
 
 	//VIRTUOSO
 	val virtuosoEnabled:Boolean = this.getPropertyAsBoolean("virtuoso.enabled", true)
@@ -63,3 +119,4 @@ class MappingPediaProperties(is:InputStream) extends Properties {
 		else { defaultValue }
 	}
 }
+
