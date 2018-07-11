@@ -205,6 +205,11 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
     jsonObj.put("name", dataset.dctIdentifier);
     jsonObj.put("owner_org", organization.dctIdentifier);
 
+    val mandatoryFields:Map[String, String] = Map(
+      "name" -> dataset.dctIdentifier
+      , "owner_org" -> organization.dctIdentifier
+    );
+
     val optionalFields:Option[Map[String, String]] = Some(Map(
       "title" -> dataset.dctTitle
       , "notes" -> dataset.dctDescription
@@ -240,16 +245,43 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       }
     }
 
+    val fields = mandatoryFields ++ optionalFields.getOrElse(Map.empty);
+
 
     val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate
     logger.info(s"Hitting endpoint: $uri");
+    logger.info(s"\tname = ${dataset.dctIdentifier}");
+    logger.info(s"\towner_org: ${organization.dctIdentifier}");
 
+    /*
     val response = Unirest.post(uri)
       .header("Authorization", this.authorizationToken)
       .body(jsonObj)
       .asJson();
+      * 
+      */
+
+    /*
+    val requestBodyWithEntity = Unirest.post(uri)
+      .header("Authorization", this.authorizationToken)
+      .body(jsonObj);
+    val responseStringStatus = requestBodyWithEntity.asString().getStatus;
+    logger.info(s"\tresponseStringStatus: ${responseStringStatus}");
+    
+    val response = requestBodyWithEntity.asJson();
+    */
+
+    val response = Unirest.post(uri)
+      .header("Authorization", this.authorizationToken)
+      //.field("name", dataset.dctIdentifier)
+      //.field("owner_org", dataset.dctPublisher.dctIdentifier)
+      .fields(fields)
+      .asJson();
+
 
     val responseStatus = response.getStatus
+    logger.info(s"\tresponseStatus: ${responseStatus}");
+
     val responseStatusText = response.getStatusText
     if (responseStatus < 200 || responseStatus >= 300) {
       logger.info(s"response.getBody= ${response.getBody}");

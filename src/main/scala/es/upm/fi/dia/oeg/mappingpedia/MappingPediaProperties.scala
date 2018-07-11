@@ -72,6 +72,7 @@ class MappingPediaProperties(is:InputStream, reader:Reader) extends Properties {
 
 	//VIRTUOSO
 	val virtuosoEnabled:Boolean = this.getPropertyAsBoolean("virtuoso.enabled", true)
+	//logger.info(s"virtuosoEnabled = ${virtuosoEnabled}")
 	val virtuosoJDBC:String = this.getProperty("vjdbc")
 	val virtuosoUser:String = this.getProperty("usr")
 	val virtuosoPwd:String = this.getProperty("pwd")
@@ -81,6 +82,7 @@ class MappingPediaProperties(is:InputStream, reader:Reader) extends Properties {
 
 	//GITHUB
 	val githubEnabled = this.getPropertyAsBoolean("github.enabled", true);
+	//logger.info(s"githubEnabled = ${githubEnabled}")
 	val githubUser:String = this.getProperty("github.mappingpedia.username")
 	val githubAccessToken:String = this.getProperty("github.mappingpedia.accesstoken")
 	//val githubRepo = this.getProperty("github.mappingpedia.repository", MappingPediaConstant.DEFAULT_GITHUB_REPOSITORY)
@@ -95,6 +97,7 @@ class MappingPediaProperties(is:InputStream, reader:Reader) extends Properties {
 
 	//CKAN
 	val ckanEnable = this.getPropertyAsBoolean("ckan.enabled", true);
+	//logger.info(s"ckanEnable = ${ckanEnable}")
 	val ckanKey:String = this.getProperty("ckan.key")
 	/*
     val ckanActionOrganizationCreate:String=this.getProperty("ckan.action.organization.create")
