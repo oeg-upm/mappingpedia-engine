@@ -51,8 +51,11 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   }
 
   def findOrCreate(organizationId:String, datasetId:String, ckanPackageId:String, ckanPackageName:String) : Dataset = {
+    logger.info("findOrCreate");
+
     val existingDataset = this.find(datasetId, ckanPackageId, ckanPackageName);
     val dataset = if(existingDataset == null) {
+
       val organization = new Agent(organizationId);
       val newDataset = new Dataset(organization);
       newDataset.ckanPackageId = ckanPackageId;
@@ -60,7 +63,8 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
       val manifestFileRef:MultipartFile = null
       val generateManifestFile:Boolean = true
-      val storeToCKAN:Boolean = false;
+      val storeToCKAN:Boolean = true;
+      logger.info(s"storeToCKAN = ${storeToCKAN}");
 
       this.add(newDataset, manifestFileRef, generateManifestFile, storeToCKAN)
       newDataset
@@ -215,6 +219,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
   def add(dataset:Dataset, manifestFileRef:MultipartFile
                  , generateManifestFile:Boolean, storeToCKAN:Boolean
                 ) : AddDatasetResult = {
+    logger.info("add");
     //val distributions = dataset.dcatDistributions;
     val unannotatedDistributions = dataset.getUnannotatedDistributions;
 
@@ -223,6 +228,9 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
 
     //STORING DATASET AS PACKAGE ON CKAN
     val ckanAddPackageResponse:HttpResponse[JsonNode] = try {
+      logger.info(s"MappingPediaEngine.mappingpediaProperties.ckanEnable = ${MappingPediaEngine.mappingpediaProperties.ckanEnable}");
+      logger.info(s"storeToCKAN = ${storeToCKAN}");
+
       if(MappingPediaEngine.mappingpediaProperties.ckanEnable && storeToCKAN) {
         logger.info("STORING DATASET AS A PACKAGE ON CKAN ...")
         val response = ckanClient.addNewPackage(dataset);
@@ -240,6 +248,7 @@ class DatasetController(val ckanClient:CKANUtility, val githubClient:GitHubUtili
         null
       }
     }
+    logger.info(s"ckanAddPackageResponse = ${ckanAddPackageResponse}");
 
 
     val ckanAddPackageResponseResult = if(ckanAddPackageResponse != null) {

@@ -1,20 +1,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>es.upm.fi.dia.oeg.mappingpedia</groupId>
 	<artifactId>mappingpedia-engine</artifactId>
-	<version>0.9.2-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>
-		<scala.version>2.11.8</scala.version>
-        <jena.version>3.1.0</jena.version>
+		<scala.version>2.11.12</scala.version>
+		<jena.version>3.7.0</jena.version>
 		<commons.codec.version>1.8</commons.codec.version>
 		<grizzled.version>1.0.1</grizzled.version>
 		<slf4j-log4j12.version>1.7.5</slf4j-log4j12.version>
 		<project.java.version>1.8</project.java.version>
 		<maven.dependency.version>2.5.1</maven.dependency.version>
-		<morphrdb.version>3.9.6</morphrdb.version>
+		<morphrdb.version>3.9.14</morphrdb.version>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<rdf4j.version>1.0.3</rdf4j.version>
+
 	</properties>
 
 	<dependencies>
@@ -80,7 +84,7 @@
 			<version>2.1.5</version>
 		</dependency>
 
-        <dependency>
+		<dependency>
 			<groupId>es.upm.fi.dia.oeg.morph</groupId>
 			<artifactId>morph-rdb-dist</artifactId>
 			<type>pom</type>
@@ -131,30 +135,41 @@
 		<dependency>
 			<groupId>be.ugent.mmlab.rml</groupId>
 			<artifactId>RML-Processor</artifactId>
-			<version>0.3</version>
-<!--			<exclusions>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-log4j12</artifactId>
-				</exclusion>
+			<!--<version>0.3</version>-->
+			<version>3.0.2</version>
 
-				<exclusion>
-					<groupId>org.springframework</groupId>
-					<artifactId>spring-context-support</artifactId>
-				</exclusion>
+			<!--			<exclusions>
+                            <exclusion>
+                                <groupId>org.slf4j</groupId>
+                                <artifactId>slf4j-log4j12</artifactId>
+                            </exclusion>
 
-				<exclusion>
-					<groupId>org.springframework</groupId>
-					<artifactId>spring-orm</artifactId>
-				</exclusion>
+                            <exclusion>
+                                <groupId>org.springframework</groupId>
+                                <artifactId>spring-context-support</artifactId>
+                            </exclusion>
 
-				<exclusion>
-					<groupId>be.ugent.mmlab.rml</groupId>
-					<artifactId>RML-DataRetrievalHandler</artifactId>
-				</exclusion>
+                            <exclusion>
+                                <groupId>org.springframework</groupId>
+                                <artifactId>spring-orm</artifactId>
+                            </exclusion>
 
-			</exclusions>-->
+                            <exclusion>
+                                <groupId>be.ugent.mmlab.rml</groupId>
+                                <artifactId>RML-DataRetrievalHandler</artifactId>
+                            </exclusion>
+
+                        </exclusions>-->
 		</dependency>
+
+		<!--		<dependency>
+                    <groupId>be.ugent.mmlab.rml</groupId>
+                    <artifactId>RML-Mapper</artifactId>
+                    <version>3.0.2</version>
+                    <type>pom</type>
+                </dependency>-->
+
+
 
 		<dependency>
 			<groupId>eu.trentorise.opendata</groupId>
@@ -168,11 +183,30 @@
 			<version>0.3.1</version>
 		</dependency>
 
-        <dependency>
-            <groupId>com.github.jsonld-java</groupId>
-            <artifactId>jsonld-java</artifactId>
-            <version>0.11.1</version>
-        </dependency>
+		<dependency>
+			<groupId>com.github.jsonld-java</groupId>
+			<artifactId>jsonld-java</artifactId>
+			<version>0.11.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.rdf4j</groupId>
+			<artifactId>rdf4j-rio-api</artifactId>
+			<version>${rdf4j.version}</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.eclipse.rdf4j/rdf4j-rio-api -->
+		<dependency>
+			<groupId>org.eclipse.rdf4j</groupId>
+			<artifactId>rdf4j-rio-api</artifactId>
+			<version>1.0.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.rdf4j</groupId>
+			<artifactId>rdf4j-runtime</artifactId>
+			<version>${rdf4j.version}</version>
+		</dependency>
 
 	</dependencies>
 
@@ -191,7 +225,7 @@
 				<updatePolicy>always</updatePolicy>
 			</snapshots>
 		</repository>
-        
+
 	</repositories>
 
 	<build>

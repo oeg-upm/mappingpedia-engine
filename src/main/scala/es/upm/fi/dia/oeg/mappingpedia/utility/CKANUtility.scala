@@ -32,11 +32,76 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   val CKAN_API_ACTION_RESOURCE_CREATE = "/api/action/resource_create";
   val CKAN_API_ACTION_RESOURCE_UPDATE = "/api/action/resource_update";
 
+  val CKAN_API_ACTION_STATUS_SHOW = "/api/action/status_show";
+
   val CKAN_FIELD_NAME = "name";
   val CKAN_FIELD_DESCRIPTION = "description";
   val CKAN_FIELD_PACKAGE_ID = "package_id";
   val CKAN_FIELD_URL = "url";
 
+  val CKAN_API_ACTION_STATUS_SHOW_URL = ckanUrl + "/api/action/status_show";
+  val CKAN_API_ACTION_PACKAGE_CREATE_URL = ckanUrl + "/api/action/package_create";
+  
+    val ckanVersion:Option[String] = {
+    logger.info(s"Hitting endpoint ${CKAN_API_ACTION_STATUS_SHOW_URL}");
+    val response = Unirest.get(CKAN_API_ACTION_STATUS_SHOW_URL).asJson();
+    val responseStatus = response.getStatus;
+    if(responseStatus >= 200 && responseStatus < 300) {
+      val ckanVersion = response.getBody.getObject.getJSONObject("result").getString("ckan_version");
+      Some(ckanVersion)
+    } else {
+      None
+    }
+  }
+
+  def createPackage(jsonObj:JSONObject) = {
+    logger.info(s"Hitting endpoint: ${CKAN_API_ACTION_PACKAGE_CREATE_URL}");
+
+    val response = Unirest.post(CKAN_API_ACTION_PACKAGE_CREATE_URL)
+      .header("Authorization", this.authorizationToken)
+      .body(jsonObj)
+      .asJson();
+
+    val responseStatus = response.getStatus
+    logger.info(s"\tresponseStatus = ${responseStatus}");
+
+    val responseStatusText = response.getStatusText
+    if (responseStatus < 200 || responseStatus >= 300) {
+      logger.info(s"response.getBody= ${response.getBody}");
+      logger.info(s"response.getHeaders= ${response.getHeaders}");
+      logger.info(s"response.getRawBody= ${response.getRawBody}");
+      logger.info(s"response.getStatus= ${response.getStatus}");
+      logger.info(s"response.getStatusText= ${response.getStatusText}");
+      throw new Exception(responseStatusText)
+    }
+
+    response;
+  }
+
+  def createPackage(fields: Map[String, String]) = {
+    logger.info(s"Hitting endpoint: ${CKAN_API_ACTION_PACKAGE_CREATE_URL}");
+
+    val response = Unirest.post(CKAN_API_ACTION_PACKAGE_CREATE_URL)
+      .header("Authorization", this.authorizationToken)
+      .fields(fields)
+      .asJson();
+
+    val responseStatus = response.getStatus
+    logger.info(s"\tresponseStatus = ${responseStatus}");
+
+    val responseStatusText = response.getStatusText
+    if (responseStatus < 200 || responseStatus >= 300) {
+      logger.info(s"response.getBody= ${response.getBody}");
+      logger.info(s"response.getHeaders= ${response.getHeaders}");
+      logger.info(s"response.getRawBody= ${response.getRawBody}");
+      logger.info(s"response.getStatus= ${response.getStatus}");
+      logger.info(s"response.getStatusText= ${response.getStatusText}");
+      throw new Exception(responseStatusText)
+    }
+
+    response;
+  }
+  
 
   def createResource(distribution: Distribution, textBodyMap:Option[Map[String, String]]) = {
     logger.info("CREATING A RESOURCE ON CKAN ... ")
@@ -201,10 +266,6 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
   def addNewPackage(dataset:Dataset) = {
     val organization = dataset.dctPublisher;
 
-    val jsonObj = new JSONObject();
-    jsonObj.put("name", dataset.dctIdentifier);
-    jsonObj.put("owner_org", organization.dctIdentifier);
-
     val optionalFields:Option[Map[String, String]] = Some(Map(
       "title" -> dataset.dctTitle
       , "notes" -> dataset.dctDescription
@@ -230,26 +291,44 @@ class CKANUtility(val ckanUrl: String, val authorizationToken: String) {
       , "was_influenced_by" -> dataset.provWasInfluencedBy
     ))
 
-    if(optionalFields != null && optionalFields.isDefined) {
-      for((key, value) <- optionalFields.get) {
-        if(key != null && !"".equals(key) && value != null && !"".equals(value)) {
-          jsonObj.put(key, value)
-        } else {
-          logger.warn(s"jsonObj key,value = ${key},${value}")
+    //val ckanVersion = ckanClient.ckanVersion;
+    val response = if(ckanVersion.isDefined) {
+      if(ckanVersion.get.equals("2.6.2")) { //use json objects
+        val jsonObj = new JSONObject();
+        jsonObj.put("name", dataset.dctIdentifier);
+        jsonObj.put("owner_org", organization.dctIdentifier);
+
+        if(optionalFields != null && optionalFields.isDefined) {
+          for((key, value) <- optionalFields.get) {
+            if(key != null && !"".equals(key) && value != null && !"".equals(value)) {
+              jsonObj.put(key, value)
+            } else {
+              logger.warn(s"jsonObj key,value = ${key},${value}")
+            }
+          }
         }
+
+        this.createPackage(jsonObj);
+      } else { // use fields
+        val mandatoryFields:Map[String, String] = Map(
+          "name" -> dataset.dctIdentifier
+          , "owner_org" -> organization.dctIdentifier
+        );
+        val fields:Map[String, String] = mandatoryFields ++ optionalFields.getOrElse(Map.empty);
+        this.createPackage(fields);
       }
+    } else { // use fields
+      val mandatoryFields:Map[String, String] = Map(
+        "name" -> dataset.dctIdentifier
+        , "owner_org" -> organization.dctIdentifier
+      );
+      val fields:Map[String, String] = mandatoryFields ++ optionalFields.getOrElse(Map.empty);
+      this.createPackage(fields);
     }
 
-
-    val uri = MappingPediaEngine.mappingpediaProperties.ckanActionPackageCreate
-    logger.info(s"Hitting endpoint: $uri");
-
-    val response = Unirest.post(uri)
-      .header("Authorization", this.authorizationToken)
-      .body(jsonObj)
-      .asJson();
-
     val responseStatus = response.getStatus
+    logger.info(s"\tresponseStatus = ${responseStatus}");
+
     val responseStatusText = response.getStatusText
     if (responseStatus < 200 || responseStatus >= 300) {
       logger.info(s"response.getBody= ${response.getBody}");
