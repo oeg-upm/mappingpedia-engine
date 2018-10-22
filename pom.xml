@@ -111,7 +111,26 @@
 			<version>0.10.0</version>
 		</dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.eclipse.rdf4j/rdf4j-rio-api -->
+        <dependency>
+            <groupId>org.eclipse.rdf4j</groupId>
+            <artifactId>rdf4j-rio-api</artifactId>
+            <version>2.4.0</version>
+        </dependency>
 
+
+        <!-- https://mvnrepository.com/artifact/org.eclipse.rdf4j/rdf4j-runtime -->
+		<dependency>
+			<groupId>org.eclipse.rdf4j</groupId>
+			<artifactId>rdf4j-runtime</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+
+        <dependency>
+            <groupId>org.eclipse.rdf4j</groupId>
+            <artifactId>rdf4j-rio-turtle</artifactId>
+			<version>2.4.0</version>
+        </dependency>
 
 		<dependency>
 			<groupId>be.ugent.mmlab.rml</groupId>
